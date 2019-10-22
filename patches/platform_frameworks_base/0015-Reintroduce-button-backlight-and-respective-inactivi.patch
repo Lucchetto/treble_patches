@@ -1,7 +1,7 @@
 From bb1e9076f1f1b40bc72180cb1536b1294f46442e Mon Sep 17 00:00:00 2001
 From: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
 Date: Fri, 23 Nov 2012 14:23:16 +0000
-Subject: [PATCH 15/36] Reintroduce button-backlight (and respective inactivity
+Subject: [PATCH 15/38] Reintroduce button-backlight (and respective inactivity
  timeout)
 
 The power manager rewrite from Change I1d7a52e98f0449f76d70bf421f6a7f245957d1d7

@@ -1,7 +1,7 @@
 From 252ef3edfbd768b4005df28c026a0969221819c2 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 14 Sep 2019 21:29:29 +0200
-Subject: [PATCH 09/12] Remove reserved_disk group (not very useful, and breaks
+Subject: [PATCH 09/13] Remove reserved_disk group (not very useful, and breaks
  SaS boot)
 
 Change-Id: Ib503fe64a095c00757d410ee65fde6fa8f6ea784

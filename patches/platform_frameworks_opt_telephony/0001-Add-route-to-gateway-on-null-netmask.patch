@@ -1,7 +1,7 @@
 From 60d9333099db6587acd48b896d37e9e949fa95dc Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 16 Aug 2018 22:12:46 +0200
-Subject: [PATCH 1/6] Add route to gateway on null netmask
+Subject: [PATCH 1/7] Add route to gateway on null netmask
 
 Galaxy S9 returns empty prefix
 

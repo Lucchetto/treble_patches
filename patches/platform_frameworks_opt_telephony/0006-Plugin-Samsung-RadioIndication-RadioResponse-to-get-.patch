@@ -1,7 +1,7 @@
 From d11dbfd4177f8e6e13965faf20de758d88265057 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 12 Aug 2019 23:49:56 +0200
-Subject: [PATCH 6/6] Plugin Samsung RadioIndication/RadioResponse to get
+Subject: [PATCH 6/7] Plugin Samsung RadioIndication/RadioResponse to get
  signal strength
 
 Change-Id: Ic3d5801627bf3dd72d2e7b6bb3741b9d368d1f07

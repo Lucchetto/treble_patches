@@ -1,7 +1,7 @@
 From 677389d4f112ca9368d55e1eb661727e5974eeb1 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 11 Aug 2019 10:30:37 +0200
-Subject: [PATCH 29/36] Add property to use linear brightness slider
+Subject: [PATCH 29/38] Add property to use linear brightness slider
 
 ---
  .../com/android/settingslib/display/BrightnessUtils.java    | 6 ++++++

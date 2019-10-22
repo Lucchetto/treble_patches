@@ -1,7 +1,7 @@
 From db389c9d29be8d7f880b1f049651e9a3f99b8b73 Mon Sep 17 00:00:00 2001
 From: Bevis Tseng <bevis@cloudmosa.com>
 Date: Thu, 18 Apr 2019 16:30:45 +0800
-Subject: [PATCH 5/6] Reverse-engineer MTK IRadio interfaces to approve
+Subject: [PATCH 5/7] Reverse-engineer MTK IRadio interfaces to approve
  incoming call for MTK devices from Telephony F/W.
 
 This is an alternative solution of 's/AT+EAIC=2/AT+EAIC=3/g' in device/phh/treble/rw-system.sh

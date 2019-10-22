@@ -1,7 +1,7 @@
 From 1edfe5d82e20527ebb852cb506f878f19049f07e Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 1 Oct 2019 13:34:35 +0200
-Subject: [PATCH 12/12] fixup! Take ro.vndk.version into account to know what
+Subject: [PATCH 12/13] fixup! Take ro.vndk.version into account to know what
  to test
 
 ---

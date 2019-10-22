@@ -1,7 +1,7 @@
 From 6556ccbc704c6cb4a3bae5e9411082f6e1e1ff71 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <pierre-hugues.husson@softathome.com>
 Date: Thu, 7 Jun 2018 13:36:51 +0200
-Subject: [PATCH 06/36] S9 brightness override only for screen
+Subject: [PATCH 06/38] S9 brightness override only for screen
 
 Change-Id: Ie16a46336fa64850014b962429f7a20ff569222f
 ---
