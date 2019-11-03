@@ -1,7 +1,7 @@
 From 0883dddcc377f9c8c271b4ee1b5796cca6b9938c Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 3 Dec 2018 20:54:54 +0100
-Subject: [PATCH 3/6] ::Kirin:: Workaround some conflicting Kirin tether
+Subject: [PATCH 3/7] ::Kirin:: Workaround some conflicting Kirin tether
  SELinux context
 
 Some Kirin devices declared some android.hardware.tetheroffload HALs,

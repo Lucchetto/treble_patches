@@ -1,7 +1,7 @@
 From c741063fdd7cbb01dda51737db457e4043af0d04 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 12 Sep 2019 20:34:28 +0200
-Subject: [PATCH 5/6] Most horrific: Remove ramdisk's zygote init scripts
+Subject: [PATCH 5/7] Most horrific: Remove ramdisk's zygote init scripts
 
 This is needed because:
 - only secilc is run soon enough in /system to

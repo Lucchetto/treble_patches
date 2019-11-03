@@ -14,7 +14,7 @@ Change-Id: I03e763b8092a9089739db68ed17368ff574879bb
  6 files changed, 6 insertions(+)
 
 diff --git a/prebuilts/api/29.0/private/compat/26.0/26.0.cil b/prebuilts/api/29.0/private/compat/26.0/26.0.cil
-index 3b3dae1c..60f42b9c 100644
+index 3b3dae1c6..60f42b9c4 100644
 --- a/prebuilts/api/29.0/private/compat/26.0/26.0.cil
 +++ b/prebuilts/api/29.0/private/compat/26.0/26.0.cil
 @@ -336,6 +336,7 @@
@@ -26,7 +26,7 @@ index 3b3dae1c..60f42b9c 100644
  (typeattributeset mediacodec_exec_26_0 (mediacodec_exec))
  (typeattributeset mediacodec_service_26_0 (mediacodec_service))
 diff --git a/prebuilts/api/29.0/private/compat/27.0/27.0.cil b/prebuilts/api/29.0/private/compat/27.0/27.0.cil
-index 365d791a..8c8f82fc 100644
+index 365d791a7..8c8f82fc8 100644
 --- a/prebuilts/api/29.0/private/compat/27.0/27.0.cil
 +++ b/prebuilts/api/29.0/private/compat/27.0/27.0.cil
 @@ -1047,6 +1047,7 @@
@@ -38,7 +38,7 @@ index 365d791a..8c8f82fc 100644
  (typeattributeset mediacodec_exec_27_0 (mediacodec_exec))
  (typeattributeset mediacodec_service_27_0 (mediacodec_service))
 diff --git a/prebuilts/api/29.0/private/compat/28.0/28.0.cil b/prebuilts/api/29.0/private/compat/28.0/28.0.cil
-index 305cb3ac..338cbd02 100644
+index 305cb3acb..338cbd027 100644
 --- a/prebuilts/api/29.0/private/compat/28.0/28.0.cil
 +++ b/prebuilts/api/29.0/private/compat/28.0/28.0.cil
 @@ -1242,6 +1242,7 @@
@@ -50,7 +50,7 @@ index 305cb3ac..338cbd02 100644
  (typeattributeset mediacodec_exec_28_0 (mediacodec_exec))
  (typeattributeset mediacodec_service_28_0 (mediacodec_service))
 diff --git a/private/compat/26.0/26.0.cil b/private/compat/26.0/26.0.cil
-index 3b3dae1c..60f42b9c 100644
+index 3b3dae1c6..60f42b9c4 100644
 --- a/private/compat/26.0/26.0.cil
 +++ b/private/compat/26.0/26.0.cil
 @@ -336,6 +336,7 @@
@@ -62,7 +62,7 @@ index 3b3dae1c..60f42b9c 100644
  (typeattributeset mediacodec_exec_26_0 (mediacodec_exec))
  (typeattributeset mediacodec_service_26_0 (mediacodec_service))
 diff --git a/private/compat/27.0/27.0.cil b/private/compat/27.0/27.0.cil
-index 365d791a..8c8f82fc 100644
+index 365d791a7..8c8f82fc8 100644
 --- a/private/compat/27.0/27.0.cil
 +++ b/private/compat/27.0/27.0.cil
 @@ -1047,6 +1047,7 @@
@@ -74,7 +74,7 @@ index 365d791a..8c8f82fc 100644
  (typeattributeset mediacodec_exec_27_0 (mediacodec_exec))
  (typeattributeset mediacodec_service_27_0 (mediacodec_service))
 diff --git a/private/compat/28.0/28.0.cil b/private/compat/28.0/28.0.cil
-index 305cb3ac..338cbd02 100644
+index 305cb3acb..338cbd027 100644
 --- a/private/compat/28.0/28.0.cil
 +++ b/private/compat/28.0/28.0.cil
 @@ -1242,6 +1242,7 @@
