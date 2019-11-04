@@ -1,0 +1,26 @@
+From e74c05dd7b2223a9b1db35293e4fecae1fc38dd1 Mon Sep 17 00:00:00 2001
+From: Luke Williams <expressluke@turbox.uk>
+Date: Mon, 4 Nov 2019 13:49:54 +0000
+Subject: [PATCH] Whitelist radio HALs (needed because they need to be in
+ framework because of weird jar issue)
+
+---
+ core/tasks/check_boot_jars/package_whitelist.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/tasks/check_boot_jars/package_whitelist.txt b/core/tasks/check_boot_jars/package_whitelist.txt
+index 38591f4e0..6ab0f7945 100644
+--- a/core/tasks/check_boot_jars/package_whitelist.txt
++++ b/core/tasks/check_boot_jars/package_whitelist.txt
+@@ -243,6 +243,8 @@ com\.google\.vr\.platform.*
+ org\.chromium\.arc
+ org\.chromium\.arc\..*
+ 
++vendor\.samsung\.hardware\.radio\.V1_2
++vendor\.mediatek\.hardware\.radio\.V2_0
+ ###################################################
+ # CodeAurora IMS functionality needed by frameworks/opt/telephony
+ # as part of "ims-ext-common"
+-- 
+2.17.1
+
