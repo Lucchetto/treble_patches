@@ -1,4 +1,4 @@
-From d1b5e990cfb06bc692fb1f69530372e304fcd51c Mon Sep 17 00:00:00 2001
+From 892480b225d3b0dc66f82c297b669f3666b99341 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 24 Mar 2019 22:48:39 +0100
 Subject: [PATCH 33/40] wip
@@ -16,7 +16,7 @@ Change-Id: I50fa9a7a670cef5b93fc4a3a027f1587b1214831
  create mode 100644 services/core/java/com/android/server/biometrics/fingerprint/FacolaView.java
 
 diff --git a/Android.bp b/Android.bp
-index 16abdbf79de..d01dc639c8f 100644
+index e3fa19c48f9..b97a639cf59 100644
 --- a/Android.bp
 +++ b/Android.bp
 @@ -777,6 +777,8 @@ java_defaults {
@@ -257,7 +257,7 @@ index 00000000000..8829bcb7e48
 +    }
 +}
 diff --git a/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java b/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
-index 19593e7e047..c7de87126e8 100644
+index f6e0742aa67..92c0cc5dc85 100644
 --- a/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
 +++ b/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
 @@ -120,8 +120,10 @@ public class FingerprintService extends BiometricServiceBase {
@@ -298,7 +298,7 @@ index 19593e7e047..c7de87126e8 100644
      }
  
      /**
-@@ -180,7 +202,6 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -181,7 +203,6 @@ public class FingerprintService extends BiometricServiceBase {
          /**
           * The following methods contain common code which is shared in biometrics/common.
           */
@@ -306,7 +306,7 @@ index 19593e7e047..c7de87126e8 100644
          @Override // Binder call
          public long preEnroll(IBinder token) {
              checkPermission(MANAGE_FINGERPRINT);
-@@ -725,6 +746,7 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -727,6 +748,7 @@ public class FingerprintService extends BiometricServiceBase {
          mAlarmManager = context.getSystemService(AlarmManager.class);
          context.registerReceiver(mLockoutReceiver, new IntentFilter(getLockoutResetIntent()),
                  getLockoutBroadcastPermission(), null /* handler */);
@@ -314,7 +314,7 @@ index 19593e7e047..c7de87126e8 100644
      }
  
      @Override
-@@ -952,6 +974,7 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -954,6 +976,7 @@ public class FingerprintService extends BiometricServiceBase {
              Slog.w(TAG, "startPreEnroll: no fingerprint HAL!");
              return 0;
          }
@@ -322,7 +322,7 @@ index 19593e7e047..c7de87126e8 100644
          try {
              return daemon.preEnroll();
          } catch (RemoteException e) {
-@@ -966,6 +989,7 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -968,6 +991,7 @@ public class FingerprintService extends BiometricServiceBase {
              Slog.w(TAG, "startPostEnroll: no fingerprint HAL!");
              return 0;
          }
@@ -349,10 +349,10 @@ index fcf87ee2a4b..0aa948417c1 100644
              // There's no data to apply, so leave it as-is.
              return null;
 diff --git a/services/core/java/com/android/server/wm/ActivityRecord.java b/services/core/java/com/android/server/wm/ActivityRecord.java
-index 5b61f215f3f..0500c78c871 100644
+index 09521a68401..aba102698f8 100644
 --- a/services/core/java/com/android/server/wm/ActivityRecord.java
 +++ b/services/core/java/com/android/server/wm/ActivityRecord.java
-@@ -2837,12 +2837,6 @@ final class ActivityRecord extends ConfigurationContainer {
+@@ -2839,12 +2839,6 @@ final class ActivityRecord extends ConfigurationContainer {
      // TODO(b/36505427): Consider moving this method and similar ones to ConfigurationContainer.
      private void updateOverrideConfiguration() {
          final Configuration overrideConfig = mTmpConfig;

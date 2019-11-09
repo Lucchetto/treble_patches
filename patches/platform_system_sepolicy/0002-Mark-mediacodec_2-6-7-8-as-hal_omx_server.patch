@@ -1,4 +1,4 @@
-From 50cc46681b211922da50a0d97624499f551642a1 Mon Sep 17 00:00:00 2001
+From ede7e130d3ef39c0231cc80c64f54a6fd66f9b1a Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Wed, 18 Sep 2019 11:50:14 +0200
 Subject: [PATCH 2/2] Mark mediacodec_2{6,7,8} as hal_omx_server

@@ -1,4 +1,4 @@
-From 6c3996a1e42192a481ac029932fc1c4eade50488 Mon Sep 17 00:00:00 2001
+From c95333369f5dc0b3b79e9d2f99d0b1bc6293be25 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Wed, 29 Aug 2018 11:05:54 +0200
 Subject: [PATCH 20/40] Add a property to override pre-o max aspect ratio
@@ -9,10 +9,10 @@ Change-Id: Id001a19fab7680feda841202b6e91c490d0d5ffa
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/services/core/java/com/android/server/wm/ActivityRecord.java b/services/core/java/com/android/server/wm/ActivityRecord.java
-index 371a9435643..5b61f215f3f 100644
+index 64913609a81..09521a68401 100644
 --- a/services/core/java/com/android/server/wm/ActivityRecord.java
 +++ b/services/core/java/com/android/server/wm/ActivityRecord.java
-@@ -2837,6 +2837,12 @@ final class ActivityRecord extends ConfigurationContainer {
+@@ -2839,6 +2839,12 @@ final class ActivityRecord extends ConfigurationContainer {
      // TODO(b/36505427): Consider moving this method and similar ones to ConfigurationContainer.
      private void updateOverrideConfiguration() {
          final Configuration overrideConfig = mTmpConfig;
@@ -25,7 +25,7 @@ index 371a9435643..5b61f215f3f 100644
          if (shouldUseSizeCompatMode()) {
              if (mCompatDisplayInsets != null) {
                  // The override configuration is set only once in size compatibility mode.
-@@ -3070,7 +3076,7 @@ final class ActivityRecord extends ConfigurationContainer {
+@@ -3072,7 +3078,7 @@ final class ActivityRecord extends ConfigurationContainer {
      // TODO(b/36505427): Consider moving this method and similar ones to ConfigurationContainer.
      private void computeBounds(Rect outBounds, Rect containingAppBounds) {
          outBounds.setEmpty();

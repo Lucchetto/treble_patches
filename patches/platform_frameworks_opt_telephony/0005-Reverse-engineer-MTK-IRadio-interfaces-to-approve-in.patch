@@ -1,4 +1,4 @@
-From db389c9d29be8d7f880b1f049651e9a3f99b8b73 Mon Sep 17 00:00:00 2001
+From 6f8691bfa27414580ebd6c6b18f02beff644a672 Mon Sep 17 00:00:00 2001
 From: Bevis Tseng <bevis@cloudmosa.com>
 Date: Thu, 18 Apr 2019 16:30:45 +0800
 Subject: [PATCH 5/7] Reverse-engineer MTK IRadio interfaces to approve
@@ -1526,10 +1526,10 @@ index 000000000..2548e967e
 +    //-- MTK Radio V2_0
 +}
 diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
-index f0b4f1b78..47cb9f240 100644
+index 4953d2683..1ee59adea 100644
 --- a/src/java/com/android/internal/telephony/RIL.java
 +++ b/src/java/com/android/internal/telephony/RIL.java
-@@ -236,6 +236,9 @@ public class RIL extends BaseCommands implements CommandsInterface {
+@@ -243,6 +243,9 @@ public class RIL extends BaseCommands implements CommandsInterface {
      final AtomicLong mRadioProxyCookie = new AtomicLong(0);
      final RadioProxyDeathRecipient mRadioProxyDeathRecipient;
      final RilHandler mRilHandler;
@@ -1539,7 +1539,7 @@ index f0b4f1b78..47cb9f240 100644
  
      //***** Events
      static final int EVENT_WAKE_LOCK_TIMEOUT    = 2;
-@@ -493,6 +496,22 @@ public class RIL extends BaseCommands implements CommandsInterface {
+@@ -500,6 +503,22 @@ public class RIL extends BaseCommands implements CommandsInterface {
              }
          }
  
@@ -1562,7 +1562,7 @@ index f0b4f1b78..47cb9f240 100644
          return mRadioProxy;
      }
  
-@@ -6054,4 +6073,23 @@ public class RIL extends BaseCommands implements CommandsInterface {
+@@ -6115,4 +6134,23 @@ public class RIL extends BaseCommands implements CommandsInterface {
      public HalVersion getHalVersion() {
          return mRadioVersion;
      }

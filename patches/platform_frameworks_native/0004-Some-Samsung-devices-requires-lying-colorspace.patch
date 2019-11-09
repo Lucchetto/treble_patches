@@ -1,4 +1,4 @@
-From c554242731125a5e6a3f7d31d4f4af9049d8c7f4 Mon Sep 17 00:00:00 2001
+From 7d433bf52c61e6f496ad89621ad622f8b5ba5dbc Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 12 Aug 2019 23:48:37 +0200
 Subject: [PATCH 4/5] Some Samsung devices requires lying colorspace

@@ -1,4 +1,4 @@
-From 12005c0b0a7f7e9c33bd8cf79ffaee609c43dafb Mon Sep 17 00:00:00 2001
+From cf0387fa6df80e2ce2cd31fe8ad8c8a3787ee252 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 22 Oct 2019 15:31:54 +0200
 Subject: [PATCH 39/40] Link hwui with libbase, because of updated skia

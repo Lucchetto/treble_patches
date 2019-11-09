@@ -1,4 +1,4 @@
-From a82fb264b079d4103bd191efb00ed66f63ef45f0 Mon Sep 17 00:00:00 2001
+From 210121cf124ec07527d9df19035df9aca3fb5f41 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 10 Aug 2019 20:40:24 +0200
 Subject: [PATCH 28/40] Add a property to disable hardware button backlights
@@ -39,7 +39,7 @@ index 427ab483324..fb381c33cbc 100644
  
          // Always use the VR brightness when in the VR state.
 diff --git a/services/core/java/com/android/server/power/PowerManagerService.java b/services/core/java/com/android/server/power/PowerManagerService.java
-index e7d5315a2b9..7c20da3fe3f 100644
+index b7b634b7d6e..c47b743a3f7 100644
 --- a/services/core/java/com/android/server/power/PowerManagerService.java
 +++ b/services/core/java/com/android/server/power/PowerManagerService.java
 @@ -255,6 +255,7 @@ public final class PowerManagerService extends SystemService

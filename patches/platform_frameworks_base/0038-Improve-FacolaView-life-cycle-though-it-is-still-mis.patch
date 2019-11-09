@@ -1,4 +1,4 @@
-From 9bba3cbb885f9917c120bfc7f072002f9e8cd4ed Mon Sep 17 00:00:00 2001
+From 9a7d72ca8bae584205aec38d6aebeb477b9e415f Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 22 Oct 2019 00:33:23 +0200
 Subject: [PATCH 38/40] Improve FacolaView life cycle, though it is still
@@ -54,7 +54,7 @@ index f61582990cf..4ff373a108d 100644
              samsungCmd("fod_enable,0");
          }
 diff --git a/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java b/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
-index c7de87126e8..972b4703860 100644
+index 92c0cc5dc85..1323c5ec0dd 100644
 --- a/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
 +++ b/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
 @@ -181,6 +181,16 @@ public class FingerprintService extends BiometricServiceBase {
@@ -74,7 +74,7 @@ index c7de87126e8..972b4703860 100644
          @Override
          public int start() {
              mFacola.show();
-@@ -219,6 +229,7 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -220,6 +230,7 @@ public class FingerprintService extends BiometricServiceBase {
                  final IFingerprintServiceReceiver receiver, final int flags,
                  final String opPackageName) {
              checkPermission(MANAGE_FINGERPRINT);
@@ -82,7 +82,7 @@ index c7de87126e8..972b4703860 100644
  
              final boolean restricted = isRestricted();
              final int groupId = userId; // default group for fingerprint enrollment
-@@ -641,6 +652,9 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -643,6 +654,9 @@ public class FingerprintService extends BiometricServiceBase {
          public void onError(final long deviceId, final int error, final int vendorCode) {
              mHandler.post(() -> {
                  FingerprintService.super.handleError(deviceId, error, vendorCode);

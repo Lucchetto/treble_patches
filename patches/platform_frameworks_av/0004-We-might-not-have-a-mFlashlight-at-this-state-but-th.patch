@@ -1,4 +1,4 @@
-From d76a1c23cb4a61bac8e1cdc33bca4201b5c1972f Mon Sep 17 00:00:00 2001
+From 223bebc530fb4b751e774fb0c8c81b54240b22d0 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 19 Aug 2018 23:05:26 +0200
 Subject: [PATCH 04/11] We might not have a mFlashlight at this state, but
@@ -9,7 +9,7 @@ Subject: [PATCH 04/11] We might not have a mFlashlight at this state, but
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
-index 3736a9e24..12ab2f47e 100644
+index 25ab667ac..513e518fb 100644
 --- a/services/camera/libcameraservice/CameraService.cpp
 +++ b/services/camera/libcameraservice/CameraService.cpp
 @@ -279,7 +279,7 @@ void CameraService::addStates(const String8 id) {

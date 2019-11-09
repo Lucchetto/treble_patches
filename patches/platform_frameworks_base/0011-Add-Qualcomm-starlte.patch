@@ -1,4 +1,4 @@
-From 695e8613f1bcee3f03269eb7f28ed9a91b41e2ad Mon Sep 17 00:00:00 2001
+From c019b0cd127d9745993ac3c072cb085f923b1a4a Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 25 Jun 2018 22:43:32 +0200
 Subject: [PATCH 11/40] Add Qualcomm starlte

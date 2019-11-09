@@ -1,4 +1,4 @@
-From ba695ca22d256bb8a27f699c0759162a48999cf7 Mon Sep 17 00:00:00 2001
+From 8878f40bc3c005f5c725677eeabd8492dc36d23e Mon Sep 17 00:00:00 2001
 From: Peter Cai <peter@typeblog.net>
 Date: Tue, 22 Oct 2019 20:54:25 +0800
 Subject: [PATCH] GrGLCaps: allow ignoring vendor-supplied texture swizzle flag

@@ -1,4 +1,4 @@
-From e73eb752f04a301bb4195a40ef3d73be5bb705d6 Mon Sep 17 00:00:00 2001
+From 5e35c8bc8e28d7f8f9e23e609c9d4ae3403b780e Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 12 Sep 2019 20:38:08 +0200
 Subject: [PATCH 35/40] Check for samsung light service everytime

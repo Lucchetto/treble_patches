@@ -1,4 +1,4 @@
-From f1176c850abc148002e5986db5ccecac116b91c9 Mon Sep 17 00:00:00 2001
+From 4c766bff52ebcbee679ee7fd29aa9698fbe27925 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 2 Jul 2018 23:36:39 +0200
 Subject: [PATCH 12/40] [Galaxy S9] "remaining" of HAL onEnroll is actually a
@@ -10,10 +10,10 @@ Change-Id: I8a586163eca93ae3c5bd968d1e7ddbf994ddcc91
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java b/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
-index 24fd1b7a6da..dc56a95217c 100644
+index 320e1022873..9789c49f069 100644
 --- a/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
 +++ b/services/core/java/com/android/server/biometrics/fingerprint/FingerprintService.java
-@@ -588,7 +588,13 @@ public class FingerprintService extends BiometricServiceBase {
+@@ -590,7 +590,13 @@ public class FingerprintService extends BiometricServiceBase {
                  final Fingerprint fingerprint =
                          new Fingerprint(getBiometricUtils().getUniqueName(getContext(), groupId),
                                  groupId, fingerId, deviceId);

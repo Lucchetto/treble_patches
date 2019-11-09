@@ -1,4 +1,4 @@
-From 1573fc903e5c874b7a4fa78284801aa67a9f1ff7 Mon Sep 17 00:00:00 2001
+From b19f456207eb65020f66a53a98d854a7f09d4db4 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 27 Oct 2019 16:27:55 +0100
 Subject: [PATCH 40/40] Fix crash on some devices by checking for null client
@@ -19,10 +19,10 @@ Change-Id: If39d8c1b26c8c0a44b3d9292b646cb71ff258a95
  1 file changed, 1 insertion(+)
 
 diff --git a/services/core/java/com/android/server/biometrics/BiometricServiceBase.java b/services/core/java/com/android/server/biometrics/BiometricServiceBase.java
-index d3c62bed7b5..b6710992a6e 100644
+index f3f9754bd32..4031cd32829 100644
 --- a/services/core/java/com/android/server/biometrics/BiometricServiceBase.java
 +++ b/services/core/java/com/android/server/biometrics/BiometricServiceBase.java
-@@ -774,6 +774,7 @@ public abstract class BiometricServiceBase extends SystemService
+@@ -783,6 +783,7 @@ public abstract class BiometricServiceBase extends SystemService
      protected void handleEnumerate(BiometricAuthenticator.Identifier identifier, int remaining) {
          ClientMonitor client = getCurrentClient();
  

@@ -1,4 +1,4 @@
-From a5bc47c2602ae78b0471e8f55538a4cca083decf Mon Sep 17 00:00:00 2001
+From 6faf991e5748908b2e295f7b34c2758e06c0884f Mon Sep 17 00:00:00 2001
 From: Artem Borisov <dedsa2002@gmail.com>
 Date: Tue, 25 Sep 2018 12:39:22 +0300
 Subject: [PATCH 05/11] CameraService: Support calling addStates in
@@ -22,7 +22,7 @@ Change-Id: Ife25b9753fdb679ab0c77f385e1b8527551a4711
  1 file changed, 16 insertions(+)
 
 diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
-index 12ab2f47e..d208a36a9 100644
+index 513e518fb..d5c5f5fd5 100644
 --- a/services/camera/libcameraservice/CameraService.cpp
 +++ b/services/camera/libcameraservice/CameraService.cpp
 @@ -204,6 +204,20 @@ status_t CameraService::enumerateProviders() {

@@ -1,4 +1,4 @@
-From f32750cc994642f6ba792051f20c3f930f3007d2 Mon Sep 17 00:00:00 2001
+From 5fc0c38e67d55bf4b5b681efee0096679cf5d621 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 12 Sep 2019 12:54:23 +0200
 Subject: [PATCH 5/6] Use vndk_lite ld.config only on same-version vendor
@@ -16,10 +16,10 @@ Change-Id: I55257cd7c738b1d20582e198e1d5621e1c87a03e
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/linker/linker.cpp b/linker/linker.cpp
-index f45a40b9d..9082fde53 100644
+index 98603ded6..d3a99fcea 100644
 --- a/linker/linker.cpp
 +++ b/linker/linker.cpp
-@@ -4069,7 +4069,10 @@ static std::string get_ld_config_file_apex_path(const char* executable_path) {
+@@ -4076,7 +4076,10 @@ static std::string get_ld_config_file_apex_path(const char* executable_path) {
  }
  
  static std::string get_ld_config_file_vndk_path() {

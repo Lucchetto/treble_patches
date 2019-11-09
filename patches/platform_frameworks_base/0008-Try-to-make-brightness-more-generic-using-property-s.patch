@@ -1,4 +1,4 @@
-From 7235d15f8ba322a1806a8736751cac88cecb9b53 Mon Sep 17 00:00:00 2001
+From 062bcbbbd451f37ecb865c3a286c6956b9a674b1 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 10 Jun 2018 22:54:55 +0200
 Subject: [PATCH 08/40] Try to make brightness more generic using property set

@@ -1,4 +1,4 @@
-From 1c3ecb1fd46c76111d44f600532068f307ccacbc Mon Sep 17 00:00:00 2001
+From 316437719a351f953aa7e415bd773e33d3c61fb4 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 14 Sep 2019 21:25:07 +0200
 Subject: [PATCH 2/2] Add BOARD_SYSTEMIMAGE_AS_SYSTEM parameter to build SaS
@@ -11,7 +11,7 @@ Change-Id: I764f0ef4e3be9a338fbe93944445cedc29d2bb81
  2 files changed, 5 insertions(+)
 
 diff --git a/core/Makefile b/core/Makefile
-index 4611fb388..9ab207c6d 100644
+index 4253b7200..39a1a5452 100644
 --- a/core/Makefile
 +++ b/core/Makefile
 @@ -1345,6 +1345,7 @@ endif # PRODUCT_USE_DYNAMIC_PARTITIONS

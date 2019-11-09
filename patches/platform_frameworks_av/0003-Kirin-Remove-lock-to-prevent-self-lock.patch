@@ -1,4 +1,4 @@
-From 6e5e5dbc804ef1aa686731d588bdb959919de29e Mon Sep 17 00:00:00 2001
+From 2c067279a4571a4a32517182edb71fd429305a79 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 19 Aug 2018 22:59:06 +0200
 Subject: [PATCH 03/11] ::Kirin:: Remove lock to prevent self-lock
@@ -17,7 +17,7 @@ Hence the safe-lock
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
-index 3e6210294..3736a9e24 100644
+index 048d0e6bc..25ab667ac 100644
 --- a/services/camera/libcameraservice/CameraService.cpp
 +++ b/services/camera/libcameraservice/CameraService.cpp
 @@ -254,7 +254,7 @@ void CameraService::onNewProviderRegistered() {

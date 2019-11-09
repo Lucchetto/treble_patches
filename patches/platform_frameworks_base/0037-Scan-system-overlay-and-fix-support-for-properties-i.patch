@@ -1,4 +1,4 @@
-From f1e202e71f6ab47a1870aa91e65d8c777770b88d Mon Sep 17 00:00:00 2001
+From c1ada1eef863883253f22955e4c72ceafbae6ba5 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 14 Oct 2019 23:50:46 +0200
 Subject: [PATCH 37/40] Scan /system/overlay and fix support for properties in
@@ -145,7 +145,7 @@ index 4518c7e66a5..9e1b6db9ad9 100644
      input_dirs.push_back(AssetManager::VENDOR_OVERLAY_DIR);
    }
 diff --git a/services/core/java/com/android/server/pm/PackageManagerService.java b/services/core/java/com/android/server/pm/PackageManagerService.java
-index 7469e099421..203eb793610 100644
+index a7d436ab87b..bd6230e9fef 100644
 --- a/services/core/java/com/android/server/pm/PackageManagerService.java
 +++ b/services/core/java/com/android/server/pm/PackageManagerService.java
 @@ -2608,6 +2608,12 @@ public class PackageManagerService extends IPackageManager.Stub

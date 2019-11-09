@@ -1,7 +1,7 @@
-From 4152eaf5e3da9f0e4d67187b351478d92c7ae627 Mon Sep 17 00:00:00 2001
+From 8733e345bff2b0e3cf4224f29881592b60aa8356 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Wed, 16 Oct 2019 15:52:12 +0200
-Subject: [PATCH 13/13] Give lmkd ptrace capability, to bypass hidepid (AOSP
+Subject: [PATCH 13/14] Give lmkd ptrace capability, to bypass hidepid (AOSP
  uses `readproc` group, but I cant because of A-only)
 
 Change-Id: Ic58e7c125d86fde45764d39f250675cf84777266
