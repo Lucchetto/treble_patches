@@ -1,0 +1,912 @@
+From 4dd19627d011e502eb19c60082220e2e10afce94 Mon Sep 17 00:00:00 2001
+From: Rhed Jao <rhedjao@google.com>
+Date: Wed, 13 Jun 2018 15:42:22 +0800
+Subject: [PATCH 06/39] Hide system apps until installed (2/2)
+
+Applying this mechanism for system carrier apps to make visibility
+reasonable from the user's perspective. In other words, before
+hidden system apps have been installed, they wouldn't be listed
+via APIs in PackageManager which are used at all apps list and
+search in Settings and so on.
+
+Test: atest CarrierAppUtilsTest
+Test: atest PackageManagerTest
+Test: cts DeviceOwnerTest
+Test: gts ManagedProfileProvisioningHostsideTest
+Bug: 74068582
+Change-Id: I7f4436c6118c133e049acfaf6ed8ed911e48c4ae
+---
+ .../telephony/SubscriptionInfoUpdater.java    |   9 +-
+ .../uicc/UiccCarrierPrivilegeRules.java       |   3 +-
+ .../telephony/CarrierAppUtilsTest.java        | 414 +++++++++++-------
+ .../SubscriptionInfoUpdaterTest.java          |   5 +-
+ 4 files changed, 265 insertions(+), 166 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/SubscriptionInfoUpdater.java b/src/java/com/android/internal/telephony/SubscriptionInfoUpdater.java
+index afd49fa40..1a4ed5b1d 100644
+--- a/src/java/com/android/internal/telephony/SubscriptionInfoUpdater.java
++++ b/src/java/com/android/internal/telephony/SubscriptionInfoUpdater.java
+@@ -122,6 +122,13 @@ public class SubscriptionInfoUpdater extends Handler {
+ 
+     public SubscriptionInfoUpdater(
+             Looper looper, Context context, Phone[] phone, CommandsInterface[] ci) {
++        this(looper, context, phone, ci,
++                IPackageManager.Stub.asInterface(ServiceManager.getService("package")));
++    }
++
++    @VisibleForTesting public SubscriptionInfoUpdater(
++            Looper looper, Context context, Phone[] phone,
++            CommandsInterface[] ci, IPackageManager packageMgr) {
+         super(looper);
+         logd("Constructor invoked");
+ 
+@@ -129,7 +136,7 @@ public class SubscriptionInfoUpdater extends Handler {
+         mPhone = phone;
+         mSubscriptionManager = SubscriptionManager.from(mContext);
+         mEuiccManager = (EuiccManager) mContext.getSystemService(Context.EUICC_SERVICE);
+-        mPackageManager = IPackageManager.Stub.asInterface(ServiceManager.getService("package"));
++        mPackageManager = packageMgr;
+ 
+         mCarrierServiceBindHelper = new CarrierServiceBindHelper(mContext);
+         initializeCarrierApps();
+diff --git a/src/java/com/android/internal/telephony/uicc/UiccCarrierPrivilegeRules.java b/src/java/com/android/internal/telephony/uicc/UiccCarrierPrivilegeRules.java
+index a45c247aa..a7bbb955a 100644
+--- a/src/java/com/android/internal/telephony/uicc/UiccCarrierPrivilegeRules.java
++++ b/src/java/com/android/internal/telephony/uicc/UiccCarrierPrivilegeRules.java
+@@ -310,7 +310,8 @@ public class UiccCarrierPrivilegeRules extends Handler {
+             // gained carrier privileges (as an indication that a matching SIM has been inserted).
+             PackageInfo pInfo = packageManager.getPackageInfo(packageName,
+                     PackageManager.GET_SIGNATURES
+-                            | PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS);
++                            | PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                            | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS);
+             return getCarrierPrivilegeStatus(pInfo);
+         } catch (PackageManager.NameNotFoundException ex) {
+             log("Package " + packageName + " not found for carrier privilege status check");
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/CarrierAppUtilsTest.java b/tests/telephonytests/src/com/android/internal/telephony/CarrierAppUtilsTest.java
+index 54a56df3c..59c36bbcb 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/CarrierAppUtilsTest.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/CarrierAppUtilsTest.java
+@@ -87,15 +87,18 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_MissingApp() throws Exception {
+         Mockito.when(mPackageManager.getApplicationInfo("com.example.missing.app",
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(null);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(null);
+         ArraySet<String> systemCarrierAppsDisabledUntilUsed = new ArraySet<>();
+         systemCarrierAppsDisabledUntilUsed.add("com.example.missing.app");
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID,
+                 systemCarrierAppsDisabledUntilUsed, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppHiddenUntilInstalled(
++                Mockito.anyString(), Mockito.anyBoolean());
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(Mockito.any(String[].class),
+                         Mockito.anyInt());
+@@ -107,12 +110,15 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     public void testDisableCarrierAppsUntilPrivileged_NonSystemApp() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppHiddenUntilInstalled(
++                Mockito.anyString(), Mockito.anyBoolean());
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+@@ -128,17 +134,20 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+@@ -148,37 +157,43 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     public void testDisableCarrierAppsUntilPrivileged_HasPrivileges_Disabled() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+ 
+-    /** Configured app has privileges, and is already enabled - should only grant permissions. */
++    /** Configured app has privileges, and is already installed - should only grant permissions. */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_HasPrivileges_Enabled() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+@@ -188,23 +203,27 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     public void testDisableCarrierAppsUntilPrivileged_HasPrivileges_UpdatedApp() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP
++                | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+ 
+     /**
+-     * Configured app has privileges, and is in the default state - should enable. Associated app
++     * Configured app has privileges, and is in the default state - should install. Associated app
+      * is missing and should not be touched.
+      */
+     @Test @SmallTest
+@@ -212,28 +231,29 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                ASSOCIATED_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, true, USER_ID);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                ASSOCIATED_APP, true, USER_ID);
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+ 
+     /**
+      * Configured app has privileges, and is in the default state along with associated app - should
+-     * enable both.
++     * install both.
+      */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_HasPrivileges_Associated_Default()
+@@ -243,34 +263,38 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+                 mContentResolver, Settings.Secure.CARRIER_APPS_HANDLED, 1, USER_ID);
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(appInfo);
+         ApplicationInfo associatedAppInfo = new ApplicationInfo();
+         associatedAppInfo.packageName = ASSOCIATED_APP;
+         associatedAppInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
+         associatedAppInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(ASSOCIATED_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(associatedAppInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                ASSOCIATED_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                ASSOCIATED_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, true, USER_ID);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                ASSOCIATED_APP, true, USER_ID);
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+ 
+     /**
+-     * Configured app has privileges, and is disabled until used - should enable. Associated app has
++     * Configured app has privileges, and is uninstalled - should install. Associated app has
+      * been updated and should not be touched.
+      */
+     @Test @SmallTest
+@@ -278,10 +302,12 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         ApplicationInfo associatedAppInfo = new ApplicationInfo();
+         associatedAppInfo.packageName = ASSOCIATED_APP;
+         associatedAppInfo.flags |=
+@@ -289,53 +315,61 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+         associatedAppInfo.enabledSetting =
+                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+         Mockito.when(mPackageManager.getApplicationInfo(ASSOCIATED_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(associatedAppInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                ASSOCIATED_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppHiddenUntilInstalled(
++                ASSOCIATED_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, true, USER_ID);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                ASSOCIATED_APP, true, USER_ID);
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+ 
+     /**
+-     * Configured app has privileges, and is disabled until used along with associated app - should
+-     * enable both.
++     * Configured app has privileges, and is uninstalled until used along with associated app -
++     * should install both.
+      */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_HasPrivileges_Associated_DisabledUntilUsed()
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         ApplicationInfo associatedAppInfo = new ApplicationInfo();
+         associatedAppInfo.packageName = ASSOCIATED_APP;
+         associatedAppInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
+         associatedAppInfo.enabledSetting =
+                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+         Mockito.when(mPackageManager.getApplicationInfo(ASSOCIATED_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(associatedAppInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                ASSOCIATED_APP, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+-                PackageManager.DONT_KILL_APP, USER_ID, CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                ASSOCIATED_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, true, USER_ID);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                ASSOCIATED_APP, true, USER_ID);
+         Mockito.verify(mPackageManager).grantDefaultPermissionsToEnabledCarrierApps(
+                 new String[] {appInfo.packageName}, USER_ID);
+     }
+@@ -345,17 +379,20 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_DisabledUser() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+@@ -367,98 +404,113 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 null /* telephonyManager */, mContentResolver, USER_ID, CARRIER_APPS,
+                 ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Configured app has no privileges, and was disabled - should do nothing. */
++    /** Configured app has no privileges, and was uninstalled - should do nothing. */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_Disabled() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Telephony is not initialized, and app was disabled - should do nothing. */
++    /** Telephony is not initialized, and app was uninstalled - should do nothing. */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NullPrivileges_Disabled() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 null /* telephonyManager */, mContentResolver, USER_ID, CARRIER_APPS,
+                 ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Configured app has no privileges, and is explicitly enabled - should do nothing. */
++    /** Configured app has no privileges, and is explicitly installed - should do nothing. */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_Enabled() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Telephony is not initialized, and app is explicitly enabled - should do nothing. */
++    /** Telephony is not initialized, and app is explicitly installed - should do nothing. */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NullPrivileges_Enabled() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 null /* telephonyManager */, mContentResolver, USER_ID, CARRIER_APPS,
+                 ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+@@ -469,17 +521,21 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_UpdatedApp() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP
++                | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+@@ -490,51 +546,60 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+     public void testDisableCarrierAppsUntilPrivileged_NullPrivileges_UpdatedApp() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
++        appInfo.flags |= (ApplicationInfo.FLAG_SYSTEM
++                | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP | ApplicationInfo.FLAG_INSTALLED);
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 null /* telephonyManager */, mContentResolver, USER_ID, CARRIER_APPS,
+                 ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+     /**
+-     * Configured app has no privileges, and is in the default state - should disable until use.
+-     * Associated app is enabled and should not be touched.
++     * Configured app has no privileges, and is in the default state - should uninstalled.
++     * Associated app is installed and should not be touched.
+      */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_EnabledAssociated_Default()
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         ApplicationInfo associatedAppInfo = new ApplicationInfo();
+         associatedAppInfo.packageName = ASSOCIATED_APP;
+         associatedAppInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
+         associatedAppInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+         Mockito.when(mPackageManager.getApplicationInfo(ASSOCIATED_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(associatedAppInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED, 0, USER_ID,
+-                CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                ASSOCIATED_APP, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED, 0,
+-                USER_ID, CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                ASSOCIATED_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, false, USER_ID);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                ASSOCIATED_APP, false, USER_ID);
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+@@ -542,34 +607,39 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+ 
+     /**
+      * Configured app has no privileges, and is in the default state along with associated app -
+-     * should disable both.
++     * should uninstall both.
+      */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_Associated_Default()
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         ApplicationInfo associatedAppInfo = new ApplicationInfo();
+         associatedAppInfo.packageName = ASSOCIATED_APP;
+-        associatedAppInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        associatedAppInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         associatedAppInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(ASSOCIATED_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(associatedAppInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED, 0, USER_ID,
+-                CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                ASSOCIATED_APP, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED, 0,
+-                USER_ID, CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                ASSOCIATED_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, false, USER_ID);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                ASSOCIATED_APP, false, USER_ID);
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+@@ -577,7 +647,7 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+ 
+     /**
+      * Configured app has no privileges, and is in the default state along with associated app, and
+-     * disabling has already occurred - should only disable configured app.
++     * disabling has already occurred - should only uninstall configured app.
+      */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_Associated_Default_AlreadyRun()
+@@ -586,90 +656,108 @@ public class CarrierAppUtilsTest extends InstrumentationTestCase {
+                 mContentResolver, Settings.Secure.CARRIER_APPS_HANDLED, 1, USER_ID);
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         ApplicationInfo associatedAppInfo = new ApplicationInfo();
+         associatedAppInfo.packageName = ASSOCIATED_APP;
+         associatedAppInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
+         associatedAppInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(ASSOCIATED_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID))
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS, USER_ID))
+                 .thenReturn(associatedAppInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED, 0, USER_ID,
+-                CALLING_PACKAGE);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.eq(ASSOCIATED_APP), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                ASSOCIATED_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, false, USER_ID);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.eq(ASSOCIATED_APP), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Telephony is not initialized, and app is in the default state - should disable until use. */
++    /** Telephony is not initialized, and app is in the default state - should uninstall it. */
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NullPrivileges_Default() throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 null /* telephonyManager */, mContentResolver, USER_ID, CARRIER_APPS,
+                 ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager).setApplicationEnabledSetting(
+-                CARRIER_APP, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED, 0, USER_ID,
+-                CALLING_PACKAGE);
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager).setSystemAppInstallState(
++                CARRIER_APP, false, USER_ID);
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Configured app has no privileges, and is disabled until used - should do nothing. */
++    /** Configured app has no privileges, and is disabled until used or not installed - should do
++     *  nothing.
++     **/
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NoPrivileges_DisabledUntilUsed()
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         Mockito.when(mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(CARRIER_APP))
+                 .thenReturn(TelephonyManager.CARRIER_PRIVILEGE_STATUS_NO_ACCESS);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 mTelephonyManager, mContentResolver, USER_ID, CARRIER_APPS, ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+     }
+ 
+-    /** Telephony is not initialized, and app is disabled until used - should do nothing. */
++    /** Telephony is not initialized, and app is disabled until used or not installed - should do
++     *  nothing.
++     **/
+     @Test @SmallTest
+     public void testDisableCarrierAppsUntilPrivileged_NullPrivileges_DisabledUntilUsed()
+             throws Exception {
+         ApplicationInfo appInfo = new ApplicationInfo();
+         appInfo.packageName = CARRIER_APP;
+-        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM;
++        appInfo.flags |= ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_INSTALLED;
+         appInfo.enabledSetting = PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED;
+         Mockito.when(mPackageManager.getApplicationInfo(CARRIER_APP,
+-                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS, USER_ID)).thenReturn(appInfo);
++                PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
++                        | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS,
++                USER_ID)).thenReturn(appInfo);
+         CarrierAppUtils.disableCarrierAppsUntilPrivileged(CALLING_PACKAGE, mPackageManager,
+                 null /* telephonyManager */, mContentResolver, USER_ID, CARRIER_APPS,
+                 ASSOCIATED_APPS);
+-        Mockito.verify(mPackageManager, Mockito.never()).setApplicationEnabledSetting(
+-                Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
+-                Mockito.anyString());
++        Mockito.verify(mPackageManager).setSystemAppHiddenUntilInstalled(
++                CARRIER_APP, true);
++        Mockito.verify(mPackageManager, Mockito.never()).setSystemAppInstallState(
++                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+         Mockito.verify(mPackageManager, Mockito.never())
+                 .grantDefaultPermissionsToEnabledCarrierApps(
+                         Mockito.any(String[].class), Mockito.anyInt());
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/SubscriptionInfoUpdaterTest.java b/tests/telephonytests/src/com/android/internal/telephony/SubscriptionInfoUpdaterTest.java
+index 67fea9423..a8bb8fb73 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/SubscriptionInfoUpdaterTest.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/SubscriptionInfoUpdaterTest.java
+@@ -36,6 +36,7 @@ import android.content.ContentProvider;
+ import android.content.ContentValues;
+ import android.content.Context;
+ import android.content.Intent;
++import android.content.pm.IPackageManager;
+ import android.content.pm.UserInfo;
+ import android.net.Uri;
+ import android.os.HandlerThread;
+@@ -90,6 +91,8 @@ public class SubscriptionInfoUpdaterTest extends TelephonyTest {
+     private EuiccController mEuiccController;
+     @Mock
+     private IntentBroadcaster mIntentBroadcaster;
++    @Mock
++    private IPackageManager mPackageManager;
+ 
+     /*Custom ContentProvider */
+     private class FakeSubscriptionContentProvider extends MockContentProvider {
+@@ -108,7 +111,7 @@ public class SubscriptionInfoUpdaterTest extends TelephonyTest {
+         @Override
+         public void onLooperPrepared() {
+             mUpdater = new SubscriptionInfoUpdater(getLooper(), mContext, new Phone[]{mPhone},
+-                    new CommandsInterface[]{mSimulatedCommands});
++                    new CommandsInterface[]{mSimulatedCommands}, mPackageManager);
+             setReady(true);
+         }
+     }
+-- 
+2.17.1
+

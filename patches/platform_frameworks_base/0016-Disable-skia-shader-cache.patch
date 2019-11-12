@@ -1,0 +1,61 @@
+From 3d09ba8627862b506b3c7eb3f241d33209c4a24f Mon Sep 17 00:00:00 2001
+From: Stan Iliev <stani@google.com>
+Date: Tue, 14 Nov 2017 13:42:42 -0500
+Subject: [PATCH 016/306] Disable skia shader cache
+
+Disable skia shader cache, which is causing image rendering
+issues.
+
+Test: Ran CNN app and images are OK.
+Bug: 69264347
+Change-Id: Ie81f3398074f28ac1670333f1fd3c95267b2beb3
+(cherry picked from commit 01b439475ccd965c37f4ae194c0dc284628c7635)
+---
+ libs/hwui/renderthread/CacheManager.cpp | 3 ---
+ libs/hwui/renderthread/RenderThread.cpp | 2 --
+ 2 files changed, 5 deletions(-)
+
+diff --git a/libs/hwui/renderthread/CacheManager.cpp b/libs/hwui/renderthread/CacheManager.cpp
+index c22364b4a56..a33b2874e7a 100644
+--- a/libs/hwui/renderthread/CacheManager.cpp
++++ b/libs/hwui/renderthread/CacheManager.cpp
+@@ -18,7 +18,6 @@
+ 
+ #include "Layer.h"
+ #include "RenderThread.h"
+-#include "pipeline/skia/ShaderCache.h"
+ #include "renderstate/RenderState.h"
+ 
+ #include <GrContextOptions.h>
+@@ -128,8 +127,6 @@ void CacheManager::configureContext(GrContextOptions* contextOptions) {
+         }
+         contextOptions->fExecutor = mTaskProcessor.get();
+     }
+-
+-    contextOptions->fPersistentCache = &skiapipeline::ShaderCache::get();
+ }
+ 
+ void CacheManager::trimMemory(TrimMemoryMode mode) {
+diff --git a/libs/hwui/renderthread/RenderThread.cpp b/libs/hwui/renderthread/RenderThread.cpp
+index 3e2eeee2bcf..05a9b75b450 100644
+--- a/libs/hwui/renderthread/RenderThread.cpp
++++ b/libs/hwui/renderthread/RenderThread.cpp
+@@ -16,7 +16,6 @@
+ 
+ #include "RenderThread.h"
+ 
+-#include "pipeline/skia/ShaderCache.h"
+ #include "CanvasContext.h"
+ #include "EglManager.h"
+ #include "OpenGLReadback.h"
+@@ -106,7 +105,6 @@ void RenderThread::initThreadLocals() {
+     mRenderState = new RenderState(*this);
+     mVkManager = new VulkanManager(*this);
+     mCacheManager = new CacheManager(mDisplayInfo);
+-    uirenderer::skiapipeline::ShaderCache::get().initShaderDiskCache();
+ }
+ 
+ void RenderThread::dumpGraphicsMemory(int fd) {
+-- 
+2.17.1
+

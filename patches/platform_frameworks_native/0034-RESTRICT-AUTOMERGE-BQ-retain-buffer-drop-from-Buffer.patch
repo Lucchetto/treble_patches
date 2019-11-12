@@ -1,0 +1,106 @@
+From cf4ab6166d76f2cb015d0fc651e189f216fa8ab6 Mon Sep 17 00:00:00 2001
+From: Sungtak Lee <taklee@google.com>
+Date: Sat, 2 Mar 2019 16:40:47 -0800
+Subject: [PATCH 34/48] RESTRICT AUTOMERGE BQ: retain buffer drop from
+ BufferQueueProducer
+
+Retain buffer drop from BufferQueueProducer::queueBuffer unless dequeue
+timeout is set positive.
+
+Bug: 122433957
+Change-Id: I8432a7ad386836498e632c67953ad49c6be008bb
+(cherry picked from commit fe8713cbb23b1a3f543ed18ce85ddfaecf513831)
+---
+ libs/gui/BufferQueueCore.cpp                  |  1 +
+ libs/gui/BufferQueueProducer.cpp              | 16 +++++++++++-----
+ libs/gui/include/gui/BufferQueueCore.h        |  5 +++++
+ libs/gui/include/gui/IGraphicBufferProducer.h |  4 ++++
+ 4 files changed, 21 insertions(+), 5 deletions(-)
+
+diff --git a/libs/gui/BufferQueueCore.cpp b/libs/gui/BufferQueueCore.cpp
+index bb703da3d..7dddd8b2c 100644
+--- a/libs/gui/BufferQueueCore.cpp
++++ b/libs/gui/BufferQueueCore.cpp
+@@ -73,6 +73,7 @@ BufferQueueCore::BufferQueueCore() :
+     mActiveBuffers(),
+     mDequeueCondition(),
+     mDequeueBufferCannotBlock(false),
++    mQueueBufferCanDrop(false),
+     mDefaultBufferFormat(PIXEL_FORMAT_RGBA_8888),
+     mDefaultWidth(1),
+     mDefaultHeight(1),
+diff --git a/libs/gui/BufferQueueProducer.cpp b/libs/gui/BufferQueueProducer.cpp
+index c96a2dd6a..c01b2b659 100644
+--- a/libs/gui/BufferQueueProducer.cpp
++++ b/libs/gui/BufferQueueProducer.cpp
+@@ -872,7 +872,7 @@ status_t BufferQueueProducer::queueBuffer(int slot,
+         item.mFence = acquireFence;
+         item.mFenceTime = acquireFenceTime;
+         item.mIsDroppable = mCore->mAsyncMode ||
+-                mCore->mDequeueBufferCannotBlock ||
++                mCore->mQueueBufferCanDrop ||
+                 (mCore->mSharedBufferMode && mCore->mSharedBufferSlot == slot);
+         item.mSurfaceDamage = surfaceDamage;
+         item.mQueuedBuffer = true;
+@@ -1213,9 +1213,10 @@ status_t BufferQueueProducer::connect(const sp<IProducerListener>& listener,
+     mCore->mConnectedPid = IPCThreadState::self()->getCallingPid();
+     mCore->mBufferHasBeenQueued = false;
+     mCore->mDequeueBufferCannotBlock = false;
+-    if (mDequeueTimeout < 0) {
+-        mCore->mDequeueBufferCannotBlock =
+-                mCore->mConsumerControlledByApp && producerControlledByApp;
++    mCore->mQueueBufferCanDrop = false;
++    if (mCore->mConsumerControlledByApp && producerControlledByApp) {
++        mCore->mDequeueBufferCannotBlock = mDequeueTimeout < 0;
++        mCore->mQueueBufferCanDrop = mDequeueTimeout <= 0;
+     }
+ 
+     mCore->mAllowAllocation = true;
+@@ -1486,7 +1487,12 @@ status_t BufferQueueProducer::setDequeueTimeout(nsecs_t timeout) {
+     }
+ 
+     mDequeueTimeout = timeout;
+-    mCore->mDequeueBufferCannotBlock = false;
++    if (timeout >= 0) {
++        mCore->mDequeueBufferCannotBlock = false;
++        if (timeout != 0) {
++            mCore->mQueueBufferCanDrop = false;
++        }
++    }
+ 
+     VALIDATE_CONSISTENCY();
+     return NO_ERROR;
+diff --git a/libs/gui/include/gui/BufferQueueCore.h b/libs/gui/include/gui/BufferQueueCore.h
+index 537c95774..f91babca1 100644
+--- a/libs/gui/include/gui/BufferQueueCore.h
++++ b/libs/gui/include/gui/BufferQueueCore.h
+@@ -225,6 +225,11 @@ private:
+     // consumer are controlled by the application.
+     bool mDequeueBufferCannotBlock;
+ 
++    // mQueueBufferCanDrop indicates whether queueBuffer is allowd to drop
++    // buffers in non-async mode. This flag is set during connect when both the
++    // producer and consumer are controlled by application.
++    bool mQueueBufferCanDrop;
++
+     // mDefaultBufferFormat can be set so it will override the buffer format
+     // when it isn't specified in dequeueBuffer.
+     PixelFormat mDefaultBufferFormat;
+diff --git a/libs/gui/include/gui/IGraphicBufferProducer.h b/libs/gui/include/gui/IGraphicBufferProducer.h
+index 887654e05..2f8a154fa 100644
+--- a/libs/gui/include/gui/IGraphicBufferProducer.h
++++ b/libs/gui/include/gui/IGraphicBufferProducer.h
+@@ -584,6 +584,10 @@ public:
+     // non-blocking mode and its corresponding spare buffer (which is used to
+     // ensure a buffer is always available).
+     //
++    // N.B. queueBuffer will stop buffer dropping behavior if timeout is
++    // strictly positive. If timeout is zero or negative, previous buffer
++    // dropping behavior will not be changed.
++    //
+     // Return of a value other than NO_ERROR means an error has occurred:
+     // * BAD_VALUE - Failure to adjust the number of available slots. This can
+     //               happen because of trying to allocate/deallocate the async
+-- 
+2.17.1
+

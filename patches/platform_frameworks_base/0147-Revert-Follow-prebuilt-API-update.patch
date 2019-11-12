@@ -1,0 +1,37 @@
+From bc077b139e5caa56b191b31c1ea4c58f25318725 Mon Sep 17 00:00:00 2001
+From: Alan Viverette <alanv@google.com>
+Date: Tue, 27 Feb 2018 20:12:41 +0000
+Subject: [PATCH 147/306] Revert "Follow prebuilt/API update"
+
+This reverts commit 8aca4f00632959b0c9c04a893270843e561387dc.
+
+Reason for revert: Required for prebuilt revert
+
+Bug: 73903252
+Bug: 73876473
+Bug: 73875529
+Bug: 73866916
+Change-Id: I9be2f47458bfba97bacf34372752328c47a5ff9f
+(cherry picked from commit e8f917cae73267f37c7b7333f33c487c07318f00)
+---
+ .../SystemUI/src/com/android/keyguard/KeyguardSliceView.java  | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardSliceView.java b/packages/SystemUI/src/com/android/keyguard/KeyguardSliceView.java
+index b54d09a6653..cecaaa9b660 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardSliceView.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardSliceView.java
+@@ -162,8 +162,8 @@ public class KeyguardSliceView extends LinearLayout implements View.OnClickListe
+             mRow.addView(button);
+ 
+             PendingIntent pendingIntent = null;
+-            if (rc.getPrimaryAction() != null) {
+-                pendingIntent = rc.getPrimaryAction().getAction();
++            if (rc.getContentIntent() != null) {
++                pendingIntent = rc.getContentIntent().getAction();
+             }
+             mClickActions.put(button, pendingIntent);
+ 
+-- 
+2.17.1
+

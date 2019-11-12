@@ -1,0 +1,333 @@
+From a4fcffa06b5e90b8be8b03d1bbf4e006a2124e07 Mon Sep 17 00:00:00 2001
+From: Adam Lesinski <adamlesinski@google.com>
+Date: Thu, 22 Feb 2018 13:32:53 -0800
+Subject: [PATCH 145/306] OMS: Make updates to category not reset the overlay's
+ state
+
+- Also change how default overlays are applied. Apply them if no other
+overlay is enabled for the same category as the default overlay.
+
+Bug: 73740686
+Test: manual
+Test: adb shell rm /data/system/overlays.xml && adb reboot #verify that colors are blue
+Test: adb pull /data/system/overlays.xml \
+          && <edit overlay to remove categories> \
+          && adb push overlays.xml /data/system/overlays.xml \
+          && adb reboot # verify that colors are blue
+
+Change-Id: If42afd287703e2e159d0087e477c19409f724124
+(cherry picked from commit 7b03181ab1d5001b6ed1fdcdeee9c2a6f4659c81)
+---
+ .../host/test-apps/UpdateOverlay/Android.mk   |  4 +-
+ .../app/{ => v1}/AndroidManifest.xml          |  0
+ .../UpdateOverlay/app/v2/AndroidManifest.xml  | 21 ++++++
+ .../server/om/OverlayManagerService.java      |  8 +-
+ .../server/om/OverlayManagerServiceImpl.java  | 73 ++++++++++++++-----
+ .../server/om/OverlayManagerSettings.java     | 33 ++++++++-
+ 6 files changed, 113 insertions(+), 26 deletions(-)
+ rename core/tests/overlaytests/host/test-apps/UpdateOverlay/app/{ => v1}/AndroidManifest.xml (100%)
+ create mode 100644 core/tests/overlaytests/host/test-apps/UpdateOverlay/app/v2/AndroidManifest.xml
+
+diff --git a/core/tests/overlaytests/host/test-apps/UpdateOverlay/Android.mk b/core/tests/overlaytests/host/test-apps/UpdateOverlay/Android.mk
+index bd6d73dddca..d26425b0887 100644
+--- a/core/tests/overlaytests/host/test-apps/UpdateOverlay/Android.mk
++++ b/core/tests/overlaytests/host/test-apps/UpdateOverlay/Android.mk
+@@ -56,7 +56,7 @@ LOCAL_CERTIFICATE := platform
+ LOCAL_AAPT_FLAGS := --custom-package $(my_package_prefix)_v1
+ LOCAL_AAPT_FLAGS += --version-code 1 --version-name v1
+ LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/app/v1/res
+-LOCAL_MANIFEST_FILE := app/AndroidManifest.xml
++LOCAL_MANIFEST_FILE := app/v1/AndroidManifest.xml
+ include $(BUILD_PACKAGE)
+ 
+ include $(CLEAR_VARS)
+@@ -67,7 +67,7 @@ LOCAL_CERTIFICATE := platform
+ LOCAL_AAPT_FLAGS := --custom-package $(my_package_prefix)_v2
+ LOCAL_AAPT_FLAGS += --version-code 2 --version-name v2
+ LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/app/v2/res
+-LOCAL_MANIFEST_FILE := app/AndroidManifest.xml
++LOCAL_MANIFEST_FILE := app/v2/AndroidManifest.xml
+ include $(BUILD_PACKAGE)
+ 
+ my_package_prefix :=
+diff --git a/core/tests/overlaytests/host/test-apps/UpdateOverlay/app/AndroidManifest.xml b/core/tests/overlaytests/host/test-apps/UpdateOverlay/app/v1/AndroidManifest.xml
+similarity index 100%
+rename from core/tests/overlaytests/host/test-apps/UpdateOverlay/app/AndroidManifest.xml
+rename to core/tests/overlaytests/host/test-apps/UpdateOverlay/app/v1/AndroidManifest.xml
+diff --git a/core/tests/overlaytests/host/test-apps/UpdateOverlay/app/v2/AndroidManifest.xml b/core/tests/overlaytests/host/test-apps/UpdateOverlay/app/v2/AndroidManifest.xml
+new file mode 100644
+index 00000000000..9ec7d06ce5d
+--- /dev/null
++++ b/core/tests/overlaytests/host/test-apps/UpdateOverlay/app/v2/AndroidManifest.xml
+@@ -0,0 +1,21 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.android.server.om.hosttest.app_overlay">
++    <overlay android:targetPackage="com.android.server.om.hosttest.update_overlay_test"
++        android:category="android.theme" />
++</manifest>
+diff --git a/services/core/java/com/android/server/om/OverlayManagerService.java b/services/core/java/com/android/server/om/OverlayManagerService.java
+index 7467954918d..fd51be57730 100644
+--- a/services/core/java/com/android/server/om/OverlayManagerService.java
++++ b/services/core/java/com/android/server/om/OverlayManagerService.java
+@@ -64,6 +64,8 @@ import com.android.server.SystemService;
+ import com.android.server.pm.Installer;
+ import com.android.server.pm.UserManagerService;
+ 
++import libcore.util.EmptyArray;
++
+ import org.xmlpull.v1.XmlPullParserException;
+ 
+ import java.io.File;
+@@ -303,10 +305,10 @@ public final class OverlayManagerService extends SystemService {
+         schedulePersistSettings();
+     }
+ 
+-    private static Set<String> getDefaultOverlayPackages() {
++    private static String[] getDefaultOverlayPackages() {
+         final String str = SystemProperties.get(DEFAULT_OVERLAYS_PROP);
+         if (TextUtils.isEmpty(str)) {
+-            return Collections.emptySet();
++            return EmptyArray.STRING;
+         }
+ 
+         final ArraySet<String> defaultPackages = new ArraySet<>();
+@@ -315,7 +317,7 @@ public final class OverlayManagerService extends SystemService {
+                 defaultPackages.add(packageName);
+             }
+         }
+-        return defaultPackages;
++        return defaultPackages.toArray(new String[defaultPackages.size()]);
+     }
+ 
+     private final class PackageReceiver extends BroadcastReceiver {
+diff --git a/services/core/java/com/android/server/om/OverlayManagerServiceImpl.java b/services/core/java/com/android/server/om/OverlayManagerServiceImpl.java
+index 43b17087953..74eb2ea25e4 100644
+--- a/services/core/java/com/android/server/om/OverlayManagerServiceImpl.java
++++ b/services/core/java/com/android/server/om/OverlayManagerServiceImpl.java
+@@ -60,13 +60,13 @@ final class OverlayManagerServiceImpl {
+     private final PackageManagerHelper mPackageManager;
+     private final IdmapManager mIdmapManager;
+     private final OverlayManagerSettings mSettings;
+-    private final Set<String> mDefaultOverlays;
++    private final String[] mDefaultOverlays;
+     private final OverlayChangeListener mListener;
+ 
+     OverlayManagerServiceImpl(@NonNull final PackageManagerHelper packageManager,
+             @NonNull final IdmapManager idmapManager,
+             @NonNull final OverlayManagerSettings settings,
+-            @NonNull final Set<String> defaultOverlays,
++            @NonNull final String[] defaultOverlays,
+             @NonNull final OverlayChangeListener listener) {
+         mPackageManager = packageManager;
+         mIdmapManager = idmapManager;
+@@ -104,31 +104,27 @@ final class OverlayManagerServiceImpl {
+         for (int i = 0; i < overlayPackagesSize; i++) {
+             final PackageInfo overlayPackage = overlayPackages.get(i);
+             final OverlayInfo oi = storedOverlayInfos.get(overlayPackage.packageName);
+-            if (oi == null || !oi.targetPackageName.equals(overlayPackage.overlayTarget)
+-                    || !Objects.equals(oi.category, overlayPackage.overlayCategory)) {
+-                // Update the overlay if it didn't exist or had the wrong target package.
++            if (oi == null || !oi.targetPackageName.equals(overlayPackage.overlayTarget)) {
++                // Reset the overlay if it didn't exist or had the wrong target package.
+                 mSettings.init(overlayPackage.packageName, newUserId,
+                         overlayPackage.overlayTarget,
+                         overlayPackage.applicationInfo.getBaseCodePath(),
+-                        overlayPackage.isStaticOverlayPackage(), overlayPackage.overlayPriority,
++                        overlayPackage.isStaticOverlayPackage(),
++                        overlayPackage.overlayPriority,
+                         overlayPackage.overlayCategory);
+ 
+-                if (oi == null) {
+-                    // This overlay does not exist in our settings.
+-                    if (overlayPackage.isStaticOverlayPackage() ||
+-                            mDefaultOverlays.contains(overlayPackage.packageName)) {
+-                        // Enable this overlay by default.
+-                        if (DEBUG) {
+-                            Slog.d(TAG, "Enabling overlay " + overlayPackage.packageName
+-                                    + " for user " + newUserId + " by default");
+-                        }
+-                        mSettings.setEnabled(overlayPackage.packageName, newUserId, true);
+-                    }
+-                } else {
++                if (oi != null) {
+                     // The targetPackageName we have stored doesn't match the overlay's target.
+                     // Queue the old target for an update as well.
+                     packagesToUpdateAssets.add(oi.targetPackageName);
+                 }
++            } else {
++                // Update all other components of an overlay that don't require a hard reset.
++                if (!Objects.equals(oi.category, overlayPackage.overlayCategory)) {
++                    // When changing categories, it is ok just to update our internal state.
++                    mSettings.setCategory(overlayPackage.packageName, newUserId,
++                            overlayPackage.overlayCategory);
++                }
+             }
+ 
+             try {
+@@ -160,6 +156,42 @@ final class OverlayManagerServiceImpl {
+                 iter.remove();
+             }
+         }
++
++        // Collect all of the categories in which we have at least one overlay enabled.
++        final ArraySet<String> enabledCategories = new ArraySet<>();
++        final ArrayMap<String, List<OverlayInfo>> userOverlays =
++                mSettings.getOverlaysForUser(newUserId);
++        final int userOverlayTargetCount = userOverlays.size();
++        for (int i = 0; i < userOverlayTargetCount; i++) {
++            final List<OverlayInfo> overlayList = userOverlays.valueAt(i);
++            final int overlayCount = overlayList != null ? overlayList.size() : 0;
++            for (int j = 0; j < overlayCount; j++) {
++                final OverlayInfo oi = overlayList.get(j);
++                if (oi.isEnabled()) {
++                    enabledCategories.add(oi.category);
++                }
++            }
++        }
++
++        // Enable the default overlay if its category does not have a single overlay enabled.
++        for (final String defaultOverlay : mDefaultOverlays) {
++            try {
++                final OverlayInfo oi = mSettings.getOverlayInfo(defaultOverlay, newUserId);
++                if (!enabledCategories.contains(oi.category)) {
++                    Slog.w(TAG, "Enabling default overlay '" + defaultOverlay + "' for target '"
++                            + oi.targetPackageName + "' in category '" + oi.category + "' for user "
++                            + newUserId);
++                    mSettings.setEnabled(oi.packageName, newUserId, true);
++                    if (updateState(oi.targetPackageName, oi.packageName, newUserId, 0)) {
++                        packagesToUpdateAssets.add(oi.targetPackageName);
++                    }
++                }
++            } catch (OverlayManagerSettings.BadKeyException e) {
++                Slog.e(TAG, "Failed to set default overlay '" + defaultOverlay + "' for user "
++                        + newUserId, e);
++            }
++        }
++
+         return new ArrayList<>(packagesToUpdateAssets);
+     }
+ 
+@@ -325,6 +357,11 @@ final class OverlayManagerServiceImpl {
+                 mSettings.init(packageName, userId, pkg.overlayTarget,
+                         pkg.applicationInfo.getBaseCodePath(), pkg.isStaticOverlayPackage(),
+                         pkg.overlayPriority, pkg.overlayCategory);
++            } else {
++                if (!Objects.equals(oldOi.category, pkg.overlayCategory)) {
++                    // Update the category in-place.
++                    mSettings.setCategory(packageName, userId, pkg.overlayCategory);
++                }
+             }
+ 
+             if (updateState(pkg.overlayTarget, packageName, userId, 0)) {
+diff --git a/services/core/java/com/android/server/om/OverlayManagerSettings.java b/services/core/java/com/android/server/om/OverlayManagerSettings.java
+index e57fa0b51d3..0b9412b43bf 100644
+--- a/services/core/java/com/android/server/om/OverlayManagerSettings.java
++++ b/services/core/java/com/android/server/om/OverlayManagerSettings.java
+@@ -20,6 +20,7 @@ import static com.android.server.om.OverlayManagerService.DEBUG;
+ import static com.android.server.om.OverlayManagerService.TAG;
+ 
+ import android.annotation.NonNull;
++import android.annotation.Nullable;
+ import android.content.om.OverlayInfo;
+ import android.util.ArrayMap;
+ import android.util.Slog;
+@@ -39,6 +40,7 @@ import java.io.OutputStream;
+ import java.io.PrintWriter;
+ import java.util.ArrayList;
+ import java.util.List;
++import java.util.Objects;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ 
+@@ -70,6 +72,9 @@ final class OverlayManagerSettings {
+                 new SettingsItem(packageName, userId, targetPackageName, baseCodePath,
+                         isStatic, priority, overlayCategory);
+         if (isStatic) {
++            // All static overlays are always enabled.
++            item.setEnabled(true);
++
+             int i;
+             for (i = mItems.size() - 1; i >= 0; i--) {
+                 SettingsItem parentItem = mItems.get(i);
+@@ -122,6 +127,15 @@ final class OverlayManagerSettings {
+         return mItems.get(idx).setBaseCodePath(path);
+     }
+ 
++    boolean setCategory(@NonNull final String packageName, final int userId,
++            @Nullable String category) throws BadKeyException {
++        final int idx = select(packageName, userId);
++        if (idx < 0) {
++            throw new BadKeyException(packageName, userId);
++        }
++        return mItems.get(idx).setCategory(category);
++    }
++
+     boolean getEnabled(@NonNull final String packageName, final int userId) throws BadKeyException {
+         final int idx = select(packageName, userId);
+         if (idx < 0) {
+@@ -420,7 +434,7 @@ final class OverlayManagerSettings {
+         private OverlayInfo mCache;
+         private boolean mIsStatic;
+         private int mPriority;
+-        private final String mCategory;
++        private String mCategory;
+ 
+         SettingsItem(@NonNull final String packageName, final int userId,
+                 @NonNull final String targetPackageName, @NonNull final String baseCodePath,
+@@ -431,7 +445,7 @@ final class OverlayManagerSettings {
+             mTargetPackageName = targetPackageName;
+             mBaseCodePath = baseCodePath;
+             mState = state;
+-            mIsEnabled = isEnabled;
++            mIsEnabled = isEnabled || isStatic;
+             mCategory = category;
+             mCache = null;
+             mIsStatic = isStatic;
+@@ -483,7 +497,11 @@ final class OverlayManagerSettings {
+             return mIsEnabled;
+         }
+ 
+-        private boolean setEnabled(final boolean enable) {
++        private boolean setEnabled(boolean enable) {
++            if (mIsStatic) {
++                return false;
++            }
++
+             if (mIsEnabled != enable) {
+                 mIsEnabled = enable;
+                 invalidateCache();
+@@ -492,6 +510,15 @@ final class OverlayManagerSettings {
+             return false;
+         }
+ 
++        private boolean setCategory(String category) {
++            if (!Objects.equals(mCategory, category)) {
++                mCategory = category.intern();
++                invalidateCache();
++                return true;
++            }
++            return false;
++        }
++
+         private OverlayInfo getOverlayInfo() {
+             if (mCache == null) {
+                 mCache = new OverlayInfo(mPackageName, mTargetPackageName, mCategory, mBaseCodePath,
+-- 
+2.17.1
+

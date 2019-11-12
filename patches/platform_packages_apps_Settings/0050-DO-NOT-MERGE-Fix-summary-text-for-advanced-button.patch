@@ -1,0 +1,33 @@
+From 03fb1a93ca7b6beb7766b130d294ad0f7dd74ea6 Mon Sep 17 00:00:00 2001
+From: Doris Ling <dling@google.com>
+Date: Fri, 13 Jul 2018 12:32:00 -0700
+Subject: [PATCH 50/71] DO NOT MERGE Fix summary text for advanced button.
+
+- the resource for the summary text is in the support library. However,
+the prebuilt version in the build does not contain the latest change for
+the summary text. Add the overlay for the summary resource here with the
+updated translation to remove the redundant summary prefix in the
+advanced button.
+
+Change-Id: I0fa8e3c9e02090d7d8a3e18608181ab73d2f46a1
+Fixes: 118315852
+Test: manual
+---
+ res/values-zh-rCN/strings.xml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/res/values-zh-rCN/strings.xml b/res/values-zh-rCN/strings.xml
+index c6cab6ee10..686aed7b36 100644
+--- a/res/values-zh-rCN/strings.xml
++++ b/res/values-zh-rCN/strings.xml
+@@ -16,6 +16,7 @@
+ 
+ <resources xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++    <string name="summary_collapsed_preference_list" msgid="5190123168583152844">"<xliff:g id="CURRENT_ITEMS">%1$s</xliff:g>、<xliff:g id="ADDED_ITEMS">%2$s</xliff:g>"</string>
+     <string name="yes" msgid="4676390750360727396">"是"</string>
+     <string name="no" msgid="6731231425810196216">"否"</string>
+     <string name="create" msgid="3578857613172647409">"创建"</string>
+-- 
+2.17.1
+

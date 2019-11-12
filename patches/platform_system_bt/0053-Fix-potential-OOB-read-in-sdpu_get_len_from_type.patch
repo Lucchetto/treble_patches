@@ -1,0 +1,178 @@
+From b78df7426f3f8656a30934455da50b1997f8c19f Mon Sep 17 00:00:00 2001
+From: Ted Wang <tedwang@google.com>
+Date: Mon, 29 Apr 2019 10:11:04 +0800
+Subject: [PATCH 53/59] Fix potential OOB read in sdpu_get_len_from_type
+
+Add boundary check in sdpu_get_len_from_type to prevent potential OOB read.
+
+Bug: 117105007
+Test: Manul
+Merged-In: I3755e13ee0a7e22ffd5f48fca909610a26b09d0a
+Change-Id: I3755e13ee0a7e22ffd5f48fca909610a26b09d0a
+(cherry picked from commit 1243f8da338dadfe2a3c281a08297b431402d41c)
+(cherry picked from commit 4d8e1d63e1a2116c47702d38d858f5a742e8292f)
+---
+ stack/sdp/sdp_db.cc        |  6 +++++-
+ stack/sdp/sdp_discovery.cc | 33 ++++++++++++++++++++++++---------
+ stack/sdp/sdp_utils.cc     | 15 ++++++++++++++-
+ stack/sdp/sdpint.h         |  2 +-
+ 4 files changed, 44 insertions(+), 12 deletions(-)
+
+diff --git a/stack/sdp/sdp_db.cc b/stack/sdp/sdp_db.cc
+index d8cee9a75..769e7d83f 100644
+--- a/stack/sdp/sdp_db.cc
++++ b/stack/sdp/sdp_db.cc
+@@ -117,7 +117,11 @@ static bool find_uuid_in_seq(uint8_t* p, uint32_t seq_len, uint8_t* p_uuid,
+ 
+   while (p < p_end) {
+     type = *p++;
+-    p = sdpu_get_len_from_type(p, type, &len);
++    p = sdpu_get_len_from_type(p, p_end, type, &len);
++    if (p == NULL || (p + len) > p_end) {
++      SDP_TRACE_WARNING("%s: bad length", __func__);
++      break;
++    }
+     type = type >> 3;
+     if (type == UUID_DESC_TYPE) {
+       if (sdpu_compare_uuid_arrays(p, len, p_uuid, uuid_len)) return (true);
+diff --git a/stack/sdp/sdp_discovery.cc b/stack/sdp/sdp_discovery.cc
+index 1ca2ad3ed..f2e9805b1 100644
+--- a/stack/sdp/sdp_discovery.cc
++++ b/stack/sdp/sdp_discovery.cc
+@@ -349,6 +349,7 @@ static void sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
+   unsigned int cpy_len, rem_len;
+   uint32_t list_len;
+   uint8_t* p;
++  uint8_t* p_end;
+   uint8_t type;
+ 
+ #if (SDP_DEBUG_RAW == TRUE)
+@@ -366,12 +367,17 @@ static void sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
+     cpy_len = p_ccb->p_db->raw_size - p_ccb->p_db->raw_used;
+     list_len = p_ccb->list_len;
+     p = &p_ccb->rsp_list[0];
++    p_end = &p_ccb->rsp_list[0] + list_len;
+ 
+     if (offset) {
+       cpy_len -= 1;
+       type = *p++;
+       uint8_t* old_p = p;
+-      p = sdpu_get_len_from_type(p, type, &list_len);
++      p = sdpu_get_len_from_type(p, p_end, type, &list_len);
++      if (p == NULL || (p + list_len) > p_end) {
++        SDP_TRACE_WARNING("%s: bad length", __func__);
++        return;
++      }
+       if ((int)cpy_len < (p - old_p)) {
+         SDP_TRACE_WARNING("%s: no bytes left for data", __func__);
+         return;
+@@ -699,8 +705,11 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+     SDP_TRACE_WARNING("SDP - Wrong type: 0x%02x in attr_rsp", type);
+     return;
+   }
+-  p = sdpu_get_len_from_type(p, type, &seq_len);
+-
++  p = sdpu_get_len_from_type(p, p + p_ccb->list_len, type, &seq_len);
++  if (p == NULL || (p + seq_len) > (p + p_ccb->list_len)) {
++    SDP_TRACE_WARNING("%s: bad length", __func__);
++    return;
++  }
+   p_end = &p_ccb->rsp_list[p_ccb->list_len];
+ 
+   if ((p + seq_len) != p_end) {
+@@ -742,9 +751,8 @@ static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
+     SDP_TRACE_WARNING("SDP - Wrong type: 0x%02x in attr_rsp", type);
+     return (NULL);
+   }
+-
+-  p = sdpu_get_len_from_type(p, type, &seq_len);
+-  if ((p + seq_len) > p_msg_end) {
++  p = sdpu_get_len_from_type(p, p_msg_end, type, &seq_len);
++  if (p == NULL || (p + seq_len) > p_msg_end) {
+     SDP_TRACE_WARNING("SDP - Bad len in attr_rsp %d", seq_len);
+     return (NULL);
+   }
+@@ -761,7 +769,11 @@ static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
+   while (p < p_seq_end) {
+     /* First get the attribute ID */
+     type = *p++;
+-    p = sdpu_get_len_from_type(p, type, &attr_len);
++    p = sdpu_get_len_from_type(p, p_msg_end, type, &attr_len);
++    if (p == NULL || (p + attr_len) > p_seq_end) {
++      SDP_TRACE_WARNING("%s: Bad len in attr_rsp %d", __func__, attr_len);
++      return (NULL);
++    }
+     if (((type >> 3) != UINT_DESC_TYPE) || (attr_len != 2)) {
+       SDP_TRACE_WARNING("SDP - Bad type: 0x%02x or len: %d in attr_rsp", type,
+                         attr_len);
+@@ -845,8 +857,11 @@ static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
+   nest_level &= ~(SDP_ADDITIONAL_LIST_MASK);
+ 
+   type = *p++;
+-  p = sdpu_get_len_from_type(p, type, &attr_len);
+-
++  p = sdpu_get_len_from_type(p, p_end, type, &attr_len);
++  if (p == NULL || (p + attr_len) > p_end) {
++    SDP_TRACE_WARNING("%s: bad length in attr_rsp", __func__);
++    return NULL;
++  }
+   attr_len &= SDP_DISC_ATTR_LEN_MASK;
+   attr_type = (type >> 3) & 0x0f;
+ 
+diff --git a/stack/sdp/sdp_utils.cc b/stack/sdp/sdp_utils.cc
+index c57a4996f..c2c6b2763 100644
+--- a/stack/sdp/sdp_utils.cc
++++ b/stack/sdp/sdp_utils.cc
+@@ -543,7 +543,8 @@ uint8_t* sdpu_extract_attr_seq(uint8_t* p, uint16_t param_len,
+  * Returns          void
+  *
+  ******************************************************************************/
+-uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type, uint32_t* p_len) {
++uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type,
++                                uint32_t* p_len) {
+   uint8_t u8;
+   uint16_t u16;
+   uint32_t u32;
+@@ -565,14 +566,26 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type, uint32_t* p_len) {
+       *p_len = 16;
+       break;
+     case SIZE_IN_NEXT_BYTE:
++      if (p + 1 > p_end) {
++        *p_len = 0;
++        return NULL;
++      }
+       BE_STREAM_TO_UINT8(u8, p);
+       *p_len = u8;
+       break;
+     case SIZE_IN_NEXT_WORD:
++      if (p + 2 > p_end) {
++        *p_len = 0;
++        return NULL;
++      }
+       BE_STREAM_TO_UINT16(u16, p);
+       *p_len = u16;
+       break;
+     case SIZE_IN_NEXT_LONG:
++      if (p + 4 > p_end) {
++        *p_len = 0;
++        return NULL;
++      }
+       BE_STREAM_TO_UINT32(u32, p);
+       *p_len = (uint16_t)u32;
+       break;
+diff --git a/stack/sdp/sdpint.h b/stack/sdp/sdpint.h
+index 0d44c9d9b..e00a8caa9 100644
+--- a/stack/sdp/sdpint.h
++++ b/stack/sdp/sdpint.h
+@@ -263,7 +263,7 @@ extern uint8_t* sdpu_extract_attr_seq(uint8_t* p, uint16_t param_len,
+ extern uint8_t* sdpu_extract_uid_seq(uint8_t* p, uint16_t param_len,
+                                      tSDP_UUID_SEQ* p_seq);
+ 
+-extern uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type,
++extern uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type,
+                                        uint32_t* p_len);
+ extern bool sdpu_is_base_uuid(uint8_t* p_uuid);
+ extern bool sdpu_compare_uuid_arrays(uint8_t* p_uuid1, uint32_t len1,
+-- 
+2.17.1
+

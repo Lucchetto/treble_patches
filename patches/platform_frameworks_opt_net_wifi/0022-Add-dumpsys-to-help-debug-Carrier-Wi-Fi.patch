@@ -1,0 +1,49 @@
+From f14d04bae2a302484c6bd79489192222ce26696d Mon Sep 17 00:00:00 2001
+From: Etan Cohen <etancohen@google.com>
+Date: Fri, 9 Nov 2018 12:57:22 -0800
+Subject: [PATCH 22/32] Add dumpsys to help debug Carrier Wi-Fi
+
+Zero functional change: additional dumpsys for the most recent
+IMSI encryption cert.
+
+Bug: 112536285
+Test: build, run, observe logs with specific carrier config
+Change-Id: Id37d2ecd2cd2442dd47d9a068049a65d6a6d5435
+---
+ .../java/com/android/server/wifi/CarrierNetworkConfig.java  | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/service/java/com/android/server/wifi/CarrierNetworkConfig.java b/service/java/com/android/server/wifi/CarrierNetworkConfig.java
+index 78dbe3a0d..cf39e0a7b 100644
+--- a/service/java/com/android/server/wifi/CarrierNetworkConfig.java
++++ b/service/java/com/android/server/wifi/CarrierNetworkConfig.java
+@@ -59,6 +59,7 @@ public class CarrierNetworkConfig {
+ 
+     private final Map<String, NetworkInfo> mCarrierNetworkMap;
+     private boolean mIsCarrierImsiEncryptionInfoAvailable = false;
++    private ImsiEncryptionInfo mLastImsiEncryptionInfo = null; // used for dumpsys only
+ 
+     /**
+      * Enable/disable verbose logging.
+@@ -137,9 +138,9 @@ public class CarrierNetworkConfig {
+             return false;
+         }
+         try {
+-            ImsiEncryptionInfo imsiEncryptionInfo = telephonyManager
++            mLastImsiEncryptionInfo = telephonyManager
+                     .getCarrierInfoForImsiEncryption(TelephonyManager.KEY_TYPE_WLAN);
+-            if (imsiEncryptionInfo == null) {
++            if (mLastImsiEncryptionInfo == null) {
+                 return false;
+             }
+         } catch (RuntimeException e) {
+@@ -280,5 +281,6 @@ public class CarrierNetworkConfig {
+         pw.println("mCarrierNetworkMap=" + mCarrierNetworkMap);
+         pw.println("mIsCarrierImsiEncryptionInfoAvailable="
+                 + mIsCarrierImsiEncryptionInfoAvailable);
++        pw.println("mLastImsiEncryptionInfo=" + mLastImsiEncryptionInfo);
+     }
+ }
+-- 
+2.17.1
+

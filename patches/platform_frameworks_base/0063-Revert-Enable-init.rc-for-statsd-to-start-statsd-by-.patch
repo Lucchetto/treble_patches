@@ -1,0 +1,30 @@
+From 269d28d3d0b88370360e982f1277829485371c65 Mon Sep 17 00:00:00 2001
+From: Yao Chen <yaochen@google.com>
+Date: Fri, 19 Jan 2018 00:12:18 +0000
+Subject: [PATCH 063/306] Revert "Enable init.rc for statsd to start statsd by
+ default in boot time"
+
+This reverts commit 56967528d7bcc7a1342d68f19e0ffa79f2a1ed59.
+
+Change-Id: I4b76bf5783f0df43603e82168009f33296d1f840
+(cherry picked from commit 5f3dc878dc0a0fddd4f7b3bc80e1277ffde22c51)
+---
+ cmds/statsd/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmds/statsd/Android.mk b/cmds/statsd/Android.mk
+index 2c35d413631..b803a985f3c 100644
+--- a/cmds/statsd/Android.mk
++++ b/cmds/statsd/Android.mk
+@@ -134,7 +134,7 @@ LOCAL_SHARED_LIBRARIES := $(statsd_common_shared_libraries) \
+ 
+ LOCAL_MODULE_CLASS := EXECUTABLES
+ 
+-LOCAL_INIT_RC := statsd.rc
++#LOCAL_INIT_RC := statsd.rc
+ 
+ include $(BUILD_EXECUTABLE)
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,48 @@
+From 270e90f033dd412206697e3a27aee76c24038c33 Mon Sep 17 00:00:00 2001
+From: Greg Kaiser <gkaiser@google.com>
+Date: Wed, 1 Aug 2018 12:34:32 -0700
+Subject: [PATCH 08/29] Revert "Support Speck encryption."
+
+This reverts commit 49c27c5cb2c48ce4665affe2b3086077c768a9ae.
+
+Remove the Speck encryption support. It was eventually
+decided not to allow Speck in Android P, so this code
+is no longer needed and wasn't used outside of testing.
+
+Bug: 112009351
+Test: Confirmed AES continues to work with FBE.
+Change-Id: Ia5458143be5687fff8d541d8fa2c8ee24a369da4
+---
+ fs_mgr/fs_mgr_fstab.cpp | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/fs_mgr/fs_mgr_fstab.cpp b/fs_mgr/fs_mgr_fstab.cpp
+index 68cc530dd..c9fb7aa57 100644
+--- a/fs_mgr/fs_mgr_fstab.cpp
++++ b/fs_mgr/fs_mgr_fstab.cpp
+@@ -114,21 +114,17 @@ static struct flag_list fs_mgr_flags[] = {
+ #define EM_ICE          2
+ #define EM_AES_256_CTS  3
+ #define EM_AES_256_HEH  4
+-#define EM_SPECK_128_256_XTS 5
+-#define EM_SPECK_128_256_CTS 6
+ 
+ static const struct flag_list file_contents_encryption_modes[] = {
+     {"aes-256-xts", EM_AES_256_XTS},
+-    {"speck128/256-xts", EM_SPECK_128_256_XTS},
+     {"software", EM_AES_256_XTS}, /* alias for backwards compatibility */
+-    {"ice", EM_ICE},              /* hardware-specific inline cryptographic engine */
++    {"ice", EM_ICE}, /* hardware-specific inline cryptographic engine */
+     {0, 0},
+ };
+ 
+ static const struct flag_list file_names_encryption_modes[] = {
+     {"aes-256-cts", EM_AES_256_CTS},
+     {"aes-256-heh", EM_AES_256_HEH},
+-    {"speck128/256-cts", EM_SPECK_128_256_CTS},
+     {0, 0},
+ };
+ 
+-- 
+2.17.1
+

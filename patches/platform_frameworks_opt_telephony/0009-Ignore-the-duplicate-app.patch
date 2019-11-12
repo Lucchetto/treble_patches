@@ -1,0 +1,216 @@
+From 127892a4008d00db87fb3166c306ef0edbf57022 Mon Sep 17 00:00:00 2001
+From: Sooraj Sasindran <sasindran@google.com>
+Date: Thu, 28 Jun 2018 14:01:21 -0700
+Subject: [PATCH 09/39] Ignore the duplicate app
+
+Ignore duplicate sim app if another app of same type
+is already in ready state.
+
+Test: Added unit test for duplicate app
+	verified with OBDM sim card.
+	verified with normal sim card
+	Verified Hotswap
+	Verified APM on and OFF
+
+Bug: 110894572
+Change-Id: I056263d015d6b476c75b43fcae0954fc18af79fa
+---
+ .../telephony/uicc/UiccCardApplication.java   | 12 +++
+ .../internal/telephony/uicc/UiccProfile.java  | 26 +++++-
+ .../telephony/uicc/UiccProfileTest.java       | 79 +++++++++++++++++++
+ 3 files changed, 115 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/uicc/UiccCardApplication.java b/src/java/com/android/internal/telephony/uicc/UiccCardApplication.java
+index 918e635de..7a361e362 100644
+--- a/src/java/com/android/internal/telephony/uicc/UiccCardApplication.java
++++ b/src/java/com/android/internal/telephony/uicc/UiccCardApplication.java
+@@ -73,6 +73,9 @@ public class UiccCardApplication {
+     private boolean       mDesiredFdnEnabled;
+     private boolean       mIccLockEnabled;
+     private boolean       mDesiredPinLocked;
++
++    // App state will be ignored while deciding whether the card is ready or not.
++    private boolean       mIgnoreApp;
+     private boolean       mIccFdnAvailable = true; // Default is enabled.
+ 
+     private CommandsInterface mCi;
+@@ -101,6 +104,7 @@ public class UiccCardApplication {
+         mPin1Replaced = (as.pin1_replaced != 0);
+         mPin1State = as.pin1;
+         mPin2State = as.pin2;
++        mIgnoreApp = false;
+ 
+         mContext = c;
+         mCi = ci;
+@@ -874,6 +878,14 @@ public class UiccCardApplication {
+         return mUiccProfile.getPhoneId();
+     }
+ 
++    public boolean isAppIgnored() {
++        return mIgnoreApp;
++    }
++
++    public void setAppIgnoreState(boolean ignore) {
++        mIgnoreApp = ignore;
++    }
++
+     protected UiccProfile getUiccProfile() {
+         return mUiccProfile;
+     }
+diff --git a/src/java/com/android/internal/telephony/uicc/UiccProfile.java b/src/java/com/android/internal/telephony/uicc/UiccProfile.java
+index 2407b71d9..2910ff7ab 100644
+--- a/src/java/com/android/internal/telephony/uicc/UiccProfile.java
++++ b/src/java/com/android/internal/telephony/uicc/UiccProfile.java
+@@ -504,6 +504,7 @@ public class UiccProfile extends IccCard {
+                 setExternalState(IccCardConstants.State.NOT_READY);
+                 break;
+             case APPSTATE_READY:
++                checkAndUpdateIfAnyAppToBeIgnored();
+                 if (areAllApplicationsReady()) {
+                     if (areAllRecordsLoaded() && areCarrierPriviligeRulesLoaded()) {
+                         if (VDBG) log("updateExternalState: setting state to LOADED");
+@@ -976,13 +977,34 @@ public class UiccProfile extends IccCard {
+         return true;
+     }
+ 
+-    private boolean areAllApplicationsReady() {
++    private void checkAndUpdateIfAnyAppToBeIgnored() {
++        boolean[] appReadyStateTracker = new boolean[AppType.APPTYPE_ISIM.ordinal() + 1];
++        for (UiccCardApplication app : mUiccApplications) {
++            if (app != null && isSupportedApplication(app) && app.isReady()) {
++                appReadyStateTracker[app.getType().ordinal()] = true;
++            }
++        }
++
+         for (UiccCardApplication app : mUiccApplications) {
+             if (app != null && isSupportedApplication(app) && !app.isReady()) {
++                /* Checks if the  appReadyStateTracker has already an entry in ready state
++                   with same type as app */
++                if (appReadyStateTracker[app.getType().ordinal()]) {
++                    app.setAppIgnoreState(true);
++                }
++            }
++        }
++    }
++
++    private boolean areAllApplicationsReady() {
++        for (UiccCardApplication app : mUiccApplications) {
++            if (app != null && isSupportedApplication(app) && !app.isReady()
++                    && !app.isAppIgnored()) {
+                 if (VDBG) log("areAllApplicationsReady: return false");
+                 return false;
+             }
+         }
++
+         if (VDBG) {
+             log("areAllApplicationsReady: outside loop, return " + (mUiccApplication != null));
+         }
+@@ -991,7 +1013,7 @@ public class UiccProfile extends IccCard {
+ 
+     private boolean areAllRecordsLoaded() {
+         for (UiccCardApplication app : mUiccApplications) {
+-            if (app != null && isSupportedApplication(app)) {
++            if (app != null && isSupportedApplication(app) && !app.isAppIgnored()) {
+                 IccRecords ir = app.getIccRecords();
+                 if (ir == null || !ir.isLoaded()) {
+                     if (VDBG) log("areAllRecordsLoaded: return false");
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/uicc/UiccProfileTest.java b/tests/telephonytests/src/com/android/internal/telephony/uicc/UiccProfileTest.java
+index 0ae553182..37f45a6cc 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/uicc/UiccProfileTest.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/uicc/UiccProfileTest.java
+@@ -40,6 +40,7 @@ import android.telephony.CarrierConfigManager;
+ import com.android.internal.telephony.IccCardConstants.State;
+ import com.android.internal.telephony.TelephonyTest;
+ import com.android.internal.telephony.cat.CatService;
++import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppState;
+ 
+ import org.junit.After;
+ import org.junit.Before;
+@@ -386,6 +387,84 @@ public class UiccProfileTest extends TelephonyTest {
+         assertEquals(State.LOADED, mUiccProfile.getState());
+     }
+ 
++    @Test
++    @SmallTest
++    public void testUpdateUiccProfileApplicationWithDuplicateApps() {
++        /* update app status and index */
++        IccCardApplicationStatus umtsApp = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_USIM,
++                IccCardApplicationStatus.AppState.APPSTATE_READY, "0xA2");
++        IccCardApplicationStatus imsApp = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_ISIM,
++                IccCardApplicationStatus.AppState.APPSTATE_READY, "0xA1");
++        IccCardApplicationStatus unknownApp = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_UNKNOWN,
++                IccCardApplicationStatus.AppState.APPSTATE_UNKNOWN, "0xA2");
++        IccCardApplicationStatus umtsAppDup = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_USIM,
++                AppState.APPSTATE_DETECTED, "0xA2");
++        mIccCardStatus.mApplications = new IccCardApplicationStatus[]{imsApp, umtsApp, unknownApp,
++                umtsAppDup};
++        mIccCardStatus.mCdmaSubscriptionAppIndex = -1;
++        mIccCardStatus.mImsSubscriptionAppIndex = 0;
++        mIccCardStatus.mGsmUmtsSubscriptionAppIndex = 1;
++        Message mProfileUpdate = mHandler.obtainMessage(UICCPROFILE_UPDATE_APPLICATION_EVENT);
++        setReady(false);
++        mProfileUpdate.sendToTarget();
++
++        waitUntilReady();
++
++        /* wait for the carrier privilege rules to be loaded */
++        waitForMs(50);
++        assertEquals(4, mUiccProfile.getNumApplications());
++
++        mUiccProfile.mHandler.sendMessage(
++                mUiccProfile.mHandler.obtainMessage(UiccProfile.EVENT_APP_READY));
++        waitForMs(SCARY_SLEEP_MS);
++        // state is loaded as all records are loaded right away as SimulatedCommands returns
++        // response for them right away. Ideally applications and records should be mocked.
++        assertEquals(State.LOADED, mUiccProfile.getState());
++    }
++
++    @Test
++    @SmallTest
++    public void testUpdateUiccProfileApplicationWithDuplicateAppsInDifferentOrder() {
++        /* update app status and index */
++        IccCardApplicationStatus umtsApp = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_USIM,
++                IccCardApplicationStatus.AppState.APPSTATE_READY, "0xA2");
++        IccCardApplicationStatus imsApp = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_ISIM,
++                IccCardApplicationStatus.AppState.APPSTATE_READY, "0xA1");
++        IccCardApplicationStatus unknownApp = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_UNKNOWN,
++                IccCardApplicationStatus.AppState.APPSTATE_UNKNOWN, "0xA2");
++        IccCardApplicationStatus umtsAppDup = composeUiccApplicationStatus(
++                IccCardApplicationStatus.AppType.APPTYPE_USIM,
++                AppState.APPSTATE_DETECTED, "0xA2");
++        mIccCardStatus.mApplications = new IccCardApplicationStatus[]{umtsAppDup, imsApp, umtsApp,
++                unknownApp};
++        mIccCardStatus.mCdmaSubscriptionAppIndex = -1;
++        mIccCardStatus.mImsSubscriptionAppIndex = 0;
++        mIccCardStatus.mGsmUmtsSubscriptionAppIndex = 2;
++        Message mProfileUpdate = mHandler.obtainMessage(UICCPROFILE_UPDATE_APPLICATION_EVENT);
++        setReady(false);
++        mProfileUpdate.sendToTarget();
++
++        waitUntilReady();
++
++        /* wait for the carrier privilege rules to be loaded */
++        waitForMs(50);
++        assertEquals(4, mUiccProfile.getNumApplications());
++
++        mUiccProfile.mHandler.sendMessage(
++                mUiccProfile.mHandler.obtainMessage(UiccProfile.EVENT_APP_READY));
++        waitForMs(SCARY_SLEEP_MS);
++        // state is loaded as all records are loaded right away as SimulatedCommands returns
++        // response for them right away. Ideally applications and records should be mocked.
++        assertEquals(State.LOADED, mUiccProfile.getState());
++    }
++
+     @Test
+     @SmallTest
+     public void testUpdateUiccProfileApplicationNoApplication() {
+-- 
+2.17.1
+

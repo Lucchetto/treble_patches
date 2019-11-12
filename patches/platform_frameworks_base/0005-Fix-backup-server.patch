@@ -1,0 +1,315 @@
+From ff25c19ac398a83f2df2430377551d35246fc65a Mon Sep 17 00:00:00 2001
+From: Christopher Tate <ctate@google.com>
+Date: Wed, 11 Oct 2017 15:50:51 -0700
+Subject: [PATCH 005/306] Fix backup server
+
+Mea culpa.  Properly do the trampoline indirection dance so
+that we can asynchronously bring up the service components.
+We'd previously accidentally introduced an ordering problem such
+that the init process... didn't.
+
+Bug: 67676879
+Test: 'adb shell dumpsys backup' and 'adb shell bmgr list transports' after boot
+Change-Id: I3e9a904a009f4745727e5eb13f7307c6deda1e4f
+(cherry picked from commit 8808609896023165274092265cc2b51597d6a388)
+---
+ .../server/backup/BackupManagerService.java   | 67 ++++++++----------
+ .../RefactoredBackupManagerService.java       | 68 ++++++++-----------
+ .../com/android/server/backup/Trampoline.java | 29 ++++++--
+ 3 files changed, 82 insertions(+), 82 deletions(-)
+
+diff --git a/services/backup/java/com/android/server/backup/BackupManagerService.java b/services/backup/java/com/android/server/backup/BackupManagerService.java
+index eabe21fed9d..f9213aabe27 100644
+--- a/services/backup/java/com/android/server/backup/BackupManagerService.java
++++ b/services/backup/java/com/android/server/backup/BackupManagerService.java
+@@ -319,7 +319,6 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+     boolean mProvisioned;
+     boolean mAutoRestore;
+     PowerManager.WakeLock mWakelock;
+-    HandlerThread mHandlerThread;
+     BackupHandler mBackupHandler;
+     PendingIntent mRunBackupIntent, mRunInitIntent;
+     BroadcastReceiver mRunBackupReceiver, mRunInitReceiver;
+@@ -409,43 +408,37 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+     // Called through the trampoline from onUnlockUser(), then we buck the work
+     // off to the background thread to keep the unlock time down.
+     public void unlockSystemUser() {
+-        mBackupHandler.post(() -> {
+-            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup init");
+-            sInstance.initialize(UserHandle.USER_SYSTEM);
+-            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+-
+-            // Migrate legacy setting
+-            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup migrate");
+-            if (!backupSettingMigrated(UserHandle.USER_SYSTEM)) {
++        // Migrate legacy setting
++        Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup migrate");
++        if (!backupSettingMigrated(UserHandle.USER_SYSTEM)) {
++            if (DEBUG) {
++                Slog.i(TAG, "Backup enable apparently not migrated");
++            }
++            final ContentResolver r = sInstance.mContext.getContentResolver();
++            final int enableState = Settings.Secure.getIntForUser(r,
++                    Settings.Secure.BACKUP_ENABLED, -1, UserHandle.USER_SYSTEM);
++            if (enableState >= 0) {
+                 if (DEBUG) {
+-                    Slog.i(TAG, "Backup enable apparently not migrated");
++                    Slog.i(TAG, "Migrating enable state " + (enableState != 0));
+                 }
+-                final ContentResolver r = sInstance.mContext.getContentResolver();
+-                final int enableState = Settings.Secure.getIntForUser(r,
+-                        Settings.Secure.BACKUP_ENABLED, -1, UserHandle.USER_SYSTEM);
+-                if (enableState >= 0) {
+-                    if (DEBUG) {
+-                        Slog.i(TAG, "Migrating enable state " + (enableState != 0));
+-                    }
+-                    writeBackupEnableState(enableState != 0, UserHandle.USER_SYSTEM);
+-                    Settings.Secure.putStringForUser(r,
+-                            Settings.Secure.BACKUP_ENABLED, null, UserHandle.USER_SYSTEM);
+-                } else {
+-                    if (DEBUG) {
+-                        Slog.i(TAG, "Backup not yet configured; retaining null enable state");
+-                    }
++                writeBackupEnableState(enableState != 0, UserHandle.USER_SYSTEM);
++                Settings.Secure.putStringForUser(r,
++                        Settings.Secure.BACKUP_ENABLED, null, UserHandle.USER_SYSTEM);
++            } else {
++                if (DEBUG) {
++                    Slog.i(TAG, "Backup not yet configured; retaining null enable state");
+                 }
+             }
+-            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
++        }
++        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+ 
+-            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup enable");
+-            try {
+-                sInstance.setBackupEnabled(readBackupEnableState(UserHandle.USER_SYSTEM));
+-            } catch (RemoteException e) {
+-                // can't happen; it's a local object
+-            }
+-            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+-        });
++        Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup enable");
++        try {
++            sInstance.setBackupEnabled(readBackupEnableState(UserHandle.USER_SYSTEM));
++        } catch (RemoteException e) {
++            // can't happen; it's a local object
++        }
++        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+     }
+ 
+     class ProvisionedObserver extends ContentObserver {
+@@ -1220,7 +1213,7 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+ 
+     // ----- Main service implementation -----
+ 
+-    public BackupManagerService(Context context, Trampoline parent) {
++    public BackupManagerService(Context context, Trampoline parent, HandlerThread backupThread) {
+         mContext = context;
+         mPackageManager = context.getPackageManager();
+         mPackageManagerBinder = AppGlobals.getPackageManager();
+@@ -1233,9 +1226,7 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+         mBackupManagerBinder = Trampoline.asInterface(parent.asBinder());
+ 
+         // spin up the backup/restore handler thread
+-        mHandlerThread = new HandlerThread("backup", Process.THREAD_PRIORITY_BACKGROUND);
+-        mHandlerThread.start();
+-        mBackupHandler = new BackupHandler(mHandlerThread.getLooper());
++        mBackupHandler = new BackupHandler(backupThread.getLooper());
+ 
+         // Set up our bookkeeping
+         final ContentResolver resolver = context.getContentResolver();
+@@ -1360,7 +1351,7 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+         if (DEBUG) Slog.v(TAG, "Starting with transport " + currentTransport);
+ 
+         mTransportManager = new TransportManager(context, transportWhitelist, currentTransport,
+-                mTransportBoundListener, mHandlerThread.getLooper());
++                mTransportBoundListener, backupThread.getLooper());
+         mTransportManager.registerAllTransports();
+ 
+         // Now that we know about valid backup participants, parse any
+diff --git a/services/backup/java/com/android/server/backup/RefactoredBackupManagerService.java b/services/backup/java/com/android/server/backup/RefactoredBackupManagerService.java
+index f298065903a..20f23690811 100644
+--- a/services/backup/java/com/android/server/backup/RefactoredBackupManagerService.java
++++ b/services/backup/java/com/android/server/backup/RefactoredBackupManagerService.java
+@@ -237,7 +237,6 @@ public class RefactoredBackupManagerService implements BackupManagerServiceInter
+     private boolean mProvisioned;
+     private boolean mAutoRestore;
+     private PowerManager.WakeLock mWakelock;
+-    private HandlerThread mHandlerThread;
+     private BackupHandler mBackupHandler;
+     private PendingIntent mRunBackupIntent;
+     private PendingIntent mRunInitIntent;
+@@ -556,43 +555,37 @@ public class RefactoredBackupManagerService implements BackupManagerServiceInter
+     // Called through the trampoline from onUnlockUser(), then we buck the work
+     // off to the background thread to keep the unlock time down.
+     public void unlockSystemUser() {
+-        mBackupHandler.post(() -> {
+-            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup init");
+-            sInstance.initialize(UserHandle.USER_SYSTEM);
+-            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+-
+-            // Migrate legacy setting
+-            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup migrate");
+-            if (!backupSettingMigrated(UserHandle.USER_SYSTEM)) {
++        // Migrate legacy setting
++        Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup migrate");
++        if (!backupSettingMigrated(UserHandle.USER_SYSTEM)) {
++            if (DEBUG) {
++                Slog.i(TAG, "Backup enable apparently not migrated");
++            }
++            final ContentResolver r = sInstance.mContext.getContentResolver();
++            final int enableState = Settings.Secure.getIntForUser(r,
++                    Settings.Secure.BACKUP_ENABLED, -1, UserHandle.USER_SYSTEM);
++            if (enableState >= 0) {
+                 if (DEBUG) {
+-                    Slog.i(TAG, "Backup enable apparently not migrated");
++                    Slog.i(TAG, "Migrating enable state " + (enableState != 0));
+                 }
+-                final ContentResolver r = sInstance.mContext.getContentResolver();
+-                final int enableState = Settings.Secure.getIntForUser(r,
+-                        Settings.Secure.BACKUP_ENABLED, -1, UserHandle.USER_SYSTEM);
+-                if (enableState >= 0) {
+-                    if (DEBUG) {
+-                        Slog.i(TAG, "Migrating enable state " + (enableState != 0));
+-                    }
+-                    writeBackupEnableState(enableState != 0, UserHandle.USER_SYSTEM);
+-                    Settings.Secure.putStringForUser(r,
+-                            Settings.Secure.BACKUP_ENABLED, null, UserHandle.USER_SYSTEM);
+-                } else {
+-                    if (DEBUG) {
+-                        Slog.i(TAG, "Backup not yet configured; retaining null enable state");
+-                    }
++                writeBackupEnableState(enableState != 0, UserHandle.USER_SYSTEM);
++                Settings.Secure.putStringForUser(r,
++                        Settings.Secure.BACKUP_ENABLED, null, UserHandle.USER_SYSTEM);
++            } else {
++                if (DEBUG) {
++                    Slog.i(TAG, "Backup not yet configured; retaining null enable state");
+                 }
+             }
+-            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
++        }
++        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+ 
+-            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup enable");
+-            try {
+-                sInstance.setBackupEnabled(readBackupEnableState(UserHandle.USER_SYSTEM));
+-            } catch (RemoteException e) {
+-                // can't happen; it's a local object
+-            }
+-            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+-        });
++        Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup enable");
++        try {
++            sInstance.setBackupEnabled(readBackupEnableState(UserHandle.USER_SYSTEM));
++        } catch (RemoteException e) {
++            // can't happen; it's a local object
++        }
++        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+     }
+ 
+     // Bookkeeping of in-flight operations for timeout etc. purposes.  The operation
+@@ -729,7 +722,8 @@ public class RefactoredBackupManagerService implements BackupManagerServiceInter
+ 
+     // ----- Main service implementation -----
+ 
+-    public RefactoredBackupManagerService(Context context, Trampoline parent) {
++    public RefactoredBackupManagerService(Context context, Trampoline parent,
++            HandlerThread backupThread) {
+         mContext = context;
+         mPackageManager = context.getPackageManager();
+         mPackageManagerBinder = AppGlobals.getPackageManager();
+@@ -742,9 +736,7 @@ public class RefactoredBackupManagerService implements BackupManagerServiceInter
+         mBackupManagerBinder = Trampoline.asInterface(parent.asBinder());
+ 
+         // spin up the backup/restore handler thread
+-        mHandlerThread = new HandlerThread("backup", Process.THREAD_PRIORITY_BACKGROUND);
+-        mHandlerThread.start();
+-        mBackupHandler = new BackupHandler(this, mHandlerThread.getLooper());
++        mBackupHandler = new BackupHandler(this, backupThread.getLooper());
+ 
+         // Set up our bookkeeping
+         final ContentResolver resolver = context.getContentResolver();
+@@ -824,7 +816,7 @@ public class RefactoredBackupManagerService implements BackupManagerServiceInter
+         if (DEBUG) Slog.v(TAG, "Starting with transport " + currentTransport);
+ 
+         mTransportManager = new TransportManager(context, transportWhitelist, currentTransport,
+-                mTransportBoundListener, mHandlerThread.getLooper());
++                mTransportBoundListener, backupThread.getLooper());
+         mTransportManager.registerAllTransports();
+ 
+         // Now that we know about valid backup participants, parse any
+diff --git a/services/backup/java/com/android/server/backup/Trampoline.java b/services/backup/java/com/android/server/backup/Trampoline.java
+index 9739e38055b..9847edf8f8c 100644
+--- a/services/backup/java/com/android/server/backup/Trampoline.java
++++ b/services/backup/java/com/android/server/backup/Trampoline.java
+@@ -28,11 +28,15 @@ import android.content.Context;
+ import android.content.Intent;
+ import android.os.Binder;
+ import android.os.Environment;
++import android.os.Handler;
++import android.os.HandlerThread;
+ import android.os.IBinder;
++import android.os.Looper;
+ import android.os.ParcelFileDescriptor;
+ import android.os.Process;
+ import android.os.RemoteException;
+ import android.os.SystemProperties;
++import android.os.Trace;
+ import android.os.UserHandle;
+ import android.provider.Settings;
+ import android.util.Slog;
+@@ -75,6 +79,8 @@ public class Trampoline extends IBackupManager.Stub {
+     final boolean mGlobalDisable;
+     volatile BackupManagerServiceInterface mService;
+ 
++    private HandlerThread mHandlerThread;
++
+     public Trampoline(Context context) {
+         mContext = context;
+         mGlobalDisable = isBackupDisabled();
+@@ -111,11 +117,11 @@ public class Trampoline extends IBackupManager.Stub {
+     }
+ 
+     protected BackupManagerServiceInterface createRefactoredBackupManagerService() {
+-        return new RefactoredBackupManagerService(mContext, this);
++        return new RefactoredBackupManagerService(mContext, this, mHandlerThread);
+     }
+ 
+     protected BackupManagerServiceInterface createBackupManagerService() {
+-        return new BackupManagerService(mContext, this);
++        return new BackupManagerService(mContext, this, mHandlerThread);
+     }
+ 
+     // internal control API
+@@ -140,10 +146,21 @@ public class Trampoline extends IBackupManager.Stub {
+     }
+ 
+     void unlockSystemUser() {
+-        BackupManagerServiceInterface svc = mService;
+-        if (svc != null) {
+-            svc.unlockSystemUser();
+-        }
++        mHandlerThread = new HandlerThread("backup", Process.THREAD_PRIORITY_BACKGROUND);
++        mHandlerThread.start();
++
++        Handler h = new Handler(mHandlerThread.getLooper());
++        h.post(() -> {
++            Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "backup init");
++            initialize(UserHandle.USER_SYSTEM);
++            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
++
++            BackupManagerServiceInterface svc = mService;
++            Slog.i(TAG, "Unlocking system user; mService=" + mService);
++            if (svc != null) {
++                svc.unlockSystemUser();
++            }
++        });
+     }
+ 
+     public void setBackupServiceActive(final int userHandle, boolean makeActive) {
+-- 
+2.17.1
+

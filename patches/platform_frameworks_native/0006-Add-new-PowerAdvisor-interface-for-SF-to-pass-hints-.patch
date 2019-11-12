@@ -1,0 +1,473 @@
+From 1509a2351a94d6e71628f6f84cdedfe1ad666c15 Mon Sep 17 00:00:00 2001
+From: Michael Wright <michaelwr@google.com>
+Date: Thu, 21 Jun 2018 02:50:34 +0100
+Subject: [PATCH 06/48] Add new PowerAdvisor interface for SF to pass hints to
+ the power HAL.
+
+GPU composition is slow with FP16 wide color gamut. In this patch, we try to
+mitigate this issue by boosting the GPU to higher frequency when SurfaceFlinger
+is going to switch to Display P3 color mode by sending the new
+PowerHint::EXPENSIVE_RENDERING to PowerManager.
+
+BUG: 110112323
+Test: adb shell cat /sys/class/kgsl/kgsl-3d0/devfreq/cur_freq to verify GPU
+      frequency with/without WCG content. GPU frequency should be high with
+      WCG content, and should be reset without WCG content.
+Change-Id: I3758bcf9940e71d4b6d122d8916b7ad7f10f5397
+Merged-In: I3758bcf9940e71d4b6d122d8916b7ad7f10f5397
+---
+ services/surfaceflinger/Android.bp            |   3 +
+ .../surfaceflinger/DisplayHardware/HWC2.cpp   |  13 ++-
+ .../surfaceflinger/DisplayHardware/HWC2.h     |   7 +-
+ .../DisplayHardware/PowerAdvisor.cpp          | 100 ++++++++++++++++++
+ .../DisplayHardware/PowerAdvisor.h            |  63 +++++++++++
+ .../surfaceflinger/tests/fakehwc/Android.bp   |   1 +
+ .../surfaceflinger/tests/unittests/Android.bp |   1 +
+ .../tests/unittests/TestableSurfaceFlinger.h  |  15 ++-
+ .../mock/DisplayHardware/MockPowerAdvisor.cpp |  29 +++++
+ .../mock/DisplayHardware/MockPowerAdvisor.h   |  37 +++++++
+ 10 files changed, 261 insertions(+), 8 deletions(-)
+ create mode 100644 services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp
+ create mode 100644 services/surfaceflinger/DisplayHardware/PowerAdvisor.h
+ create mode 100644 services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.cpp
+ create mode 100644 services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.h
+
+diff --git a/services/surfaceflinger/Android.bp b/services/surfaceflinger/Android.bp
+index c2bb6ad6b..320e11f7e 100644
+--- a/services/surfaceflinger/Android.bp
++++ b/services/surfaceflinger/Android.bp
+@@ -27,6 +27,7 @@ cc_defaults {
+         "android.hardware.graphics.composer@2.1",
+         "android.hardware.graphics.composer@2.2",
+         "android.hardware.power@1.0",
++        "android.hardware.power@1.3",
+         "libbase",
+         "libbinder",
+         "libbufferhubqueue",
+@@ -69,6 +70,7 @@ cc_defaults {
+         "android.hardware.graphics.allocator@2.0",
+         "android.hardware.graphics.composer@2.1",
+         "android.hardware.graphics.composer@2.2",
++        "android.hardware.power@1.3",
+         "libhidlbase",
+         "libhidltransport",
+         "libhwbinder",
+@@ -96,6 +98,7 @@ filegroup {
+         "DisplayHardware/HWC2.cpp",
+         "DisplayHardware/HWComposer.cpp",
+         "DisplayHardware/HWComposerBufferCache.cpp",
++        "DisplayHardware/PowerAdvisor.cpp",
+         "DisplayHardware/VirtualDisplaySurface.cpp",
+         "DispSync.cpp",
+         "Effects/Daltonizer.cpp",
+diff --git a/services/surfaceflinger/DisplayHardware/HWC2.cpp b/services/surfaceflinger/DisplayHardware/HWC2.cpp
+index 61758b63f..1a60c83b0 100644
+--- a/services/surfaceflinger/DisplayHardware/HWC2.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWC2.cpp
+@@ -138,7 +138,7 @@ Error Device::createVirtualDisplay(uint32_t width, uint32_t height,
+     }
+ 
+     auto display = std::make_unique<Display>(
+-            *mComposer.get(), mCapabilities, displayId, DisplayType::Virtual);
++            *mComposer.get(), mPowerAdvisor, mCapabilities, displayId, DisplayType::Virtual);
+     display->setConnected(true);
+     *outDisplay = display.get();
+     mDisplays.emplace(displayId, std::move(display));
+@@ -177,7 +177,7 @@ void Device::onHotplug(hwc2_display_t displayId, Connection connection) {
+         }
+ 
+         auto newDisplay = std::make_unique<Display>(
+-                *mComposer.get(), mCapabilities, displayId, displayType);
++                *mComposer.get(), mPowerAdvisor, mCapabilities, displayId, displayType);
+         newDisplay->setConnected(true);
+         mDisplays.emplace(displayId, std::move(newDisplay));
+     } else if (connection == Connection::Disconnected) {
+@@ -219,10 +219,11 @@ Error Device::flushCommands()
+ 
+ // Display methods
+ 
+-Display::Display(android::Hwc2::Composer& composer,
++Display::Display(android::Hwc2::Composer& composer, android::Hwc2::PowerAdvisor& advisor,
+                  const std::unordered_set<Capability>& capabilities, hwc2_display_t id,
+                  DisplayType type)
+       : mComposer(composer),
++        mPowerAdvisor(advisor),
+         mCapabilities(capabilities),
+         mId(id),
+         mIsConnected(false),
+@@ -605,6 +606,12 @@ Error Display::setClientTarget(uint32_t slot, const sp<GraphicBuffer>& target,
+ 
+ Error Display::setColorMode(ColorMode mode, RenderIntent renderIntent)
+ {
++    // When the color mode is switched to DISPLAY_P3, we want to boost the GPU frequency
++    // so that GPU composition can finish in time. When color mode is switched from
++    // DISPLAY_P3, we want to reset GPU frequency.
++    const bool expensiveRenderingExpected = (mode == ColorMode::DISPLAY_P3);
++    mPowerAdvisor.setExpensiveRenderingExpected(mId, expensiveRenderingExpected);
++
+     auto intError = mComposer.setColorMode(mId, mode, renderIntent);
+     return static_cast<Error>(intError);
+ }
+diff --git a/services/surfaceflinger/DisplayHardware/HWC2.h b/services/surfaceflinger/DisplayHardware/HWC2.h
+index 29d7a47ad..e423167a2 100644
+--- a/services/surfaceflinger/DisplayHardware/HWC2.h
++++ b/services/surfaceflinger/DisplayHardware/HWC2.h
+@@ -37,6 +37,8 @@
+ #include <unordered_set>
+ #include <vector>
+ 
++#include "PowerAdvisor.h"
++
+ namespace android {
+     class Fence;
+     class FloatRect;
+@@ -119,6 +121,7 @@ private:
+     std::unique_ptr<android::Hwc2::Composer> mComposer;
+     std::unordered_set<Capability> mCapabilities;
+     std::unordered_map<hwc2_display_t, std::unique_ptr<Display>> mDisplays;
++    android::Hwc2::impl::PowerAdvisor mPowerAdvisor;
+     bool mRegisteredCallback = false;
+ };
+ 
+@@ -126,7 +129,8 @@ private:
+ class Display
+ {
+ public:
+-    Display(android::Hwc2::Composer& composer, const std::unordered_set<Capability>& capabilities,
++    Display(android::Hwc2::Composer& composer, android::Hwc2::PowerAdvisor& advisor,
++            const std::unordered_set<Capability>& capabilities,
+             hwc2_display_t id, DisplayType type);
+     ~Display();
+ 
+@@ -282,6 +286,7 @@ private:
+     // this HWC2::Display, so these references are guaranteed to be valid for
+     // the lifetime of this object.
+     android::Hwc2::Composer& mComposer;
++    android::Hwc2::PowerAdvisor& mPowerAdvisor;
+     const std::unordered_set<Capability>& mCapabilities;
+ 
+     hwc2_display_t mId;
+diff --git a/services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp b/services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp
+new file mode 100644
+index 000000000..0e4ad9104
+--- /dev/null
++++ b/services/surfaceflinger/DisplayHardware/PowerAdvisor.cpp
+@@ -0,0 +1,100 @@
++/*
++ * Copyright 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#undef LOG_TAG
++#define LOG_TAG "PowerAdvisor"
++
++#include <cinttypes>
++
++#include <utils/Log.h>
++#include <utils/Mutex.h>
++
++#include "PowerAdvisor.h"
++
++namespace android {
++namespace Hwc2 {
++
++PowerAdvisor::~PowerAdvisor() = default;
++
++namespace impl {
++
++namespace V1_0 = android::hardware::power::V1_0;
++using V1_3::PowerHint;
++
++PowerAdvisor::~PowerAdvisor() = default;
++
++PowerAdvisor::PowerAdvisor() = default;
++
++void PowerAdvisor::setExpensiveRenderingExpected(hwc2_display_t displayId, bool expected) {
++    if (expected) {
++        mExpensiveDisplays.insert(displayId);
++    } else {
++        mExpensiveDisplays.erase(displayId);
++    }
++
++    const sp<V1_3::IPower> powerHal = getPowerHal();
++    if (powerHal == nullptr) {
++        return;
++    }
++
++    const bool expectsExpensiveRendering = !mExpensiveDisplays.empty();
++    if (mNotifiedExpensiveRendering != expectsExpensiveRendering) {
++        auto ret = powerHal->powerHintAsync_1_3(PowerHint::EXPENSIVE_RENDERING,
++                                                expectsExpensiveRendering);
++        // If Power HAL 1.3 was available previously but now fails,
++        // it may restart, so attempt to reconnect next time
++        if (!ret.isOk()) {
++            mReconnectPowerHal = true;
++            return;
++        }
++        mNotifiedExpensiveRendering = expectsExpensiveRendering;
++    }
++}
++
++sp<V1_3::IPower> PowerAdvisor::getPowerHal() {
++    static sp<V1_3::IPower> sPowerHal_1_3 = nullptr;
++    static bool sHasPowerHal_1_3 = true;
++
++    if (mReconnectPowerHal) {
++        sPowerHal_1_3 = nullptr;
++        mReconnectPowerHal = false;
++    }
++
++    // Power HAL 1.3 is not guaranteed to be available, thus we need to query
++    // Power HAL 1.0 first and try to cast it to Power HAL 1.3.
++    // Power HAL 1.0 is always available, thus if we fail to query it, it means
++    // Power HAL is not available temporarily and we should retry later. However,
++    // if Power HAL 1.0 is available and we can't cast it to Power HAL 1.3,
++    // it means Power HAL 1.3 is not available at all, so we should stop trying.
++    if (sHasPowerHal_1_3 && sPowerHal_1_3 == nullptr) {
++        sp<V1_0::IPower> powerHal_1_0 = V1_0::IPower::getService();
++        if (powerHal_1_0 != nullptr) {
++            // Try to cast to Power HAL 1.3
++            sPowerHal_1_3 =  V1_3::IPower::castFrom(powerHal_1_0);
++            if (sPowerHal_1_3 == nullptr) {
++                ALOGW("No Power HAL 1.3 service in system");
++                sHasPowerHal_1_3 = false;
++            } else {
++                ALOGI("Loaded Power HAL 1.3 service");
++            }
++        }
++    }
++    return sPowerHal_1_3;
++}
++
++} // namespace impl
++} // namespace Hwc2
++} // namespace android
+diff --git a/services/surfaceflinger/DisplayHardware/PowerAdvisor.h b/services/surfaceflinger/DisplayHardware/PowerAdvisor.h
+new file mode 100644
+index 000000000..573a1a9ad
+--- /dev/null
++++ b/services/surfaceflinger/DisplayHardware/PowerAdvisor.h
+@@ -0,0 +1,63 @@
++/*
++ * Copyright 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#define HWC2_INCLUDE_STRINGIFICATION
++#define HWC2_USE_CPP11
++#include <hardware/hwcomposer2.h>
++#undef HWC2_INCLUDE_STRINGIFICATION
++#undef HWC2_USE_CPP11
++
++#include <android/hardware/power/1.3/IPower.h>
++#include <utils/StrongPointer.h>
++
++#include <unordered_set>
++
++namespace android {
++namespace Hwc2 {
++
++class PowerAdvisor {
++public:
++    virtual ~PowerAdvisor();
++
++    virtual void setExpensiveRenderingExpected(hwc2_display_t displayId, bool expected) = 0;
++};
++
++namespace impl {
++
++namespace V1_3 = android::hardware::power::V1_3;
++
++// PowerAdvisor is a wrapper around IPower HAL which takes into account the
++// full state of the system when sending out power hints to things like the GPU.
++class PowerAdvisor final : public Hwc2::PowerAdvisor {
++public:
++    PowerAdvisor();
++    ~PowerAdvisor() override;
++
++    void setExpensiveRenderingExpected(hwc2_display_t displayId, bool expected) override;
++
++private:
++    sp<V1_3::IPower> getPowerHal();
++
++    std::unordered_set<hwc2_display_t> mExpensiveDisplays;
++    bool mNotifiedExpensiveRendering = false;
++    bool mReconnectPowerHal = false;
++};
++
++} // namespace impl
++} // namespace Hwc2
++} // namespace android
+diff --git a/services/surfaceflinger/tests/fakehwc/Android.bp b/services/surfaceflinger/tests/fakehwc/Android.bp
+index 520df2d63..5fa8a09ba 100644
+--- a/services/surfaceflinger/tests/fakehwc/Android.bp
++++ b/services/surfaceflinger/tests/fakehwc/Android.bp
+@@ -12,6 +12,7 @@ cc_test {
+     shared_libs: [
+         "android.hardware.graphics.composer@2.1",
+         "android.hardware.graphics.mapper@2.0",
++        "android.hardware.power@1.3",
+         "libbase",
+         "libbinder",
+         "libcutils",
+diff --git a/services/surfaceflinger/tests/unittests/Android.bp b/services/surfaceflinger/tests/unittests/Android.bp
+index 39761dd9a..4a9278052 100644
+--- a/services/surfaceflinger/tests/unittests/Android.bp
++++ b/services/surfaceflinger/tests/unittests/Android.bp
+@@ -24,6 +24,7 @@ cc_test {
+         "EventThreadTest.cpp",
+         "mock/DisplayHardware/MockComposer.cpp",
+         "mock/DisplayHardware/MockDisplaySurface.cpp",
++        "mock/DisplayHardware/MockPowerAdvisor.cpp",
+         "mock/gui/MockGraphicBufferConsumer.cpp",
+         "mock/gui/MockGraphicBufferProducer.cpp",
+         "mock/MockEventControlThread.cpp",
+diff --git a/services/surfaceflinger/tests/unittests/TestableSurfaceFlinger.h b/services/surfaceflinger/tests/unittests/TestableSurfaceFlinger.h
+index f1556d8bc..acd16fe65 100644
+--- a/services/surfaceflinger/tests/unittests/TestableSurfaceFlinger.h
++++ b/services/surfaceflinger/tests/unittests/TestableSurfaceFlinger.h
+@@ -149,12 +149,18 @@ public:
+      * Wrapper classes for Read-write access to private data to set up
+      * preconditions and assert post-conditions.
+      */
++    class FakePowerAdvisor : public Hwc2::PowerAdvisor {
++    public:
++        FakePowerAdvisor() = default;
++        ~FakePowerAdvisor() override = default;
++        void setExpensiveRenderingExpected(hwc2_display_t, bool) override { }
++    };
+ 
+     struct HWC2Display : public HWC2::Display {
+-        HWC2Display(Hwc2::Composer& composer,
++        HWC2Display(Hwc2::Composer& composer, Hwc2::PowerAdvisor& advisor,
+                     const std::unordered_set<HWC2::Capability>& capabilities, hwc2_display_t id,
+                     HWC2::DisplayType type)
+-              : HWC2::Display(composer, capabilities, id, type) {}
++              : HWC2::Display(composer, advisor, capabilities, id, type) {}
+         ~HWC2Display() {
+             // Prevents a call to disable vsyncs.
+             mType = HWC2::DisplayType::Invalid;
+@@ -217,8 +223,8 @@ public:
+         }
+ 
+         void inject(TestableSurfaceFlinger* flinger, Hwc2::Composer* composer) {
+-            auto display = std::make_unique<HWC2Display>(*composer, mCapabilities, mHwcDisplayId,
+-                                                         mHwcDisplayType);
++            auto display = std::make_unique<HWC2Display>(*composer, mPowerAdvisor, mCapabilities,
++                                                         mHwcDisplayId, mHwcDisplayType);
+ 
+             auto config = HWC2::Display::Config::Builder(*display, mActiveConfig);
+             config.setWidth(mWidth);
+@@ -248,6 +254,7 @@ public:
+         int32_t mDpiY = DEFAULT_DPI;
+         int32_t mActiveConfig = DEFAULT_ACTIVE_CONFIG;
+         std::unordered_set<HWC2::Capability> mCapabilities;
++        FakePowerAdvisor mPowerAdvisor;
+     };
+ 
+     class FakeDisplayDeviceInjector {
+diff --git a/services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.cpp b/services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.cpp
+new file mode 100644
+index 000000000..8be707750
+--- /dev/null
++++ b/services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.cpp
+@@ -0,0 +1,29 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "MockPowerAdvisor.h"
++
++namespace android {
++namespace Hwc2 {
++namespace mock {
++
++// Explicit default instantiation is recommended.
++PowerAdvisor::PowerAdvisor() = default;
++PowerAdvisor::~PowerAdvisor() = default;
++
++} // namespace mock
++} // namespace Hwc2
++} // namespace android
+diff --git a/services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.h b/services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.h
+new file mode 100644
+index 000000000..dc6d83b0f
+--- /dev/null
++++ b/services/surfaceflinger/tests/unittests/mock/DisplayHardware/MockPowerAdvisor.h
+@@ -0,0 +1,37 @@
++/*
++ * Copyright 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#include <gmock/gmock.h>
++
++#include "DisplayHardware/PowerAdvisor.h"
++
++namespace android {
++namespace Hwc2 {
++namespace mock {
++
++class PowerAdvisor : public android::Hwc2::PowerAdvisor {
++public:
++    PowerAdvisor();
++    ~PowerAdvisor() override;
++
++    MOCK_METHOD2(setExpensiveRenderingExpected, void(hwc2_display_t displayId, bool expected));
++};
++
++} // namespace mock
++} // namespace Hwc2
++} // namespace android
+-- 
+2.17.1
+

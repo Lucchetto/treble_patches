@@ -1,0 +1,103 @@
+From e13179c17f19577405aeeb82187333a16aa3a78d Mon Sep 17 00:00:00 2001
+From: Pavlin Radoslavov <pavlin@google.com>
+Date: Fri, 16 Mar 2018 11:56:37 -0700
+Subject: [PATCH 05/59] Add missing codec initialization for A2DP Sink
+
+Also:
+ * Added missing assert to check when local codecs are not initialized
+ * Removed unnecessary local copy: BtifAvSource::codec_priorities_
+
+Bug: 74079615
+Test: Manual: Enable A2DP Sink profile and initiate the connection from
+      Remote A2DP Source
+Change-Id: I40ea1aa2164612bbe108ac06be7f6cae8be30a72
+(cherry picked from commit b27aa7ebbf373fe2ddc4d75a19d02c7b3ea5359e)
+---
+ btif/co/bta_av_co.cc |  8 +++++---
+ btif/src/btif_av.cc  | 14 ++++++++------
+ 2 files changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/btif/co/bta_av_co.cc b/btif/co/bta_av_co.cc
+index ed153a756..9ad432e7f 100644
+--- a/btif/co/bta_av_co.cc
++++ b/btif/co/bta_av_co.cc
+@@ -1484,9 +1484,11 @@ bool BtaAvCo::ReportSourceCodecState(BtaAvCoPeer* p_peer) {
+ 
+   APPL_TRACE_DEBUG("%s: peer_address=%s", __func__,
+                    p_peer->addr.ToString().c_str());
+-  if (!p_peer->GetCodecs()->getCodecConfigAndCapabilities(
+-          &codec_config, &codecs_local_capabilities,
+-          &codecs_selectable_capabilities)) {
++  A2dpCodecs* codecs = p_peer->GetCodecs();
++  CHECK(codecs != nullptr);
++  if (!codecs->getCodecConfigAndCapabilities(&codec_config,
++                                             &codecs_local_capabilities,
++                                             &codecs_selectable_capabilities)) {
+     APPL_TRACE_WARNING(
+         "%s: Peer %s : error reporting audio source codec state: "
+         "cannot get codec config and capabilities",
+diff --git a/btif/src/btif_av.cc b/btif/src/btif_av.cc
+index 527a7008a..724bf3c64 100644
+--- a/btif/src/btif_av.cc
++++ b/btif/src/btif_av.cc
+@@ -341,12 +341,12 @@ class BtifAvSource {
+         max_connected_peers_(kDefaultMaxConnectedAudioDevices) {}
+   ~BtifAvSource();
+ 
+-  btav_source_callbacks_t* Callbacks() { return callbacks_; }
+   bt_status_t Init(
+       btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
+       const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
+   void Cleanup();
+ 
++  btav_source_callbacks_t* Callbacks() { return callbacks_; }
+   bool Enabled() const { return enabled_; }
+   bool A2dpOffloadEnabled() const { return a2dp_offload_enabled_; }
+ 
+@@ -447,7 +447,6 @@ class BtifAvSource {
+   std::map<RawAddress, BtifAvPeer*> peers_;
+   RawAddress active_peer_;
+   std::map<uint8_t, tBTA_AV_HNDL> peer_id2bta_handle_;
+-  std::vector<btav_a2dp_codec_config_t> codec_priorities_;
+ };
+ 
+ class BtifAvSink {
+@@ -461,12 +460,13 @@ class BtifAvSink {
+         enabled_(false),
+         max_connected_peers_(kDefaultMaxConnectedAudioDevices) {}
+   ~BtifAvSink();
+-  bt_status_t Init(btav_sink_callbacks_t* callbacks);
+ 
+-  btav_sink_callbacks_t* Callbacks() { return callbacks_; }
++  bt_status_t Init(btav_sink_callbacks_t* callbacks);
+   void Cleanup();
+ 
++  btav_sink_callbacks_t* Callbacks() { return callbacks_; }
+   bool Enabled() const { return enabled_; }
++
+   BtifAvPeer* FindPeer(const RawAddress& peer_address);
+   BtifAvPeer* FindPeerByHandle(tBTA_AV_HNDL bta_handle);
+   BtifAvPeer* FindPeerByPeerId(uint8_t peer_id);
+@@ -863,8 +863,7 @@ bt_status_t BtifAvSource::Init(
+   BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
+ 
+   callbacks_ = callbacks;
+-  codec_priorities_ = codec_priorities;
+-  bta_av_co_init(codec_priorities_);
++  bta_av_co_init(codec_priorities);
+ 
+   if (!btif_a2dp_source_init()) {
+     return BT_STATUS_FAIL;
+@@ -1041,6 +1040,9 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
+   max_connected_peers_ = kDefaultMaxConnectedAudioDevices;
+   callbacks_ = callbacks;
+ 
++  std::vector<btav_a2dp_codec_config_t> codec_priorities;  // Default priorities
++  bta_av_co_init(codec_priorities);
++
+   if (!btif_a2dp_sink_init()) {
+     return BT_STATUS_FAIL;
+   }
+-- 
+2.17.1
+

@@ -1,0 +1,282 @@
+From b730ba797139dff1266add3b233f7e302804e9de Mon Sep 17 00:00:00 2001
+From: Robert Berry <robertberry@google.com>
+Date: Fri, 6 Apr 2018 10:13:16 +0000
+Subject: [PATCH 182/306] Revert "Remove deprecated RecoveryController API."
+
+This reverts commit 0d55aa387a4ec65899fc82a1391e5533c85c3edb.
+
+Reason for revert: aps_sidecar binary is still using some of these @removed APIs. Although HEAD of auth_folsom is fixed, aps_sidecar burned in framework is old.
+
+Bug: 77629807
+Change-Id: I2f03c7d12de30cc2eebd91bb65646caaa00fcd1d
+(cherry picked from commit c157e21249b01cca18e6712d69c719f245db51a7)
+---
+ api/system-current.txt                        | 13 ++++++++
+ api/system-removed.txt                        | 31 -------------------
+ .../keystore/recovery/KeyChainSnapshot.java   |  4 +--
+ .../keystore/recovery/RecoveryController.java | 31 +++++++++++++++----
+ .../keystore/recovery/RecoverySession.java    |  6 ++--
+ .../recovery/WrappedApplicationKey.java       |  4 +--
+ 6 files changed, 45 insertions(+), 44 deletions(-)
+
+diff --git a/api/system-current.txt b/api/system-current.txt
+index e7761b79a66..b6a162fc616 100644
+--- a/api/system-current.txt
++++ b/api/system-current.txt
+@@ -4353,6 +4353,7 @@ package android.security.keystore.recovery {
+     method public byte[] getServerParams();
+     method public int getSnapshotVersion();
+     method public java.security.cert.CertPath getTrustedHardwareCertPath();
++    method public deprecated byte[] getTrustedHardwarePublicKey();
+     method public java.util.List<android.security.keystore.recovery.WrappedApplicationKey> getWrappedApplicationKeys();
+     method public void writeToParcel(android.os.Parcel, int);
+     field public static final android.os.Parcelable.Creator<android.security.keystore.recovery.KeyChainSnapshot> CREATOR;
+@@ -4377,18 +4378,25 @@ package android.security.keystore.recovery {
+ 
+   public class RecoveryController {
+     method public android.security.keystore.recovery.RecoverySession createRecoverySession();
++    method public byte[] generateAndStoreKey(java.lang.String, byte[]) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.LockScreenRequiredException;
++    method public deprecated java.security.Key generateKey(java.lang.String, byte[]) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.LockScreenRequiredException;
+     method public java.security.Key generateKey(java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.LockScreenRequiredException;
++    method public deprecated java.util.List<java.lang.String> getAliases(java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public java.util.List<java.lang.String> getAliases() throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public static android.security.keystore.recovery.RecoveryController getInstance(android.content.Context);
+     method public java.security.Key getKey(java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException, java.security.UnrecoverableKeyException;
+     method public android.security.keystore.recovery.KeyChainSnapshot getKeyChainSnapshot() throws android.security.keystore.recovery.InternalRecoveryServiceException;
++    method public deprecated android.security.keystore.recovery.KeyChainSnapshot getRecoveryData() throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public int[] getRecoverySecretTypes() throws android.security.keystore.recovery.InternalRecoveryServiceException;
++    method public deprecated int getRecoveryStatus(java.lang.String, java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public int getRecoveryStatus(java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public java.util.Map<java.lang.String, java.security.cert.X509Certificate> getRootCertificates();
+     method public java.security.Key importKey(java.lang.String, byte[]) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.LockScreenRequiredException;
++    method public deprecated void initRecoveryService(java.lang.String, byte[]) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public void initRecoveryService(java.lang.String, byte[], byte[]) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public void removeKey(java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public void setRecoverySecretTypes(int[]) throws android.security.keystore.recovery.InternalRecoveryServiceException;
++    method public deprecated void setRecoveryStatus(java.lang.String, java.lang.String, int) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.content.pm.PackageManager.NameNotFoundException;
+     method public void setRecoveryStatus(java.lang.String, int) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public void setServerParams(byte[]) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public void setSnapshotCreatedPendingIntent(android.app.PendingIntent) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+@@ -4400,6 +4408,9 @@ package android.security.keystore.recovery {
+   public class RecoverySession implements java.lang.AutoCloseable {
+     method public void close();
+     method public java.util.Map<java.lang.String, java.security.Key> recoverKeyChainSnapshot(byte[], java.util.List<android.security.keystore.recovery.WrappedApplicationKey>) throws android.security.keystore.recovery.DecryptionFailedException, android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.SessionExpiredException;
++    method public deprecated java.util.Map<java.lang.String, byte[]> recoverKeys(byte[], java.util.List<android.security.keystore.recovery.WrappedApplicationKey>) throws android.security.keystore.recovery.DecryptionFailedException, android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.SessionExpiredException;
++    method public deprecated byte[] start(byte[], byte[], byte[], java.util.List<android.security.keystore.recovery.KeyChainProtectionParams>) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
++    method public deprecated byte[] start(java.security.cert.CertPath, byte[], byte[], java.util.List<android.security.keystore.recovery.KeyChainProtectionParams>) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+     method public byte[] start(java.lang.String, java.security.cert.CertPath, byte[], byte[], java.util.List<android.security.keystore.recovery.KeyChainProtectionParams>) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+   }
+ 
+@@ -4409,6 +4420,7 @@ package android.security.keystore.recovery {
+ 
+   public final class WrappedApplicationKey implements android.os.Parcelable {
+     method public int describeContents();
++    method public deprecated byte[] getAccount();
+     method public java.lang.String getAlias();
+     method public byte[] getEncryptedKeyMaterial();
+     method public void writeToParcel(android.os.Parcel, int);
+@@ -4418,6 +4430,7 @@ package android.security.keystore.recovery {
+   public static class WrappedApplicationKey.Builder {
+     ctor public WrappedApplicationKey.Builder();
+     method public android.security.keystore.recovery.WrappedApplicationKey build();
++    method public deprecated android.security.keystore.recovery.WrappedApplicationKey.Builder setAccount(byte[]);
+     method public android.security.keystore.recovery.WrappedApplicationKey.Builder setAlias(java.lang.String);
+     method public android.security.keystore.recovery.WrappedApplicationKey.Builder setEncryptedKeyMaterial(byte[]);
+   }
+diff --git a/api/system-removed.txt b/api/system-removed.txt
+index 7cf12ef3c59..48f43e0880d 100644
+--- a/api/system-removed.txt
++++ b/api/system-removed.txt
+@@ -91,37 +91,6 @@ package android.os {
+ 
+ }
+ 
+-package android.security.keystore.recovery {
+-
+-  public final class KeyChainSnapshot implements android.os.Parcelable {
+-    method public deprecated byte[] getTrustedHardwarePublicKey();
+-  }
+-
+-  public class RecoveryController {
+-    method public deprecated java.security.Key generateKey(java.lang.String, byte[]) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.LockScreenRequiredException;
+-    method public deprecated java.util.List<java.lang.String> getAliases(java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+-    method public deprecated android.security.keystore.recovery.KeyChainSnapshot getRecoveryData() throws android.security.keystore.recovery.InternalRecoveryServiceException;
+-    method public deprecated int getRecoveryStatus(java.lang.String, java.lang.String) throws android.security.keystore.recovery.InternalRecoveryServiceException;
+-    method public deprecated void initRecoveryService(java.lang.String, byte[]) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+-    method public deprecated void setRecoveryStatus(java.lang.String, java.lang.String, int) throws android.security.keystore.recovery.InternalRecoveryServiceException, android.content.pm.PackageManager.NameNotFoundException;
+-  }
+-
+-  public class RecoverySession implements java.lang.AutoCloseable {
+-    method public deprecated java.util.Map<java.lang.String, byte[]> recoverKeys(byte[], java.util.List<android.security.keystore.recovery.WrappedApplicationKey>) throws android.security.keystore.recovery.DecryptionFailedException, android.security.keystore.recovery.InternalRecoveryServiceException, android.security.keystore.recovery.SessionExpiredException;
+-    method public deprecated byte[] start(byte[], byte[], byte[], java.util.List<android.security.keystore.recovery.KeyChainProtectionParams>) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+-    method public deprecated byte[] start(java.security.cert.CertPath, byte[], byte[], java.util.List<android.security.keystore.recovery.KeyChainProtectionParams>) throws java.security.cert.CertificateException, android.security.keystore.recovery.InternalRecoveryServiceException;
+-  }
+-
+-  public final class WrappedApplicationKey implements android.os.Parcelable {
+-    method public deprecated byte[] getAccount();
+-  }
+-
+-  public static class WrappedApplicationKey.Builder {
+-    method public deprecated android.security.keystore.recovery.WrappedApplicationKey.Builder setAccount(byte[]);
+-  }
+-
+-}
+-
+ package android.service.notification {
+ 
+   public abstract class NotificationListenerService extends android.app.Service {
+diff --git a/core/java/android/security/keystore/recovery/KeyChainSnapshot.java b/core/java/android/security/keystore/recovery/KeyChainSnapshot.java
+index 73a6a749d31..9334aa99c86 100644
+--- a/core/java/android/security/keystore/recovery/KeyChainSnapshot.java
++++ b/core/java/android/security/keystore/recovery/KeyChainSnapshot.java
+@@ -118,7 +118,7 @@ public final class KeyChainSnapshot implements Parcelable {
+      *
+      * See implementation for binary key format.
+      *
+-     * @removed Use {@link #getTrustedHardwareCertPath} instead.
++     * @deprecated Use {@link #getTrustedHardwareCertPath} instead.
+      */
+     @Deprecated
+     public @NonNull byte[] getTrustedHardwarePublicKey() {
+@@ -227,7 +227,7 @@ public final class KeyChainSnapshot implements Parcelable {
+          *
+          * @param publicKey The public key
+          * @return This builder.
+-         * @removed Use {@link #setTrustedHardwareCertPath} instead.
++         * @deprecated Use {@link #setTrustedHardwareCertPath} instead.
+          */
+         @Deprecated
+         public Builder setTrustedHardwarePublicKey(byte[] publicKey) {
+diff --git a/core/java/android/security/keystore/recovery/RecoveryController.java b/core/java/android/security/keystore/recovery/RecoveryController.java
+index 2c48bf49b31..f351c5afa57 100644
+--- a/core/java/android/security/keystore/recovery/RecoveryController.java
++++ b/core/java/android/security/keystore/recovery/RecoveryController.java
+@@ -288,7 +288,7 @@ public class RecoveryController {
+     }
+ 
+     /**
+-     * @removed Use {@link #initRecoveryService(String, byte[], byte[])} instead.
++     * @deprecated Use {@link #initRecoveryService(String, byte[], byte[])} instead.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -359,7 +359,7 @@ public class RecoveryController {
+     }
+ 
+     /**
+-     * @removed Use {@link #getKeyChainSnapshot()}
++     * @deprecated Use {@link #getKeyChainSnapshot()}
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -435,7 +435,7 @@ public class RecoveryController {
+     }
+ 
+     /**
+-     * @removed Use {@link #getAliases()}.
++     * @deprecated Use {@link #getAliases()}.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -460,7 +460,7 @@ public class RecoveryController {
+     }
+ 
+     /**
+-     * @removed Use {@link #setRecoveryStatus(String, int)}
++     * @deprecated Use {@link #setRecoveryStatus(String, int)}
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -494,7 +494,7 @@ public class RecoveryController {
+     }
+ 
+     /**
+-     * @removed Use {@link #getRecoveryStatus(String)}.
++     * @deprecated Use {@link #getRecoveryStatus(String)}.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -576,7 +576,26 @@ public class RecoveryController {
+     }
+ 
+     /**
+-     * @removed Use {@link #generateKey(String)}.
++     * Deprecated.
++     * Generates a AES256/GCM/NoPADDING key called {@code alias} and loads it into the recoverable
++     * key store. Returns the raw material of the key.
++     *
++     * @param alias The key alias.
++     * @param account The account associated with the key
++     * @throws InternalRecoveryServiceException if an unexpected error occurred in the recovery
++     *     service.
++     * @throws LockScreenRequiredException if the user has not set a lock screen. This is required
++     *     to generate recoverable keys, as the snapshots are encrypted using a key derived from the
++     *     lock screen.
++     */
++    @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
++    public byte[] generateAndStoreKey(@NonNull String alias, byte[] account)
++            throws InternalRecoveryServiceException, LockScreenRequiredException {
++        throw new UnsupportedOperationException("Operation is not supported, use generateKey");
++    }
++
++    /**
++     * @deprecated Use {@link #generateKey(String)}.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+diff --git a/core/java/android/security/keystore/recovery/RecoverySession.java b/core/java/android/security/keystore/recovery/RecoverySession.java
+index 87dc6b477ed..83533894090 100644
+--- a/core/java/android/security/keystore/recovery/RecoverySession.java
++++ b/core/java/android/security/keystore/recovery/RecoverySession.java
+@@ -78,7 +78,7 @@ public class RecoverySession implements AutoCloseable {
+     }
+ 
+     /**
+-     * @removed Use {@link #start(String, CertPath, byte[], byte[], List)} instead.
++     * @deprecated Use {@link #start(String, CertPath, byte[], byte[], List)} instead.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -109,7 +109,7 @@ public class RecoverySession implements AutoCloseable {
+     }
+ 
+     /**
+-     * @removed Use {@link #start(String, CertPath, byte[], byte[], List)} instead.
++     * @deprecated Use {@link #start(String, CertPath, byte[], byte[], List)} instead.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+@@ -198,7 +198,7 @@ public class RecoverySession implements AutoCloseable {
+     }
+ 
+     /**
+-     * @removed Use {@link #recoverKeyChainSnapshot(byte[], List)} instead.
++     * @deprecated Use {@link #recoverKeyChainSnapshot(byte[], List)} instead.
+      */
+     @Deprecated
+     @RequiresPermission(android.Manifest.permission.RECOVER_KEYSTORE)
+diff --git a/core/java/android/security/keystore/recovery/WrappedApplicationKey.java b/core/java/android/security/keystore/recovery/WrappedApplicationKey.java
+index 86419d8e461..32952db7037 100644
+--- a/core/java/android/security/keystore/recovery/WrappedApplicationKey.java
++++ b/core/java/android/security/keystore/recovery/WrappedApplicationKey.java
+@@ -75,7 +75,7 @@ public final class WrappedApplicationKey implements Parcelable {
+         }
+ 
+         /**
+-         * @removed AOSP does not associate keys with accounts. This may be done by system app.
++         * @deprecated AOSP does not associate keys with accounts. This may be done by system app.
+          */
+         @Deprecated
+         public Builder setAccount(@NonNull byte[] account) {
+@@ -133,7 +133,7 @@ public final class WrappedApplicationKey implements Parcelable {
+     }
+ 
+     /**
+-     * @removed AOSP does not associate keys with accounts. This may be done by system app.
++     * @deprecated AOSP does not associate keys with accounts. This may be done by system app.
+      */
+     @Deprecated
+     public @NonNull byte[] getAccount() {
+-- 
+2.17.1
+

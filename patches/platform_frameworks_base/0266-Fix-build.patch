@@ -1,0 +1,100 @@
+From dae4dcb221bedc81b040630d1eb391ccf72f3a60 Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Sun, 3 Nov 2019 22:12:52 +0100
+Subject: [PATCH 266/306] Fix build
+
+Broke because of conflict between
+06aed1054fbf7b3a434d93e153e6663e4fc3985c ( security )
+and
+3eab951217abbb2c1e77c3814bbe60c7b50fee26 ( pixel release for additional
+data reports)
+---
+ .../server/am/ActivityManagerService.java     |  2 +-
+ .../server/am/ActivityStartController.java    | 22 ++++++-------------
+ .../server/am/PendingIntentRecord.java        |  3 ++-
+ 3 files changed, 10 insertions(+), 17 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index effe81d2837..4c15b858318 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -5609,7 +5609,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+         // TODO: Switch to user app stacks here.
+         int ret = mActivityStartController.startActivities(caller, -1, 0,
+                 UserHandle.USER_NULL, callingPackage, intents, resolvedTypes, resultTo,
+-                SafeActivityOptions.fromBundle(bOptions), userId, reason);
++                SafeActivityOptions.fromBundle(bOptions), userId, reason, null);
+         return ret;
+     }
+ 
+diff --git a/services/core/java/com/android/server/am/ActivityStartController.java b/services/core/java/com/android/server/am/ActivityStartController.java
+index d8afc0d000b..7067ce8428f 100644
+--- a/services/core/java/com/android/server/am/ActivityStartController.java
++++ b/services/core/java/com/android/server/am/ActivityStartController.java
+@@ -285,42 +285,34 @@ public class ActivityStartController {
+      */
+     final int startActivitiesInPackage(int uid, String callingPackage, Intent[] intents,
+             String[] resolvedTypes, IBinder resultTo, SafeActivityOptions options, int userId,
+-<<<<<<< HEAD
+             boolean validateIncomingUser, PendingIntentRecord originatingPendingIntent) {
+-=======
+-            boolean validateIncomingUser) {
+         return startActivitiesInPackage(uid, 0, UserHandle.USER_NULL,
+              callingPackage, intents, resolvedTypes, resultTo, options, userId,
+-             validateIncomingUser);
++             validateIncomingUser, originatingPendingIntent);
+     }
+->>>>>>> android-9.0.0_r49
+ 
+     final int startActivitiesInPackage(int uid, int realCallingPid, int realCallingUid,
+             String callingPackage, Intent[] intents, String[] resolvedTypes, IBinder resultTo,
+-            SafeActivityOptions options, int userId, boolean validateIncomingUser) {
++            SafeActivityOptions options, int userId, boolean validateIncomingUser, PendingIntentRecord originatingPendingIntent) {
+         final String reason = "startActivityInPackage";
+ 
+         userId = checkTargetUser(userId, validateIncomingUser, Binder.getCallingPid(),
+                 Binder.getCallingUid(), reason);
+ 
+-        // TODO: Switch to user app stacks here.
+-<<<<<<< HEAD
+-        return startActivities(null, uid, callingPackage, intents, resolvedTypes, resultTo, options,
+-                userId, reason, originatingPendingIntent);
++        return startActivities(null, uid, realCallingPid, realCallingUid, callingPackage, intents,
++                resolvedTypes, resultTo, options, userId, reason, originatingPendingIntent);
+     }
+ 
+     int startActivities(IApplicationThread caller, int callingUid, String callingPackage,
+             Intent[] intents, String[] resolvedTypes, IBinder resultTo, SafeActivityOptions options,
+             int userId, String reason, PendingIntentRecord originatingPendingIntent) {
+-=======
+-        return startActivities(null, uid, realCallingPid, realCallingUid, callingPackage, intents,
+-                resolvedTypes, resultTo, options, userId, reason);
++        return startActivities(null, callingUid, 0, 0, callingPackage, intents,
++                resolvedTypes, resultTo, options, userId, reason, originatingPendingIntent);
+     }
+ 
+     int startActivities(IApplicationThread caller, int callingUid, int incomingRealCallingPid,
+             int incomingRealCallingUid, String callingPackage, Intent[] intents, String[] resolvedTypes,
+-            IBinder resultTo, SafeActivityOptions options, int userId, String reason) {
+->>>>>>> android-9.0.0_r49
++            IBinder resultTo, SafeActivityOptions options, int userId, String reason, PendingIntentRecord originatingPendingIntent) {
+         if (intents == null) {
+             throw new NullPointerException("intents is null");
+         }
+diff --git a/services/core/java/com/android/server/am/PendingIntentRecord.java b/services/core/java/com/android/server/am/PendingIntentRecord.java
+index c1a2cb99558..ab607f87d31 100644
+--- a/services/core/java/com/android/server/am/PendingIntentRecord.java
++++ b/services/core/java/com/android/server/am/PendingIntentRecord.java
+@@ -346,7 +346,8 @@ final class PendingIntentRecord extends IIntentSender.Stub {
+                                 res = owner.getActivityStartController().startActivitiesInPackage(
+                                         uid, callingPid, callingUid, key.packageName, allIntents,
+                                         allResolvedTypes, resultTo, mergedOptions, userId,
+-                                        false /* validateIncomingUser */);
++                                        false /* validateIncomingUser */,
++					this);
+                             } else {
+                                 res = owner.getActivityStartController().startActivityInPackage(uid,
+                                         callingPid, callingUid, key.packageName, finalIntent,
+-- 
+2.17.1
+

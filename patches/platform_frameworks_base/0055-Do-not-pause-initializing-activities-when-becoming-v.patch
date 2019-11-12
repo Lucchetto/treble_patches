@@ -1,0 +1,72 @@
+From 779f150bba2cc59205df9802c568fb228c4a8d4a Mon Sep 17 00:00:00 2001
+From: Bryce Lee <brycelee@google.com>
+Date: Tue, 16 Jan 2018 11:13:30 -0800
+Subject: [PATCH 055/306] Do not pause initializing activities when becoming
+ visible.
+
+makeVisibleIfNeeded was recently modified to ensure activities
+becoming visible were not left in the stopped state. However, the
+condition was based on simply not being in the paused state, rather
+than requiring it be in the stopped/stopping state. This can lead
+to lifecycle issues for moving an initializing activity into the
+paused state.
+
+This changelist ensures that only stopped/stopping activities are
+considered.
+
+Change-Id: I17fc6310db6ee111d1db8f69599090becd1e1760
+Fixes: 72028454
+Test: atest FrameworksServicesTests:com.android.server.am.ActivityRecordTests
+(cherry picked from commit 052957b6c0f50d0201f842f9f9291f789814aca2)
+---
+ .../core/java/com/android/server/am/ActivityRecord.java  | 5 ++---
+ .../src/com/android/server/am/ActivityRecordTests.java   | 9 +++++++++
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityRecord.java b/services/core/java/com/android/server/am/ActivityRecord.java
+index b74c8da611a..b5fbee617fb 100644
+--- a/services/core/java/com/android/server/am/ActivityRecord.java
++++ b/services/core/java/com/android/server/am/ActivityRecord.java
+@@ -1609,9 +1609,8 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
+             mStackSupervisor.mStoppingActivities.remove(this);
+             mStackSupervisor.mGoingToSleepActivities.remove(this);
+ 
+-            // If an activity is not in the paused state when becoming visible, cycle to the paused
+-            // state.
+-            if (state != PAUSED) {
++            // If the activity is stopped or stopping, cycle to the paused state.
++            if (state == STOPPED || state == STOPPING) {
+                 // An activity must be in the {@link PAUSING} state for the system to validate
+                 // the move to {@link PAUSED}.
+                 state = PAUSING;
+diff --git a/services/tests/servicestests/src/com/android/server/am/ActivityRecordTests.java b/services/tests/servicestests/src/com/android/server/am/ActivityRecordTests.java
+index b38a4136c94..9923fa86758 100644
+--- a/services/tests/servicestests/src/com/android/server/am/ActivityRecordTests.java
++++ b/services/tests/servicestests/src/com/android/server/am/ActivityRecordTests.java
+@@ -22,6 +22,7 @@ import static android.content.pm.ActivityInfo.RESIZE_MODE_RESIZEABLE;
+ import static android.content.pm.ActivityInfo.RESIZE_MODE_UNRESIZEABLE;
+ import static android.view.Display.DEFAULT_DISPLAY;
+ 
++import static com.android.server.am.ActivityStack.ActivityState.INITIALIZING;
+ import static com.android.server.am.ActivityStack.ActivityState.PAUSING;
+ import static com.android.server.am.ActivityStack.ActivityState.STOPPED;
+ import static com.android.server.am.ActivityStack.REMOVE_TASK_MODE_MOVING;
+@@ -122,7 +123,15 @@ public class ActivityRecordTests extends ActivityTestsBase {
+         mActivity.makeVisibleIfNeeded(null /* starting */);
+ 
+         assertEquals(mActivity.state, PAUSING);
++
+         assertTrue(pauseFound.value);
++
++        // Make sure that the state does not change for current non-stopping states.
++        mActivity.state = INITIALIZING;
++
++        mActivity.makeVisibleIfNeeded(null /* starting */);
++
++        assertEquals(mActivity.state, INITIALIZING);
+     }
+ 
+     @Test
+-- 
+2.17.1
+

@@ -1,0 +1,48 @@
+From 98a6ae31e5de97b38d9cd68ab4c9fda01f12b710 Mon Sep 17 00:00:00 2001
+From: Wei Wang <wvw@google.com>
+Date: Tue, 9 Oct 2018 12:42:06 -0700
+Subject: [PATCH 13/29] init: increase thermal shutdown timeout to 3s
+
+1) increase thermal shutdown timeout to 3s for process to save work
+2) respect property "ro.build.shutdown_timeout" in thermal shutdown if
+   it is set less than default time - "3s"
+
+Bug: 112432890
+Test: Build
+Change-Id: Idc2b24dd44c1fab8f9b047fd2468de2ee45ff783
+Merged-In: Idc2b24dd44c1fab8f9b047fd2468de2ee45ff783
+(cherry picked from commit b5de088262b735267288bbdd3f4430f18f281967)
+---
+ init/reboot.cpp | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/init/reboot.cpp b/init/reboot.cpp
+index 328164f78..503afdd47 100644
+--- a/init/reboot.cpp
++++ b/init/reboot.cpp
+@@ -350,15 +350,14 @@ void DoReboot(unsigned int cmd, const std::string& reason, const std::string& re
+ 
+     auto shutdown_timeout = 0ms;
+     if (!SHUTDOWN_ZERO_TIMEOUT) {
+-        if (is_thermal_shutdown) {
+-            constexpr unsigned int thermal_shutdown_timeout = 1;
+-            shutdown_timeout = std::chrono::seconds(thermal_shutdown_timeout);
+-        } else {
+-            constexpr unsigned int shutdown_timeout_default = 6;
+-            auto shutdown_timeout_property = android::base::GetUintProperty(
+-                "ro.build.shutdown_timeout", shutdown_timeout_default);
+-            shutdown_timeout = std::chrono::seconds(shutdown_timeout_property);
++        constexpr unsigned int shutdown_timeout_default = 6;
++        constexpr unsigned int max_thermal_shutdown_timeout = 3;
++        auto shutdown_timeout_final =
++            android::base::GetUintProperty("ro.build.shutdown_timeout", shutdown_timeout_default);
++        if (is_thermal_shutdown && shutdown_timeout_final > max_thermal_shutdown_timeout) {
++            shutdown_timeout_final = max_thermal_shutdown_timeout;
+         }
++        shutdown_timeout = std::chrono::seconds(shutdown_timeout_final);
+     }
+     LOG(INFO) << "Shutdown timeout: " << shutdown_timeout.count() << " ms";
+ 
+-- 
+2.17.1
+

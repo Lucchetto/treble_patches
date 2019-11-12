@@ -1,0 +1,33 @@
+From 279873fed4efaec8ebfc574f5d7c84b84b08a43e Mon Sep 17 00:00:00 2001
+From: Jayachandran C <jayachandranc@google.com>
+Date: Tue, 30 Oct 2018 15:58:08 -0700
+Subject: [PATCH 49/70] Revert "Add a new protected intent
+ ACTION_MMSSMS_DATABASE_LOST"
+
+This reverts commit a30b309f1ca33656ce833733acdff6080a6864b4.
+
+Reason for revert: b/118658558 failure on B4S4
+
+Bug: 118658558
+Bug: 115990430
+Merged-In: I61cebc2ec977139de6fc8136d0fb63f0bd47d9d4
+Change-Id: I61cebc2ec977139de6fc8136d0fb63f0bd47d9d4
+---
+ AndroidManifest.xml | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 72e3cc3a2..30760dc68 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -38,7 +38,6 @@
+     <protected-broadcast android:name="android.intent.action.ANY_DATA_STATE" />
+     <protected-broadcast android:name="android.intent.action.DATA_CONNECTION_FAILED" />
+     <protected-broadcast android:name="android.intent.action.DATA_STALL_DETECTED" />
+-    <protected-broadcast android:name="android.intent.action.MMSSMS_DATABASE_LOST" />
+     <protected-broadcast android:name="android.intent.action.SIM_STATE_CHANGED" />
+     <protected-broadcast android:name="android.intent.action.NETWORK_SET_TIME" />
+     <protected-broadcast android:name="android.intent.action.NETWORK_SET_TIMEZONE" />
+-- 
+2.17.1
+

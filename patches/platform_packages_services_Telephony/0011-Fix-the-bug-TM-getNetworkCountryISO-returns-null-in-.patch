@@ -1,0 +1,37 @@
+From 3732c2bc6d2e709c7727445059310184d5e1aeca Mon Sep 17 00:00:00 2001
+From: Malcolm Chen <refuhoo@google.com>
+Date: Wed, 18 Jul 2018 20:15:24 -0700
+Subject: [PATCH 11/70] Fix the bug TM#getNetworkCountryISO returns null in
+ SUW.
+
+TM#getNetworkCountryISO() will pass INVALID_PHONE_INDEX if no default
+SIM is ever set, and ends up having a null phone object. Then an
+empty string is returned instead of proper value from LocaleTracker#
+getCurrentCountry.
+
+Bug: 111387352
+Test: TelephonyManagerTestApp. With no SIM, call TM#getNetworkCountryISO
+and see the result.
+Change-Id: I2bf04620d58a9610b1b2ea53be193061350d0137
+---
+ src/com/android/phone/PhoneInterfaceManager.java | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/com/android/phone/PhoneInterfaceManager.java b/src/com/android/phone/PhoneInterfaceManager.java
+index 5e1fe2252..a327d8883 100755
+--- a/src/com/android/phone/PhoneInterfaceManager.java
++++ b/src/com/android/phone/PhoneInterfaceManager.java
+@@ -1716,6 +1716,10 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+         // registered cell info, so return a NULL country instead.
+         final long identity = Binder.clearCallingIdentity();
+         try {
++            if (phoneId == SubscriptionManager.INVALID_PHONE_INDEX) {
++                // Get default phone in this case.
++                phoneId = SubscriptionManager.DEFAULT_PHONE_INDEX;
++            }
+             final int subId = mSubscriptionController.getSubIdUsingPhoneId(phoneId);
+             // Todo: fix this when we can get the actual cellular network info when the device
+             // is on IWLAN.
+-- 
+2.17.1
+

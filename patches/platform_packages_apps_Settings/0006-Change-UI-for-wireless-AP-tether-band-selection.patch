@@ -1,0 +1,820 @@
+From acff57fa686d903cd9f7c253286f45e0094c7894 Mon Sep 17 00:00:00 2001
+From: Salvador Martinez <dehboxturtle@google.com>
+Date: Tue, 29 May 2018 17:53:02 -0700
+Subject: [PATCH 06/71] Change UI for wireless AP tether band selection
+
+We decided to use the list preference after all due to
+some devices not supporting various combinations of AP
+configurations. This change makes it so that there are
+three different UIs depending on the configurations
+which are supported.
+- 5.0 GHz unsupported: disable the preference and just
+set the value to 2.4 GHz
+- all supported, no dual mode: allow the user to choose
+EITHER 2.4 GHz or 5.0 GHz
+- all supported, dual mode: allow the user to choose
+2.4 GHz or BOTH 2.4 GHz & 5.0 GHz with 5.0 being
+preferred
+
+Test: atest SettingsRoboTests
+Bug: 80315296
+Change-Id: I888d35811a98b8cf0155a3cb96c42ff762763378
+Merged-In: I888d35811a98b8cf0155a3cb96c42ff762763378
+---
+ res/values/arrays.xml                         |  20 +-
+ res/values/strings.xml                        |   4 +-
+ res/xml/wifi_tether_settings.xml              |   8 +-
+ .../HotspotApBandSelectionPreference.java     | 258 ------------------
+ .../WifiTetherApBandPreferenceController.java |  66 +++--
+ .../HotspotApBandSelectionPreferenceTest.java | 158 -----------
+ ...iTetherApBandPreferenceControllerTest.java |  66 +++--
+ 7 files changed, 118 insertions(+), 462 deletions(-)
+ delete mode 100644 src/com/android/settings/widget/HotspotApBandSelectionPreference.java
+ delete mode 100644 tests/robotests/src/com/android/settings/widget/HotspotApBandSelectionPreferenceTest.java
+
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index 5f39738a8a..be7a0ca50b 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -284,17 +284,27 @@
+ 
+    <!-- Wi-Fi AP band settings.  Either Auto, 2.4GHz or 5GHz. -->
+    <!-- Note that adding/removing/moving the items will need wifi settings code change. -->
+-    <string-array name="wifi_ap_band_config_full">
++    <string-array translatable="false" name="wifi_ap_band_config_full">
++        <item>0</item>
++        <item>1</item>
++    </string-array>
++
++    <string-array translatable="false" name="wifi_ap_band_summary_full">
+         <item>@string/wifi_ap_choose_2G</item>
+         <item>@string/wifi_ap_choose_5G</item>
+     </string-array>
+ 
+-    <string-array name="wifi_ap_band_summary_full">
+-        <item>@string/wifi_ap_2G</item>
+-        <item>@string/wifi_ap_5G</item>
++    <string-array translatable="false" name="wifi_ap_band_dual_mode">
++        <item>0</item>
++        <item>-1</item>
++    </string-array>
++
++    <string-array translatable="false" name="wifi_ap_band_dual_mode_summary">
++        <item>@string/wifi_ap_choose_2G</item>
++        <item>@string/wifi_ap_prefer_5G</item>
+     </string-array>
+ 
+-    <string-array name="wifi_ap_band_config_2G_only">
++    <string-array translatable="false" name="wifi_ap_band_config_2G_only">
+         <item>@string/wifi_ap_choose_auto</item>
+         <item>@string/wifi_ap_choose_2G</item>
+     </string-array>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 1b5f12571d..30290a788c 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -1990,8 +1990,10 @@
+     <string name="wifi_ap_choose_auto">Auto</string>
+     <!-- Label for the radio button to choose wifi ap 2.4 GHz band -->
+     <string name="wifi_ap_choose_2G">2.4 GHz Band</string>
+-    <!-- Label for the radio button to choose wifi ap 5GHz band -->
++    <!-- Label for the radio button to only choose wifi ap 5GHz band -->
+     <string name="wifi_ap_choose_5G">5.0 GHz Band</string>
++    <!-- Label for the radio button to prefer 5GHz wifi ap band  [CHAR LIMIT=80]-->
++    <string name="wifi_ap_prefer_5G">5.0 GHz Band preferred</string>
+     <!-- Label for adding to the list of selected bands when 2.4 GHz is selected -->
+     <string name="wifi_ap_2G">2.4 GHz</string>
+     <!-- Label for adding to the list of selected bands when 5.0 GHz is selected -->
+diff --git a/res/xml/wifi_tether_settings.xml b/res/xml/wifi_tether_settings.xml
+index a609621e58..525870e453 100644
+--- a/res/xml/wifi_tether_settings.xml
++++ b/res/xml/wifi_tether_settings.xml
+@@ -43,11 +43,7 @@
+         android:title="@string/wifi_hotspot_auto_off_title"
+         android:summary="@string/wifi_hotspot_auto_off_summary" />
+ 
+-    <com.android.settings.widget.HotspotApBandSelectionPreference
++    <ListPreference
+         android:key="wifi_tether_network_ap_band"
+-        android:title="@string/wifi_hotspot_ap_band_title"
+-        android:dialogLayout="@layout/hotspot_ap_band_selection_dialog"
+-        android:dialogTitle="@string/wifi_hotspot_ap_band_title"
+-        android:negativeButtonText="@string/cancel"
+-        android:positiveButtonText="@string/apply" />
++        android:title="@string/wifi_hotspot_ap_band_title" />
+ </PreferenceScreen>
+\ No newline at end of file
+diff --git a/src/com/android/settings/widget/HotspotApBandSelectionPreference.java b/src/com/android/settings/widget/HotspotApBandSelectionPreference.java
+deleted file mode 100644
+index 0a2405e413..0000000000
+--- a/src/com/android/settings/widget/HotspotApBandSelectionPreference.java
++++ /dev/null
+@@ -1,258 +0,0 @@
+-/*
+- * Copyright (C) 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.settings.widget;
+-
+-import android.app.AlertDialog;
+-import android.content.Context;
+-import android.content.DialogInterface;
+-import android.net.wifi.WifiConfiguration;
+-import android.os.Bundle;
+-import android.os.Parcel;
+-import android.os.Parcelable;
+-import android.support.annotation.VisibleForTesting;
+-import android.util.AttributeSet;
+-import android.view.View;
+-import android.widget.Button;
+-import android.widget.CheckBox;
+-import android.widget.CompoundButton;
+-import android.widget.LinearLayout;
+-
+-import com.android.settings.R;
+-import com.android.settingslib.CustomDialogPreference;
+-
+-import java.util.ArrayList;
+-
+-public class HotspotApBandSelectionPreference extends CustomDialogPreference implements
+-        CompoundButton.OnCheckedChangeListener, DialogInterface.OnShowListener {
+-    private static final int UNSET = Integer.MIN_VALUE;
+-
+-    @VisibleForTesting
+-    static final String KEY_CHECKED_BANDS = "checked_bands";
+-    @VisibleForTesting
+-    static final String KEY_HOTSPOT_SUPER_STATE = "hotspot_super_state";
+-
+-    @VisibleForTesting
+-    CheckBox mBox2G;
+-    @VisibleForTesting
+-    CheckBox mBox5G;
+-    @VisibleForTesting
+-    ArrayList<Integer> mRestoredBands;
+-    @VisibleForTesting
+-    boolean mShouldRestore;
+-
+-    private String[] mBandEntries;
+-    private int mExistingConfigValue = UNSET;
+-
+-    public HotspotApBandSelectionPreference(Context context) {
+-        super(context);
+-    }
+-
+-    public HotspotApBandSelectionPreference(Context context, AttributeSet attrs) {
+-        super(context, attrs);
+-    }
+-
+-    public HotspotApBandSelectionPreference(Context context, AttributeSet attrs, int defStyleAttr) {
+-        super(context, attrs, defStyleAttr);
+-    }
+-
+-    public HotspotApBandSelectionPreference(Context context, AttributeSet attrs, int defStyleAttr,
+-            int defStyleRes) {
+-        super(context, attrs, defStyleAttr, defStyleRes);
+-    }
+-
+-    @Override
+-    protected void onRestoreInstanceState(Parcelable state) {
+-        SavedState myState = (SavedState) state;
+-
+-        super.onRestoreInstanceState(myState.getSuperState());
+-
+-        mShouldRestore = myState.shouldRestore;
+-        if (mShouldRestore) {
+-            mRestoredBands = new ArrayList<>();
+-            if (myState.enabled2G) {
+-                mRestoredBands.add(WifiConfiguration.AP_BAND_2GHZ);
+-            }
+-            if (myState.enabled5G) {
+-                mRestoredBands.add(WifiConfiguration.AP_BAND_5GHZ);
+-            }
+-        } else {
+-            mRestoredBands = null;
+-        }
+-        updatePositiveButton();
+-    }
+-
+-    @Override
+-    protected void onBindDialogView(View view) {
+-        super.onBindDialogView(view);
+-        final Context context = getContext();
+-
+-        // Register so we can adjust the buttons if needed once the dialog is available.
+-        setOnShowListener(this);
+-
+-        mBandEntries = context.getResources().getStringArray(R.array.wifi_ap_band_config_full);
+-        // add a checkbox for every band entry.
+-        addApBandViews((LinearLayout) view);
+-        // try to update the button just in case we already missed the onShow call.
+-        updatePositiveButton();
+-        // clear any saved state so it doesn't leak across multiple rotations/dialog closings
+-        mRestoredBands = null;
+-        mShouldRestore = false;
+-    }
+-
+-    @Override
+-    protected Parcelable onSaveInstanceState() {
+-        final Parcelable superState = super.onSaveInstanceState();
+-
+-        SavedState myState = new SavedState(superState);
+-        myState.shouldRestore = getDialog() != null;
+-        myState.enabled2G = mBox2G != null && mBox2G.isChecked();
+-        myState.enabled5G = mBox5G != null && mBox5G.isChecked();
+-        return myState;
+-    }
+-
+-    @Override
+-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+-        if (!(buttonView instanceof CheckBox)) {
+-            return;
+-        }
+-        updatePositiveButton();
+-    }
+-
+-    @Override
+-    protected void onClick(DialogInterface dialog, int which) {
+-        // we only want to persist our enabled bands if apply is clicked
+-        if (which == DialogInterface.BUTTON_POSITIVE) {
+-            if (mBox2G.isChecked() || mBox5G.isChecked()) {
+-                int wifiBand = getWifiBand();
+-                mExistingConfigValue = wifiBand;
+-                callChangeListener(wifiBand);
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Used to set the band selection for the preference if one already exists
+-     * @param band the band to set it to from {@link WifiConfiguration}
+-     */
+-    public void setExistingConfigValue(int band) {
+-        mExistingConfigValue = band;
+-    }
+-
+-    private void addApBandViews(LinearLayout view) {
+-        mBox2G = view.findViewById(R.id.box_2g);
+-        mBox2G.setText(mBandEntries[WifiConfiguration.AP_BAND_2GHZ]);
+-        mBox2G.setChecked(restoreBandIfNeeded(WifiConfiguration.AP_BAND_2GHZ));
+-        mBox2G.setOnCheckedChangeListener(this);
+-
+-        mBox5G = view.findViewById(R.id.box_5g);
+-        mBox5G.setText(mBandEntries[WifiConfiguration.AP_BAND_5GHZ]);
+-        mBox5G.setChecked(restoreBandIfNeeded(WifiConfiguration.AP_BAND_5GHZ));
+-        mBox5G.setOnCheckedChangeListener(this);
+-    }
+-
+-    private boolean restoreBandIfNeeded(int band) {
+-        // Only use the provided config if we aren't restoring, restore if state available
+-        return (isBandPreviouslySelected(band) && !mShouldRestore)
+-                || (mShouldRestore && mRestoredBands.contains(band));
+-    }
+-
+-    private void updatePositiveButton() {
+-        AlertDialog dialog = (AlertDialog) getDialog();
+-        Button button = dialog == null ? null : dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+-        if (button != null && mBox5G != null && mBox2G != null) {
+-            button.setEnabled(mBox2G.isChecked() || mBox5G.isChecked());
+-        }
+-    }
+-
+-    @VisibleForTesting
+-    int getWifiBand() {
+-        final boolean checked_2g = mBox2G.isChecked();
+-        final boolean checked_5g = mBox5G.isChecked();
+-        if (checked_2g && checked_5g) {
+-            return WifiConfiguration.AP_BAND_ANY;
+-        } else if (checked_2g && !checked_5g) {
+-            return WifiConfiguration.AP_BAND_2GHZ;
+-        } else if (checked_5g && !checked_2g) {
+-            return WifiConfiguration.AP_BAND_5GHZ;
+-        } else {
+-            throw new IllegalStateException("Wifi Config only supports selecting one or all bands");
+-        }
+-    }
+-
+-    private boolean isBandPreviouslySelected(int bandIndex) {
+-        switch(mExistingConfigValue) {
+-            case WifiConfiguration.AP_BAND_ANY:
+-                return true;
+-            case WifiConfiguration.AP_BAND_2GHZ:
+-                return bandIndex == 0;
+-            case WifiConfiguration.AP_BAND_5GHZ:
+-                return bandIndex == 1;
+-            case UNSET:
+-            default:
+-                return false;
+-        }
+-    }
+-
+-    @Override
+-    public void onShow(DialogInterface dialog) {
+-        updatePositiveButton();
+-    }
+-
+-    private static class SavedState extends BaseSavedState {
+-        boolean shouldRestore;
+-        boolean enabled2G;
+-        boolean enabled5G;
+-
+-        public SavedState(Parcelable source) {
+-            super(source);
+-        }
+-
+-        private SavedState(Parcel in) {
+-            super(in);
+-            shouldRestore =  in.readByte() == 1;
+-            enabled2G = in.readByte() == 1;
+-            enabled5G = in.readByte() == 1;
+-        }
+-
+-        @Override
+-        public void writeToParcel(Parcel dest, int flags) {
+-            super.writeToParcel(dest, flags);
+-            dest.writeByte((byte) (shouldRestore ? 1 : 0));
+-            dest.writeByte((byte) (enabled2G ? 1: 0));
+-            dest.writeByte((byte) (enabled5G ? 1 : 0));
+-        }
+-
+-        @Override
+-        public String toString() {
+-            return "HotspotApBandSelectionPreference.SavedState{"
+-                    + Integer.toHexString(System.identityHashCode(this))
+-                    + " shouldRestore=" + shouldRestore
+-                    + " enabled2G=" + enabled2G
+-                    + " enabled5G=" + enabled5G + "}";
+-        }
+-
+-        public static final Parcelable.Creator<SavedState> CREATOR
+-                = new Parcelable.Creator<SavedState>() {
+-            public SavedState createFromParcel(Parcel in) {
+-                return new SavedState(in);
+-            }
+-
+-            public SavedState[] newArray(int size) {
+-                return new SavedState[size];
+-            }
+-        };
+-    }
+-}
+diff --git a/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceController.java b/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceController.java
+index b107777f67..2624c73632 100644
+--- a/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceController.java
++++ b/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceController.java
+@@ -16,36 +16,31 @@
+ 
+ package com.android.settings.wifi.tether;
+ 
+-import static android.net.wifi.WifiConfiguration.AP_BAND_2GHZ;
+-import static android.net.wifi.WifiConfiguration.AP_BAND_5GHZ;
+-
+ import android.content.Context;
+ import android.content.res.Resources;
+-import android.icu.text.ListFormatter;
+ import android.net.wifi.WifiConfiguration;
++import android.support.annotation.VisibleForTesting;
++import android.support.v7.preference.ListPreference;
+ import android.support.v7.preference.Preference;
+ import android.util.Log;
+ 
+ import com.android.settings.R;
+-import com.android.settings.widget.HotspotApBandSelectionPreference;
+ 
+ public class WifiTetherApBandPreferenceController extends WifiTetherBasePreferenceController {
+ 
+     private static final String TAG = "WifiTetherApBandPref";
+     private static final String PREF_KEY = "wifi_tether_network_ap_band";
+-    public static final String[] BAND_VALUES =
+-            {String.valueOf(AP_BAND_2GHZ), String.valueOf(AP_BAND_5GHZ)};
+ 
+-    private final String[] mBandEntries;
+-    private final String[] mBandSummaries;
++    private String[] mBandEntries;
++    private String[] mBandSummaries;
+     private int mBandIndex;
++    private boolean isDualMode;
+ 
+     public WifiTetherApBandPreferenceController(Context context,
+             OnTetherConfigUpdateListener listener) {
+         super(context, listener);
+-        Resources res = mContext.getResources();
+-        mBandEntries = res.getStringArray(R.array.wifi_ap_band_config_full);
+-        mBandSummaries = res.getStringArray(R.array.wifi_ap_band_summary_full);
++        isDualMode = mWifiManager.isDualModeSupported();
++        updatePreferenceEntries();
+     }
+ 
+     @Override
+@@ -55,7 +50,7 @@ public class WifiTetherApBandPreferenceController extends WifiTetherBasePreferen
+             mBandIndex = 0;
+             Log.d(TAG, "Updating band index to 0 because no config");
+         } else if (is5GhzBandSupported()) {
+-            mBandIndex = config.apBand;
++            mBandIndex = validateSelection(config.apBand);
+             Log.d(TAG, "Updating band index to " + mBandIndex);
+         } else {
+             config.apBand = 0;
+@@ -63,21 +58,23 @@ public class WifiTetherApBandPreferenceController extends WifiTetherBasePreferen
+             mBandIndex = config.apBand;
+             Log.d(TAG, "5Ghz not supported, updating band index to " + mBandIndex);
+         }
+-        HotspotApBandSelectionPreference preference =
+-                (HotspotApBandSelectionPreference) mPreference;
++        ListPreference preference =
++                (ListPreference) mPreference;
++        preference.setEntries(mBandSummaries);
++        preference.setEntryValues(mBandEntries);
+ 
+         if (!is5GhzBandSupported()) {
+             preference.setEnabled(false);
+             preference.setSummary(R.string.wifi_ap_choose_2G);
+         } else {
+-            preference.setExistingConfigValue(config.apBand);
++            preference.setValue(Integer.toString(config.apBand));
+             preference.setSummary(getConfigSummary());
+         }
+     }
+ 
+     String getConfigSummary() {
+         if (mBandIndex == WifiConfiguration.AP_BAND_ANY) {
+-            return ListFormatter.getInstance().format((Object[]) mBandSummaries);
++           return mContext.getString(R.string.wifi_ap_prefer_5G);
+         }
+         return mBandSummaries[mBandIndex];
+     }
+@@ -89,13 +86,46 @@ public class WifiTetherApBandPreferenceController extends WifiTetherBasePreferen
+ 
+     @Override
+     public boolean onPreferenceChange(Preference preference, Object newValue) {
+-        mBandIndex = (Integer) newValue;
++        mBandIndex = validateSelection(Integer.parseInt((String) newValue));
+         Log.d(TAG, "Band preference changed, updating band index to " + mBandIndex);
+         preference.setSummary(getConfigSummary());
+         mListener.onTetherConfigUpdated();
+         return true;
+     }
+ 
++    private int validateSelection(int band) {
++        // Reset the band to 2.4 GHz if we get a weird config back to avoid a crash.
++        final boolean isDualMode = mWifiManager.isDualModeSupported();
++
++        // unsupported states:
++        // 1: no dual mode means we can't have AP_BAND_ANY - default to 5GHZ
++        // 2: no 5 GHZ support means we can't have AP_BAND_5GHZ - default to 2GHZ
++        // 3: With Dual mode support we can't have AP_BAND_5GHZ - default to ANY
++        if (!isDualMode && WifiConfiguration.AP_BAND_ANY == band) {
++            return WifiConfiguration.AP_BAND_5GHZ;
++        } else if (!mWifiManager.is5GHzBandSupported() && WifiConfiguration.AP_BAND_5GHZ == band) {
++            return WifiConfiguration.AP_BAND_2GHZ;
++        } else if (isDualMode && WifiConfiguration.AP_BAND_5GHZ == band) {
++            return WifiConfiguration.AP_BAND_ANY;
++        }
++
++        return band;
++    }
++
++    @VisibleForTesting
++    void updatePreferenceEntries() {
++        Resources res = mContext.getResources();
++        int entriesRes = R.array.wifi_ap_band_config_full;
++        int summariesRes = R.array.wifi_ap_band_summary_full;
++        // change the list options if this is a dual mode device
++        if (isDualMode) {
++            entriesRes = R.array.wifi_ap_band_dual_mode;
++            summariesRes = R.array.wifi_ap_band_dual_mode_summary;
++        }
++        mBandEntries = res.getStringArray(entriesRes);
++        mBandSummaries = res.getStringArray(summariesRes);
++    }
++
+     private boolean is5GhzBandSupported() {
+         final String countryCode = mWifiManager.getCountryCode();
+         if (!mWifiManager.isDualBandSupported() || countryCode == null) {
+diff --git a/tests/robotests/src/com/android/settings/widget/HotspotApBandSelectionPreferenceTest.java b/tests/robotests/src/com/android/settings/widget/HotspotApBandSelectionPreferenceTest.java
+deleted file mode 100644
+index 0ffda3baa9..0000000000
+--- a/tests/robotests/src/com/android/settings/widget/HotspotApBandSelectionPreferenceTest.java
++++ /dev/null
+@@ -1,158 +0,0 @@
+-/*
+- * Copyright (C) 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.settings.widget;
+-
+-import static com.android.settingslib.CustomDialogPreference.CustomPreferenceDialogFragment;
+-
+-import static com.google.common.truth.Truth.assertThat;
+-
+-import static org.mockito.ArgumentMatchers.anyInt;
+-import static org.mockito.Mockito.mock;
+-import static org.mockito.Mockito.never;
+-import static org.mockito.Mockito.spy;
+-import static org.mockito.Mockito.times;
+-import static org.mockito.Mockito.verify;
+-import static org.mockito.Mockito.when;
+-
+-import android.app.AlertDialog;
+-import android.content.Context;
+-import android.net.wifi.WifiConfiguration;
+-import android.os.Bundle;
+-import android.os.Parcelable;
+-import android.view.LayoutInflater;
+-import android.view.View;
+-import android.widget.Button;
+-import android.widget.CheckBox;
+-import android.widget.LinearLayout;
+-
+-import com.android.settings.R;
+-import com.android.settings.testutils.SettingsRobolectricTestRunner;
+-
+-import org.junit.Assert;
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.junit.runner.RunWith;
+-import org.robolectric.RuntimeEnvironment;
+-import org.robolectric.util.ReflectionHelpers;
+-
+-import java.util.List;
+-
+-@RunWith(SettingsRobolectricTestRunner.class)
+-public class HotspotApBandSelectionPreferenceTest {
+-    private HotspotApBandSelectionPreference mPreference;
+-    private Context mContext;
+-    private Button mSaveButton;
+-    private View mLayout;
+-
+-    @Before
+-    public void setUp() {
+-        mContext = RuntimeEnvironment.application;
+-        mSaveButton = spy(new Button(mContext));
+-
+-        final CustomPreferenceDialogFragment fragment = mock(CustomPreferenceDialogFragment.class);
+-        final AlertDialog dialog = mock(AlertDialog.class);
+-        when(fragment.getDialog()).thenReturn(dialog);
+-        when(dialog.getButton(anyInt())).thenReturn(mSaveButton);
+-
+-        mPreference = new HotspotApBandSelectionPreference(mContext);
+-        ReflectionHelpers.setField(mPreference, "mFragment", fragment);
+-
+-        final LayoutInflater inflater = LayoutInflater.from(mContext);
+-        mLayout = inflater.inflate(R.layout.hotspot_ap_band_selection_dialog,
+-                new LinearLayout(mContext), false);
+-    }
+-
+-    @Test
+-    public void getWifiBand_updatesBandPresetConfigProvided() {
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_ANY);
+-        mPreference.onBindDialogView(mLayout);
+-
+-        // check that the boxes are set correctly when a pre-existing config is set
+-        assertThat(mPreference.getWifiBand()).isEqualTo(WifiConfiguration.AP_BAND_ANY);
+-    }
+-
+-    @Test
+-    public void getWifiBand_updatesBandWhenBoxesToggled() {
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_ANY);
+-        mPreference.onBindDialogView(mLayout);
+-
+-        assertThat(mPreference.getWifiBand()).isEqualTo(WifiConfiguration.AP_BAND_ANY);
+-
+-        // make sure we have the expected box then toggle it
+-        mPreference.mBox2G.setChecked(false);
+-
+-        // check that band is updated
+-        assertThat(mPreference.getWifiBand()).isEqualTo(WifiConfiguration.AP_BAND_5GHZ);
+-    }
+-
+-    @Test
+-    public void onSaveInstanceState_skipWhenDialogGone() {
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_2GHZ);
+-        mPreference.onBindDialogView(mLayout);
+-        // remove the fragment to make the dialog unavailable
+-        ReflectionHelpers.setField(mPreference, "mFragment", null);
+-
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_ANY);
+-        mPreference.onBindDialogView(mLayout);
+-
+-        // state should only be saved when the dialog is available
+-        Parcelable parcelable = mPreference.onSaveInstanceState();
+-        mPreference.onRestoreInstanceState(parcelable);
+-        assertThat(mPreference.mShouldRestore).isFalse();
+-    }
+-
+-    @Test
+-    public void onSaveInstanceState_doesNotCrashWhenViewGone() {
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_2GHZ);
+-        mPreference.onBindDialogView(mLayout);
+-        // When the device dozes the view and dialog can become null
+-        mPreference.mBox5G = null;
+-        mPreference.mBox2G = null;
+-        ReflectionHelpers.setField(mPreference, "mFragment", null);
+-
+-        // make sure it does not crash and state is not restored
+-        Parcelable parcelable = mPreference.onSaveInstanceState();
+-        mPreference.onRestoreInstanceState(parcelable);
+-        assertThat(mPreference.mShouldRestore).isFalse();
+-    }
+-
+-    @Test
+-    public void onSaveInstanceState_presentWhenDialogPresent() {
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_2GHZ);
+-        mPreference.onBindDialogView(mLayout);
+-
+-        Parcelable parcelable = mPreference.onSaveInstanceState();
+-        mPreference.onRestoreInstanceState(parcelable);
+-        assertThat(mPreference.mShouldRestore).isTrue();
+-    }
+-
+-    @Test
+-    public void positiveButton_updatedCorrectly() {
+-        mPreference.setExistingConfigValue(WifiConfiguration.AP_BAND_ANY);
+-        mPreference.onBindDialogView(mLayout);
+-
+-        // button is enabled whole time so far since we have a pre-existing selection
+-        verify(mSaveButton, never()).setEnabled(false);
+-
+-        // clear all boxes and make sure it stays enabled until empty
+-        mPreference.mBox2G.setChecked(false);
+-        mPreference.mBox5G.setChecked(false);
+-
+-        // button should be disabled now
+-        verify(mSaveButton, times(1)).setEnabled(false);
+-    }
+-}
+diff --git a/tests/robotests/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceControllerTest.java b/tests/robotests/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceControllerTest.java
+index d9c867cf2a..8df62c3c02 100644
+--- a/tests/robotests/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceControllerTest.java
++++ b/tests/robotests/src/com/android/settings/wifi/tether/WifiTetherApBandPreferenceControllerTest.java
+@@ -18,6 +18,7 @@ package com.android.settings.wifi.tether;
+ 
+ import static com.google.common.truth.Truth.assertThat;
+ import static org.mockito.Matchers.anyString;
++import static org.mockito.Mockito.spy;
+ import static org.mockito.Mockito.times;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+@@ -26,16 +27,15 @@ import android.content.Context;
+ import android.net.ConnectivityManager;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiManager;
++import android.support.v7.preference.ListPreference;
+ import android.support.v7.preference.PreferenceScreen;
+ 
+ import com.android.settings.R;
+ import com.android.settings.testutils.SettingsRobolectricTestRunner;
+-import com.android.settings.widget.HotspotApBandSelectionPreference;
+ 
+ import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+-import org.mockito.Answers;
+ import org.mockito.Mock;
+ import org.mockito.MockitoAnnotations;
+ import org.robolectric.RuntimeEnvironment;
+@@ -43,8 +43,9 @@ import org.robolectric.RuntimeEnvironment;
+ @RunWith(SettingsRobolectricTestRunner.class)
+ public class WifiTetherApBandPreferenceControllerTest {
+ 
+-    private static final String ALL_BANDS = "2.4 GHz and 5.0 GHz";
+-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
++    private static final String ALL_BANDS = "5.0 GHz Band preferred";
++    private static final String TWO_GHZ_STRING = "2.4 GHz Band";
++    private static final String FIVE_GHZ_STRING = "5.0 GHz Band";
+     private Context mContext;
+     @Mock
+     private ConnectivityManager mConnectivityManager;
+@@ -56,12 +57,13 @@ public class WifiTetherApBandPreferenceControllerTest {
+     private PreferenceScreen mScreen;
+ 
+     private WifiTetherApBandPreferenceController mController;
+-    private HotspotApBandSelectionPreference mPreference;
++    private ListPreference mPreference;
+ 
+     @Before
+     public void setUp() {
+         MockitoAnnotations.initMocks(this);
+-        mPreference = new HotspotApBandSelectionPreference(RuntimeEnvironment.application);
++        mContext = spy(RuntimeEnvironment.application);
++        mPreference = new ListPreference(RuntimeEnvironment.application);
+         when(mContext.getSystemService(Context.WIFI_SERVICE)).thenReturn(mWifiManager);
+         when(mContext.getSystemService(Context.CONNECTIVITY_SERVICE))
+                 .thenReturn(mConnectivityManager);
+@@ -71,6 +73,7 @@ public class WifiTetherApBandPreferenceControllerTest {
+         WifiConfiguration config = new WifiConfiguration();
+         config.apBand = WifiConfiguration.AP_BAND_ANY;
+         when(mWifiManager.getWifiApConfiguration()).thenReturn(new WifiConfiguration());
++        when(mWifiManager.isDualModeSupported()).thenReturn(false);
+ 
+         mController = new WifiTetherApBandPreferenceController(mContext, mListener);
+     }
+@@ -79,9 +82,10 @@ public class WifiTetherApBandPreferenceControllerTest {
+     public void display_5GhzSupported_shouldDisplayFullList() {
+         when(mWifiManager.getCountryCode()).thenReturn("US");
+         when(mWifiManager.isDualBandSupported()).thenReturn(true);
++        when(mWifiManager.isDualModeSupported()).thenReturn(true);
+ 
+         mController.displayPreference(mScreen);
+-        mController.onPreferenceChange(mPreference, -1);
++        mController.onPreferenceChange(mPreference, "-1");
+ 
+         assertThat(mPreference.getSummary()).isEqualTo(ALL_BANDS);
+     }
+@@ -110,24 +114,54 @@ public class WifiTetherApBandPreferenceControllerTest {
+     }
+ 
+     @Test
+-    public void changePreference_shouldUpdateValue() {
++    public void changePreference_noDualModeWith5G_shouldUpdateValue() {
+         when(mWifiManager.is5GHzBandSupported()).thenReturn(true);
+ 
+         mController.displayPreference(mScreen);
+ 
++        // -1 is WifiConfiguration.AP_BAND_ANY, for 'Auto' option. This should be prevented from
++        // being set since it is invalid for this configuration
++        mController.onPreferenceChange(mPreference, "-1");
++        assertThat(mController.getBandIndex()).isEqualTo(1);
++        assertThat(mPreference.getSummary()).isEqualTo(FIVE_GHZ_STRING);
++        verify(mListener, times(1)).onTetherConfigUpdated();
++
++        // set to 5 Ghz
++        mController.onPreferenceChange(mPreference, "1");
++        assertThat(mController.getBandIndex()).isEqualTo(1);
++        assertThat(mPreference.getSummary()).isEqualTo(FIVE_GHZ_STRING);
++        verify(mListener, times(2)).onTetherConfigUpdated();
++
++        // set to 2 Ghz
++        mController.onPreferenceChange(mPreference, "0");
++        assertThat(mController.getBandIndex()).isEqualTo(0);
++        assertThat(mPreference.getSummary()).isEqualTo(TWO_GHZ_STRING);
++        verify(mListener, times(3)).onTetherConfigUpdated();
++    }
++
++    @Test
++    public void changePreference_dualModeWith5G_shouldUpdateValue() {
++        when(mWifiManager.is5GHzBandSupported()).thenReturn(true);
++        when(mWifiManager.isDualModeSupported()).thenReturn(true);
++
++        mController.displayPreference(mScreen);
++
+         // -1 is WifiConfiguration.AP_BAND_ANY, for 'Auto' option.
+-        mController.onPreferenceChange(mPreference, -1);
++        mController.onPreferenceChange(mPreference, "-1");
+         assertThat(mController.getBandIndex()).isEqualTo(-1);
+         assertThat(mPreference.getSummary()).isEqualTo(ALL_BANDS);
++        verify(mListener, times(1)).onTetherConfigUpdated();
+ 
+-        mController.onPreferenceChange(mPreference, 1);
+-        assertThat(mController.getBandIndex()).isEqualTo(1);
+-        assertThat(mPreference.getSummary()).isEqualTo("5.0 GHz");
++        // should revert to the default for 5 Ghz only since this is not supported with this config
++        mController.onPreferenceChange(mPreference, "1");
++        assertThat(mController.getBandIndex()).isEqualTo(-1);
++        assertThat(mPreference.getSummary()).isEqualTo(ALL_BANDS);
++        verify(mListener, times(2)).onTetherConfigUpdated();
+ 
+-        mController.onPreferenceChange(mPreference, 0);
++        // set to 2 Ghz
++        mController.onPreferenceChange(mPreference, "0");
+         assertThat(mController.getBandIndex()).isEqualTo(0);
+-        assertThat(mPreference.getSummary()).isEqualTo("2.4 GHz");
+-
++        assertThat(mPreference.getSummary()).isEqualTo(TWO_GHZ_STRING);
+         verify(mListener, times(3)).onTetherConfigUpdated();
+     }
+ 
+@@ -136,7 +170,7 @@ public class WifiTetherApBandPreferenceControllerTest {
+         // Set controller band index to 1 and verify is set.
+         when(mWifiManager.is5GHzBandSupported()).thenReturn(true);
+         mController.displayPreference(mScreen);
+-        mController.onPreferenceChange(mPreference, 1);
++        mController.onPreferenceChange(mPreference, "1");
+         assertThat(mController.getBandIndex()).isEqualTo(1);
+ 
+         // Disable 5Ghz band
+-- 
+2.17.1
+

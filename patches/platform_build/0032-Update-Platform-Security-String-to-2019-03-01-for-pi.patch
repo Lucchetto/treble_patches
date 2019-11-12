@@ -1,0 +1,26 @@
+From a1165c3723c9d58afc83202ff63c6f691737effb Mon Sep 17 00:00:00 2001
+From: Adam Seaton <aseaton@google.com>
+Date: Tue, 8 Jan 2019 13:59:01 -0800
+Subject: [PATCH 32/81] Update Platform Security String to 2019-03-01 for
+ pi-dev Bug:122541777
+
+---
+ core/version_defaults.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/version_defaults.mk b/core/version_defaults.mk
+index 57e5492f9..b64dd1b7b 100644
+--- a/core/version_defaults.mk
++++ b/core/version_defaults.mk
+@@ -231,7 +231,7 @@ ifndef PLATFORM_SECURITY_PATCH
+     #  It must be of the form "YYYY-MM-DD" on production devices.
+     #  It must match one of the Android Security Patch Level strings of the Public Security Bulletins.
+     #  If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
+-      PLATFORM_SECURITY_PATCH := 2019-02-05
++      PLATFORM_SECURITY_PATCH := 2019-03-01
+ endif
+ 
+ ifndef PLATFORM_SECURITY_PATCH_TIMESTAMP
+-- 
+2.17.1
+

@@ -1,0 +1,157 @@
+From fa3961b43b4b671531518350bbf6bf6152c551a2 Mon Sep 17 00:00:00 2001
+From: Cassie <xih@google.com>
+Date: Thu, 20 Sep 2018 15:47:33 -0700
+Subject: [PATCH 58/70] Clean Cherrypick - Displaying '4G' instead of 'LTE'
+ when the config_show4GForLTE enabled.
+
+Bug: 111732788
+Test: Manual test
+
+Change-Id: I5ff3a0aa452e32a1de508cb078c3b6eb16a66075
+Merged-In: I5ff3a0aa452e32a1de508cb078c3b6eb16a66075
+---
+ res/drawable/signal_strength_4g.xml           | 28 +++++++++++++++++++
+ .../phone/NetworkOperatorPreference.java      |  7 +++--
+ .../android/phone/NetworkSelectSetting.java   | 21 ++++++++++----
+ 3 files changed, 49 insertions(+), 7 deletions(-)
+ create mode 100644 res/drawable/signal_strength_4g.xml
+
+diff --git a/res/drawable/signal_strength_4g.xml b/res/drawable/signal_strength_4g.xml
+new file mode 100644
+index 000000000..906209657
+--- /dev/null
++++ b/res/drawable/signal_strength_4g.xml
+@@ -0,0 +1,28 @@
++<!--
++Copyright (C) 2014 The Android Open Source Project
++
++   Licensed under the Apache License, Version 2.0 (the "License");
++    you may not use this file except in compliance with the License.
++    You may obtain a copy of the License at
++
++         http://www.apache.org/licenses/LICENSE-2.0
++
++    Unless required by applicable law or agreed to in writing, software
++    distributed under the License is distributed on an "AS IS" BASIS,
++    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++    See the License for the specific language governing permissions and
++    limitations under the License.
++-->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="9.208dp"
++    android:height="17dp"
++    android:viewportWidth="13.0"
++    android:viewportHeight="24.0"
++    android:tint="?android:attr/colorControlNormal">
++    <path
++        android:fillColor="#FFFFFFFF"
++        android:pathData="M4.600000,7.800000l0.700000,0.000000l0.000000,1.300000L4.600000,9.100000L4.600000,11.000000L3.000000,11.000000L3.000000,9.200000L0.100000,9.200000L0.000000,8.100000L3.000000,2.500000l1.700000,0.000000L4.700000,7.800000zM1.600000,7.800000L3.000000,7.800000l0.000000,-3.000000L2.900000,5.000000L1.600000,7.800000z"/>
++    <path
++        android:fillColor="#FFFFFFFF"
++        android:pathData="M11.900000,9.900000c-0.200000,0.400000 -0.600000,0.700000 -1.000000,0.900000s-1.000000,0.400000 -1.800000,0.400000c-0.900000,0.000000 -1.700000,-0.300000 -2.200000,-0.800000S6.100000,9.000000 6.100000,7.900000L6.100000,5.600000c0.000000,-1.100000 0.300000,-1.900000 0.800000,-2.400000S8.100000,2.400000 9.000000,2.400000c1.000000,0.000000 1.700000,0.200000 2.100000,0.700000s0.700000,1.200000 0.700000,2.100000l-1.600000,0.000000c0.000000,-0.500000 -0.100000,-0.900000 -0.200000,-1.100000S9.500000,3.700000 9.000000,3.700000c-0.400000,0.000000 -0.700000,0.200000 -0.900000,0.500000S7.700000,5.000000 7.700000,5.600000l0.000000,2.300000c0.000000,0.700000 0.100000,1.100000 0.300000,1.400000s0.600000,0.500000 1.000000,0.500000c0.300000,0.000000 0.600000,0.000000 0.700000,-0.100000s0.300000,-0.200000 0.400000,-0.300000L10.099999,7.800000L9.000000,7.800000L9.000000,6.600000l2.900000,0.000000L11.900000,9.900000z"/>
++</vector>
+\ No newline at end of file
+diff --git a/src/com/android/phone/NetworkOperatorPreference.java b/src/com/android/phone/NetworkOperatorPreference.java
+index 85adf1634..26c3fdee0 100644
+--- a/src/com/android/phone/NetworkOperatorPreference.java
++++ b/src/com/android/phone/NetworkOperatorPreference.java
+@@ -44,16 +44,18 @@ public class NetworkOperatorPreference extends Preference {
+     private CellInfo mCellInfo;
+     private List<String> mForbiddenPlmns;
+     private int mLevel = -1;
++    private boolean mShow4GForLTE;
+ 
+     // The following constants are used to draw signal icon.
+     private static final Drawable EMPTY_DRAWABLE = new ColorDrawable(Color.TRANSPARENT);
+     private static final int NO_CELL_DATA_CONNECTED_ICON = 0;
+ 
+     public NetworkOperatorPreference(
+-            CellInfo cellinfo, Context context, List<String> forbiddenPlmns) {
++            CellInfo cellinfo, Context context, List<String> forbiddenPlmns, boolean show4GForLTE) {
+         super(context);
+         mCellInfo = cellinfo;
+         mForbiddenPlmns = forbiddenPlmns;
++        mShow4GForLTE = show4GForLTE;
+         refresh();
+     }
+ 
+@@ -90,7 +92,8 @@ public class NetworkOperatorPreference extends Preference {
+         if (networkType == TelephonyManager.NETWORK_TYPE_CDMA) {
+             return R.drawable.signal_strength_1x;
+         } else if (networkType == TelephonyManager.NETWORK_TYPE_LTE) {
+-            return R.drawable.signal_strength_lte;
++            return mShow4GForLTE
++                ? R.drawable.signal_strength_4g : R.drawable.signal_strength_lte;
+         } else if (networkType == TelephonyManager.NETWORK_TYPE_UMTS) {
+             return R.drawable.signal_strength_3g;
+         } else if (networkType == TelephonyManager.NETWORK_TYPE_GSM) {
+diff --git a/src/com/android/phone/NetworkSelectSetting.java b/src/com/android/phone/NetworkSelectSetting.java
+index 0655a2ee9..d1bd9955a 100644
+--- a/src/com/android/phone/NetworkSelectSetting.java
++++ b/src/com/android/phone/NetworkSelectSetting.java
+@@ -21,6 +21,7 @@ import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.ServiceConnection;
++import android.content.pm.PackageManager;
+ import android.os.AsyncResult;
+ import android.os.AsyncTask;
+ import android.os.Bundle;
+@@ -87,6 +88,7 @@ public class NetworkSelectSetting extends PreferenceFragment {
+     private TelephonyManager mTelephonyManager;
+     private NetworkOperators mNetworkOperators;
+     private List<String> mForbiddenPlmns;
++    private boolean mShow4GForLTE;
+ 
+     private final Runnable mUpdateNetworkOperatorsRunnable = () -> {
+         updateNetworkOperatorsPreferenceCategory();
+@@ -121,6 +123,15 @@ public class NetworkSelectSetting extends PreferenceFragment {
+         mTelephonyManager = (TelephonyManager)
+                 getContext().getSystemService(Context.TELEPHONY_SERVICE);
+         mNetworkOperators = new NetworkOperators(getContext());
++        try {
++            Context con = getActivity().createPackageContext("com.android.systemui", 0);
++            int id = con.getResources().getIdentifier("config_show4GForLTE",
++                    "bool", "com.android.systemui");
++            mShow4GForLTE = con.getResources().getBoolean(id);
++        } catch (PackageManager.NameNotFoundException e) {
++            Log.e(TAG, "NameNotFoundException for show4GFotLTE");
++            mShow4GForLTE = false;
++        }
+         setRetainInstance(true);
+     }
+ 
+@@ -396,7 +407,7 @@ public class NetworkSelectSetting extends PreferenceFragment {
+         for (int index = 0; index < mCellInfoList.size(); index++) {
+             if (!mCellInfoList.get(index).isRegistered()) {
+                 NetworkOperatorPreference pref = new NetworkOperatorPreference(
+-                        mCellInfoList.get(index), getContext(), mForbiddenPlmns);
++                        mCellInfoList.get(index), getContext(), mForbiddenPlmns, mShow4GForLTE);
+                 pref.setKey(CellInfoUtil.getNetworkTitle(mCellInfoList.get(index)));
+                 pref.setOrder(index);
+                 mNetworkOperatorsPreferences.addPreference(pref);
+@@ -434,8 +445,8 @@ public class NetworkSelectSetting extends PreferenceFragment {
+             CellInfo cellInfo = CellInfoUtil.wrapCellInfoWithCellIdentity(cellIdentity);
+             if (cellInfo != null) {
+                 if (DBG) logd("Currently registered cell: " + cellInfo.toString());
+-                NetworkOperatorPreference pref =
+-                        new NetworkOperatorPreference(cellInfo, getContext(), mForbiddenPlmns);
++                NetworkOperatorPreference pref = new NetworkOperatorPreference(
++                        cellInfo, getContext(), mForbiddenPlmns, mShow4GForLTE);
+                 pref.setTitle(mTelephonyManager.getNetworkOperatorName());
+                 pref.setSummary(R.string.network_connected);
+                 // Update the signal strength icon, since the default signalStrength value would be
+@@ -515,8 +526,8 @@ public class NetworkSelectSetting extends PreferenceFragment {
+         if (DBG) logd("addConnectedNetworkOperatorPreference");
+         // Remove the current ConnectedNetworkOperatorsPreference
+         removeConnectedNetworkOperatorPreference();
+-        final NetworkOperatorPreference pref =
+-                new NetworkOperatorPreference(cellInfo, getContext(), mForbiddenPlmns);
++        final NetworkOperatorPreference pref = new NetworkOperatorPreference(
++                cellInfo, getContext(), mForbiddenPlmns, mShow4GForLTE);
+         pref.setSummary(R.string.network_connected);
+         mConnectedNetworkOperatorsPreference.addPreference(pref);
+         PreferenceScreen preferenceScreen = getPreferenceScreen();
+-- 
+2.17.1
+

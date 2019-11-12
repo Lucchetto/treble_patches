@@ -1,0 +1,42 @@
+From 1d25a97badecdeaae9543f9f2e5c9db93a768479 Mon Sep 17 00:00:00 2001
+From: andychou <andychou@google.com>
+Date: Fri, 7 Dec 2018 12:46:41 +0800
+Subject: [PATCH 23/39] Allow override own number as voicemail number for GSM
+
+KEY_CONFIG_TELEPHONY_USE_OWN_NUMBER_FOR_VOICEMAIL_BOOL only take effect
+for CDMA.
+Also let it be able to take effect for GSM condition
+
+Bug: b/120452825
+Test: Build pass
+Change-Id: Ib2727c8eb62ad695b8a915d3e420b526cb436acb
+Merged-In: I0cd60dec4edf1cfb6805d201eb0dcbfbe098dfbd
+---
+ src/java/com/android/internal/telephony/GsmCdmaPhone.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/GsmCdmaPhone.java b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
+index 2a94fc5cf..073530d1d 100644
+--- a/src/java/com/android/internal/telephony/GsmCdmaPhone.java
++++ b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
+@@ -1400,7 +1400,7 @@ public class GsmCdmaPhone extends Phone {
+             }
+         }
+ 
+-        if (!isPhoneTypeGsm() && TextUtils.isEmpty(number)) {
++        if (TextUtils.isEmpty(number)) {
+             // Read platform settings for dynamic voicemail number
+             CarrierConfigManager configManager = (CarrierConfigManager)
+                     getContext().getSystemService(Context.CARRIER_CONFIG_SERVICE);
+@@ -1408,7 +1408,7 @@ public class GsmCdmaPhone extends Phone {
+             if (b != null && b.getBoolean(
+                     CarrierConfigManager.KEY_CONFIG_TELEPHONY_USE_OWN_NUMBER_FOR_VOICEMAIL_BOOL)) {
+                 number = getLine1Number();
+-            } else {
++            } else if (!isPhoneTypeGsm()) {
+                 number = "*86";
+             }
+         }
+-- 
+2.17.1
+

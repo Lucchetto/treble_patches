@@ -1,0 +1,51 @@
+From df1396c07b2f86bd67902f72ab69715e058b861a Mon Sep 17 00:00:00 2001
+From: Jakub Pawlowski <jpawlowski@google.com>
+Date: Thu, 29 Nov 2018 18:54:21 +0100
+Subject: [PATCH 231/306] Bluetooth: Check descriptors size in
+ BluetoothHidDeviceAppSdpSettings
+
+Bug: 119819889
+Test: compilation
+Change-Id: If51d0e2af74d99758f79a603d40cc2f5c84e4dde
+(cherry picked from commit 63519217e8c0682369b5b3dc11417f79b3b48b7e)
+---
+ .../bluetooth/BluetoothHidDeviceAppSdpSettings.java      | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/core/java/android/bluetooth/BluetoothHidDeviceAppSdpSettings.java b/core/java/android/bluetooth/BluetoothHidDeviceAppSdpSettings.java
+index 237082e4cb6..2f0b44f76ff 100644
+--- a/core/java/android/bluetooth/BluetoothHidDeviceAppSdpSettings.java
++++ b/core/java/android/bluetooth/BluetoothHidDeviceAppSdpSettings.java
+@@ -18,6 +18,7 @@ package android.bluetooth;
+ 
+ import android.os.Parcel;
+ import android.os.Parcelable;
++import android.util.EventLog;
+ 
+ 
+ /**
+@@ -30,6 +31,8 @@ import android.os.Parcelable;
+  */
+ public final class BluetoothHidDeviceAppSdpSettings implements Parcelable {
+ 
++    private static final int MAX_DESCRIPTOR_SIZE = 2048;
++
+     private final String mName;
+     private final String mDescription;
+     private final String mProvider;
+@@ -55,6 +58,12 @@ public final class BluetoothHidDeviceAppSdpSettings implements Parcelable {
+         mDescription = description;
+         mProvider = provider;
+         mSubclass = subclass;
++
++        if (descriptors == null || descriptors.length > MAX_DESCRIPTOR_SIZE) {
++            EventLog.writeEvent(0x534e4554, "119819889", -1, "");
++            throw new IllegalArgumentException("descriptors must be not null and shorter than "
++                    + MAX_DESCRIPTOR_SIZE);
++        }
+         mDescriptors = descriptors.clone();
+     }
+ 
+-- 
+2.17.1
+

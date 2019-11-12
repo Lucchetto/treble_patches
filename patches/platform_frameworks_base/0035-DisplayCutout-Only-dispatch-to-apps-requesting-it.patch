@@ -1,0 +1,59 @@
+From 15fbd4d4ba418d46ee8b38af22e3567721863b16 Mon Sep 17 00:00:00 2001
+From: Adrian Roos <roosa@google.com>
+Date: Tue, 12 Dec 2017 16:07:55 +0100
+Subject: [PATCH 035/306] DisplayCutout: Only dispatch to apps requesting it
+
+Fixes a compatibility issues, where apps that were not expecting
+a cutout were dispatched one anyway, which caused the WindowInsets
+dispatch to continue down the hierarchy even though the SystemInsets
+were consumed by the app.
+
+To avoid this, we pre-emptively consume the cutout for any apps that
+did not request to be laid out in the cutout area. This is safe,
+because for apps that don't request it, the status bar will take care
+of consuming it, or they won't be laid out in the cutout at all.
+
+If apps still need to know where the cutout is, they can query for it
+via View.getRootWindowInsets().
+
+Fixes: 65689439
+Bug: 70490585
+Test: atest android.view.cts.DisplayCutoutTest
+Change-Id: If06674c619f095d4105be1b3a511fb5823b63d2b
+(cherry picked from commit 2b0dcb3fd220ef02f534188c88451a3530c04396)
+---
+ core/java/android/view/ViewRootImpl.java | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/view/ViewRootImpl.java b/core/java/android/view/ViewRootImpl.java
+index 129a255c198..c6c42faad6b 100644
+--- a/core/java/android/view/ViewRootImpl.java
++++ b/core/java/android/view/ViewRootImpl.java
+@@ -20,6 +20,7 @@ import static android.view.Display.INVALID_DISPLAY;
+ import static android.view.View.PFLAG_DRAW_ANIMATION;
+ import static android.view.WindowCallbacks.RESIZE_MODE_DOCKED_DIVIDER;
+ import static android.view.WindowCallbacks.RESIZE_MODE_FREEFORM;
++import static android.view.WindowManager.LayoutParams.FLAG2_LAYOUT_IN_DISPLAY_CUTOUT_AREA;
+ import static android.view.WindowManager.LayoutParams.PRIVATE_FLAG_FORCE_DECOR_VIEW_VISIBILITY;
+ import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD;
+ import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL;
+@@ -1586,7 +1587,15 @@ public final class ViewRootImpl implements ViewParent,
+     }
+ 
+     void dispatchApplyInsets(View host) {
+-        host.dispatchApplyWindowInsets(getWindowInsets(true /* forceConstruct */));
++        WindowInsets insets = getWindowInsets(true /* forceConstruct */);
++        final boolean layoutInCutout =
++                (mWindowAttributes.flags2 & FLAG2_LAYOUT_IN_DISPLAY_CUTOUT_AREA) != 0;
++        if (!layoutInCutout) {
++            // Window is either not laid out in cutout or the status bar inset takes care of
++            // clearing the cutout, so we don't need to dispatch the cutout to the hierarchy.
++            insets = insets.consumeCutout();
++        }
++        host.dispatchApplyWindowInsets(insets);
+     }
+ 
+     private static boolean shouldUseDisplaySize(final WindowManager.LayoutParams lp) {
+-- 
+2.17.1
+

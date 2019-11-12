@@ -1,0 +1,31 @@
+From 20e7c9d0bae10537bb26510a42389196bcd188ed Mon Sep 17 00:00:00 2001
+From: Doris Ling <dling@google.com>
+Date: Fri, 13 Jul 2018 12:32:00 -0700
+Subject: [PATCH 19/71] DO NOT MERGE Fix summary text for advanced button.
+
+- the resource for the summary text is in the support library. However,
+the prebuilt version in the build does not contain the latest change for
+the summary text. Add the overlay for the summary resource here with the
+updated translation to remove the redundant summary prefix in the
+advanced button.
+
+Change-Id: Ib6db0c402d79a2d965e6060b1851d7b898ae3f94
+Fixes: 111195268
+Test: manual
+---
+ res/values-zh-rCN/strings.xml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/res/values-zh-rCN/strings.xml b/res/values-zh-rCN/strings.xml
+index 8bf6eeeb34..0db1605605 100644
+--- a/res/values-zh-rCN/strings.xml
++++ b/res/values-zh-rCN/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"网络详情"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"您的设备名称会显示在手机上的应用中。此外，当您连接到蓝牙设备或设置 WLAN 热点时，其他人可能也会看到您的设备名称。"</string>
+     <string name="devices_title" msgid="7701726109334110391">"设备"</string>
++    <string name="summary_collapsed_preference_list" msgid="5190123168583152844">"<xliff:g id="CURRENT_ITEMS">%1$s</xliff:g>、<xliff:g id="ADDED_ITEMS">%2$s</xliff:g>"</string>
+ </resources>
+-- 
+2.17.1
+

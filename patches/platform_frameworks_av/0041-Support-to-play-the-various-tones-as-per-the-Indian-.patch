@@ -1,0 +1,118 @@
+From b7afce9ef7d9c4cd5181501447663921617f560e Mon Sep 17 00:00:00 2001
+From: Nobuaki Tanaka <nobuaki.xb.tanaka@sony.com>
+Date: Wed, 12 Sep 2018 16:22:17 +0900
+Subject: [PATCH 41/80] Support to play the various tones as per the Indian
+ standard
+
+To play the following tones as per Indian standards.
+ - Dial tone
+ - Busy tone
+ - Congestion tone
+ - Call waiting tone
+ - Ringing tone
+
+Bug: 117161543
+Bug: 118655632
+Test: Play each tone in indian locale
+
+(cherry picked from commit f4a4005adb8340b2883d0b6771bcebac5c9c75b5)
+
+Change-Id: I6358b18bf23fa21b6fd0a6e3ff4d296b2df6e69d
+---
+ media/libaudioclient/ToneGenerator.cpp        | 40 +++++++++++++++++++
+ .../include/media/ToneGenerator.h             |  7 ++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/media/libaudioclient/ToneGenerator.cpp b/media/libaudioclient/ToneGenerator.cpp
+index 57167275a..d846d7939 100644
+--- a/media/libaudioclient/ToneGenerator.cpp
++++ b/media/libaudioclient/ToneGenerator.cpp
+@@ -826,6 +826,34 @@ const ToneGenerator::ToneDescriptor ToneGenerator::sToneDescriptors[] = {
+                         { .duration = 0 , .waveFreq = { 0 }, 0, 0}},
+           .repeatCnt = ToneGenerator::TONEGEN_INF,
+           .repeatSegment = 0 },                              // TONE_IE_CALL_WAITING
++        { .segments = { { .duration = ToneGenerator::TONEGEN_INF, .waveFreq = { 375, 400, 425, 0 }, 0, 0 },
++                        { .duration = 0 , .waveFreq = { 0 }, 0, 0}},
++          .repeatCnt = ToneGenerator::TONEGEN_INF,
++          .repeatSegment = 0 },                              // TONE_INDIA_DIAL
++        { .segments = { { .duration = 750, .waveFreq = { 400, 0 }, 0, 0 },
++                      { .duration = 750, .waveFreq = { 0 }, 0, 0 },
++                      { .duration = 0 , .waveFreq = { 0 }, 0, 0}},
++          .repeatCnt = ToneGenerator::TONEGEN_INF,
++          .repeatSegment = 0 },                               // TONE_INDIA_BUSY
++        { .segments = { { .duration = 250, .waveFreq = { 400, 0 }, 0, 0 },
++                        { .duration = 250, .waveFreq = { 0 }, 0, 0 },
++                        { .duration = 0 , .waveFreq = { 0 }, 0, 0}},
++          .repeatCnt = ToneGenerator::TONEGEN_INF,
++          .repeatSegment = 0 },                              // TONE_INDIA_CONGESTION
++        { .segments = { { .duration = 200, .waveFreq = { 400, 0 }, 0, 0 },
++                        { .duration = 100, .waveFreq = { 0 }, 0, 0 },
++                        { .duration = 200, .waveFreq = { 400, 0 }, 0, 0 },
++                        { .duration = 7500, .waveFreq = { 0 }, 0, 0 },
++                        { .duration = 0 , .waveFreq = { 0 }, 0, 0}},
++          .repeatCnt = ToneGenerator::TONEGEN_INF,
++          .repeatSegment = 0 },                              // TONE_INDIA_CALL_WAITING
++        { .segments = { { .duration = 400, .waveFreq = { 375, 400, 425, 0 }, 0, 0 },
++                      { .duration = 200, .waveFreq = { 0 }, 0, 0 },
++                      { .duration = 400, .waveFreq = { 375, 400, 425, 0 }, 0, 0 },
++                      { .duration = 2000, .waveFreq = { 0 }, 0, 0 },
++                      { .duration = 0 , .waveFreq = { 0 }, 0, 0}},
++          .repeatCnt = ToneGenerator::TONEGEN_INF,
++          .repeatSegment = 0 },                               // TONE_INDIA_RINGTONE
+ };
+ 
+ // Used by ToneGenerator::getToneForRegion() to convert user specified supervisory tone type
+@@ -900,6 +928,16 @@ const unsigned char /*tone_type*/ ToneGenerator::sToneMappingTable[NUM_REGIONS-1
+             TONE_SUP_ERROR,              // TONE_SUP_ERROR
+             TONE_IE_CALL_WAITING,        // TONE_SUP_CALL_WAITING
+             TONE_IE_RINGTONE             // TONE_SUP_RINGTONE
++        },
++        {   // INDIA
++            TONE_INDIA_DIAL,             // TONE_SUP_DIAL
++            TONE_INDIA_BUSY,             // TONE_SUP_BUSY
++            TONE_INDIA_CONGESTION,       // TONE_SUP_CONGESTION
++            TONE_SUP_RADIO_ACK,          // TONE_SUP_RADIO_ACK
++            TONE_SUP_RADIO_NOTAVAIL,     // TONE_SUP_RADIO_NOTAVAIL
++            TONE_SUP_ERROR,              // TONE_SUP_ERROR
++            TONE_INDIA_CALL_WAITING,     // TONE_SUP_CALL_WAITING
++            TONE_INDIA_RINGTONE          // TONE_SUP_RINGTONE
+         }
+ };
+ 
+@@ -971,6 +1009,8 @@ ToneGenerator::ToneGenerator(audio_stream_type_t streamType, float volume, bool
+         mRegion = HONGKONG;
+     } else if (strstr(value, "ie") != NULL) {
+         mRegion = IRELAND;
++    } else if (strstr(value, "in") != NULL) {
++        mRegion = INDIA;
+     } else {
+         mRegion = CEPT;
+     }
+diff --git a/media/libaudioclient/include/media/ToneGenerator.h b/media/libaudioclient/include/media/ToneGenerator.h
+index 247703fe9..7ae6aa67a 100644
+--- a/media/libaudioclient/include/media/ToneGenerator.h
++++ b/media/libaudioclient/include/media/ToneGenerator.h
+@@ -212,6 +212,12 @@ private:
+         // IRELAND Supervisory tones
+         TONE_IE_RINGTONE,           // Ring Tone: A 400Hz + 450Hz tone repeated in a 0.4s on, 0.2s off, 0.4s on, 2.0s off pattern.
+         TONE_IE_CALL_WAITING,       // Call waiting tone: 425Hz tone repeated in a 0.18s on, 0.2s off, 0.2s on, 4.5s off pattern.
++        // INDIA supervisory tones
++        TONE_INDIA_DIAL,            // Dial tone: 400 Hz tone modulated with 25Hz, continuous
++        TONE_INDIA_BUSY,            // Busy tone: 400 Hz, 750ms ON, 750ms OFF...
++        TONE_INDIA_CONGESTION,      // Congestion tone: 400 Hz, 250ms ON, 250ms OFF...
++        TONE_INDIA_CALL_WAITING,    // Call waiting tone: 400 Hz, tone repeated in a 0.2s on, 0.1s off, 0.2s on, 7.5s off pattern.
++        TONE_INDIA_RINGTONE,        // Ring tone: 400 Hz tone modulated with 25Hz, 0.4 on 0.2 off 0.4 on 2..0 off
+         NUM_ALTERNATE_TONES
+     };
+ 
+@@ -223,6 +229,7 @@ private:
+         SINGAPORE,
+         HONGKONG,
+         IRELAND,
++        INDIA,
+         CEPT,
+         NUM_REGIONS
+     };
+-- 
+2.17.1
+

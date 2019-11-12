@@ -1,0 +1,126 @@
+From 95abf59af43bafe4922b8cc096b10b65440419b8 Mon Sep 17 00:00:00 2001
+From: Ivan Chiang <chiangi@google.com>
+Date: Thu, 24 May 2018 17:52:49 +0800
+Subject: [PATCH 01/71] Fix gray out previously connected device preference
+ issue
+
+Count the dock devices in previously connected device controller.
+
+Fix: 80227045
+Test: m -j SettingsRoboTests RunSettingsRoboTests
+Change-Id: I08d82ec715698ecf894a4a7cd0631c5f1de0f591
+Merged-In: I08d82ec715698ecf894a4a7cd0631c5f1de0f591
+---
+ ...ouslyConnectedDevicePreferenceController.java | 16 +++++++++++++---
+ ...yConnectedDevicePreferenceControllerTest.java |  6 ++++++
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceController.java b/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceController.java
+index ba3ee1f105..73c95ab4e3 100644
+--- a/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceController.java
++++ b/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceController.java
+@@ -21,26 +21,29 @@ import android.support.annotation.VisibleForTesting;
+ import android.support.v7.preference.Preference;
+ import android.support.v7.preference.PreferenceScreen;
+ 
+-import android.util.Log;
+ import com.android.settings.bluetooth.BluetoothDeviceUpdater;
+ import com.android.settings.bluetooth.SavedBluetoothDeviceUpdater;
++import com.android.settings.connecteddevice.dock.DockUpdater;
+ import com.android.settings.core.BasePreferenceController;
+ import com.android.settings.dashboard.DashboardFragment;
+-
++import com.android.settings.overlay.FeatureFactory;
+ import com.android.settingslib.core.lifecycle.LifecycleObserver;
+ import com.android.settingslib.core.lifecycle.events.OnStart;
+ import com.android.settingslib.core.lifecycle.events.OnStop;
+-import com.android.settingslib.utils.ThreadUtils;
+ 
+ public class PreviouslyConnectedDevicePreferenceController extends BasePreferenceController
+         implements LifecycleObserver, OnStart, OnStop, DevicePreferenceCallback {
+ 
+     private Preference mPreference;
+     private BluetoothDeviceUpdater mBluetoothDeviceUpdater;
++    private DockUpdater mSavedDockUpdater;
+     private int mPreferenceSize;
+ 
+     public PreviouslyConnectedDevicePreferenceController(Context context, String preferenceKey) {
+         super(context, preferenceKey);
++
++        mSavedDockUpdater = FeatureFactory.getFactory(
++                context).getDockUpdaterFeatureProvider().getSavedDockUpdater(context, this);
+     }
+ 
+     @Override
+@@ -62,12 +65,14 @@ public class PreviouslyConnectedDevicePreferenceController extends BasePreferenc
+     @Override
+     public void onStart() {
+         mBluetoothDeviceUpdater.registerCallback();
++        mSavedDockUpdater.registerCallback();
+         updatePreferenceOnSizeChanged();
+     }
+ 
+     @Override
+     public void onStop() {
+         mBluetoothDeviceUpdater.unregisterCallback();
++        mSavedDockUpdater.unregisterCallback();
+     }
+ 
+     public void init(DashboardFragment fragment) {
+@@ -92,6 +97,11 @@ public class PreviouslyConnectedDevicePreferenceController extends BasePreferenc
+         mBluetoothDeviceUpdater = bluetoothDeviceUpdater;
+     }
+ 
++    @VisibleForTesting
++    void setSavedDockUpdater(DockUpdater savedDockUpdater) {
++        mSavedDockUpdater = savedDockUpdater;
++    }
++
+     @VisibleForTesting
+     void setPreferenceSize(int size) {
+         mPreferenceSize = size;
+diff --git a/tests/robotests/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceControllerTest.java b/tests/robotests/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceControllerTest.java
+index 444728a1c4..d04b206c6d 100644
+--- a/tests/robotests/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceControllerTest.java
++++ b/tests/robotests/src/com/android/settings/connecteddevice/PreviouslyConnectedDevicePreferenceControllerTest.java
+@@ -21,6 +21,7 @@ import android.content.pm.PackageManager;
+ import android.support.v7.preference.Preference;
+ 
+ import com.android.settings.bluetooth.BluetoothDeviceUpdater;
++import com.android.settings.connecteddevice.dock.DockUpdater;
+ import com.android.settings.dashboard.DashboardFragment;
+ import com.android.settings.testutils.SettingsRobolectricTestRunner;
+ 
+@@ -46,6 +47,8 @@ public class PreviouslyConnectedDevicePreferenceControllerTest {
+     @Mock
+     private BluetoothDeviceUpdater mBluetoothDeviceUpdater;
+     @Mock
++    private DockUpdater mDockUpdater;
++    @Mock
+     private PackageManager mPackageManager;
+ 
+     private Context mContext;
+@@ -61,6 +64,7 @@ public class PreviouslyConnectedDevicePreferenceControllerTest {
+         mPreConnectedDeviceController =
+                 new PreviouslyConnectedDevicePreferenceController(mContext, KEY);
+         mPreConnectedDeviceController.setBluetoothDeviceUpdater(mBluetoothDeviceUpdater);
++        mPreConnectedDeviceController.setSavedDockUpdater(mDockUpdater);
+ 
+         mPreference = new Preference(mContext);
+         mPreConnectedDeviceController.setPreference(mPreference);
+@@ -71,10 +75,12 @@ public class PreviouslyConnectedDevicePreferenceControllerTest {
+         // register the callback in onStart()
+         mPreConnectedDeviceController.onStart();
+         verify(mBluetoothDeviceUpdater).registerCallback();
++        verify(mDockUpdater).registerCallback();
+ 
+         // unregister the callback in onStop()
+         mPreConnectedDeviceController.onStop();
+         verify(mBluetoothDeviceUpdater).unregisterCallback();
++        verify(mDockUpdater).unregisterCallback();
+     }
+ 
+     @Test
+-- 
+2.17.1
+

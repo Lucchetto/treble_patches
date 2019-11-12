@@ -1,0 +1,863 @@
+From 4f2b78142b83c0c77f902c849f53437124664465 Mon Sep 17 00:00:00 2001
+From: Chihhang Chuang <chihhangchuang@google.com>
+Date: Thu, 7 Jun 2018 16:25:27 +0800
+Subject: [PATCH 23/70] Add faster emergency call button UI
+
+Faster emergency dialer list a shortcut button of no location status.
+The location information would not displayed, and the call button is for
+112 using. Clicking to the button, it would show a confirm view for
+seeking the second click to place an emergency call.
+
+Test: Manually
+
+Bug: 112168722
+Bug: 80406570
+
+Change-Id: I61e2deed6372bb7207cd9efc003ccb48bac611d2
+Merged-In: I61e2deed6372bb7207cd9efc003ccb48bac611d2
+---
+ res/drawable-hdpi/ic_emergency_number_24.png  | Bin 0 -> 163 bytes
+ res/drawable-hdpi/ic_location_on_white_18.png | Bin 0 -> 308 bytes
+ res/drawable-mdpi/ic_emergency_number_24.png  | Bin 0 -> 126 bytes
+ res/drawable-mdpi/ic_location_on_white_18.png | Bin 0 -> 224 bytes
+ res/drawable-xhdpi/ic_emergency_number_24.png | Bin 0 -> 189 bytes
+ .../ic_location_on_white_18.png               | Bin 0 -> 371 bytes
+ .../ic_emergency_number_24.png                | Bin 0 -> 251 bytes
+ .../ic_location_on_white_18.png               | Bin 0 -> 521 bytes
+ res/drawable/phone_type_icon_background.xml   |  19 ++
+ res/layout/emergency_dialer.xml               |   1 +
+ res/layout/emergency_shortcut_button.xml      | 122 +++++++++
+ .../emergency_shortcut_buttons_group.xml      |  63 +++++
+ res/values/colors.xml                         |   1 +
+ res/values/strings.xml                        |   6 +
+ src/com/android/phone/EmergencyDialer.java    | 109 +++++++-
+ .../phone/EmergencyShortcutButton.java        | 256 ++++++++++++++++++
+ 16 files changed, 570 insertions(+), 7 deletions(-)
+ create mode 100644 res/drawable-hdpi/ic_emergency_number_24.png
+ create mode 100644 res/drawable-hdpi/ic_location_on_white_18.png
+ create mode 100644 res/drawable-mdpi/ic_emergency_number_24.png
+ create mode 100644 res/drawable-mdpi/ic_location_on_white_18.png
+ create mode 100644 res/drawable-xhdpi/ic_emergency_number_24.png
+ create mode 100644 res/drawable-xhdpi/ic_location_on_white_18.png
+ create mode 100644 res/drawable-xxhdpi/ic_emergency_number_24.png
+ create mode 100644 res/drawable-xxhdpi/ic_location_on_white_18.png
+ create mode 100644 res/drawable/phone_type_icon_background.xml
+ create mode 100644 res/layout/emergency_shortcut_button.xml
+ create mode 100644 res/layout/emergency_shortcut_buttons_group.xml
+ create mode 100644 src/com/android/phone/EmergencyShortcutButton.java
+
+diff --git a/res/drawable-hdpi/ic_emergency_number_24.png b/res/drawable-hdpi/ic_emergency_number_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..d5c0b28c38e2d73eda1292a8be144a2618acf8e5
+GIT binary patch
+literal 163
+zcmeAS@N?(olHy`uVBq!ia0vp^Dj>|k0wldT1B8K8mZytjh{y4_R}J|X6ggNN{?7lT
+z%=3TeA@z4x#SIyg9;&X<o#}NW$f$2Y(*c3U(h4DSXMRZ265*KmMf8!t5p5MkkDd$Z
+zN(;LcFI%aWNKUc;{XXEymA>HP_F?XCeH`s}uY22fD$Qi-$(+wj%WoI*R&*LQ0BvRP
+MboFyt=akR{04~%!MgRZ+
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-hdpi/ic_location_on_white_18.png b/res/drawable-hdpi/ic_location_on_white_18.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..8f93ec9927169a012619c3ddc5133fb17d3551d7
+GIT binary patch
+literal 308
+zcmV-40n7f0P)<h;3K|Lk000e1NJLTq000{R000{Z1ONa4C*3^W0002{Nkl<ZI1$ak
+zKTASk7>D7XN04k4r-*3Ew*G7qZ8g>qq}AtWiE^-|miiV!gG01MjbUREn3IjsoTY=E
+zJ5U})eBaY?s_T;e9664ta7Tqh<`f56E(sY3xgeux%<{^p1~c*_O%1naCgej2zXQ3E
+z<Q?-tnJtcKV%`Yk!ZPNYyt-H=#4N~#0_I+QR59Cfp@_LrAGesITv)+;F{Li1X<_nm
+zVUjkc#u{1HsbgBC<;FFBSMp&KzYX~iP{-|sKz{7tR!|fYJTR(CLeW^F!>|sE`W>eX
+zJ5d~@cw*p@l;UBYPkNf<6d!x^>}oum17{i+N%jf!FZ=-h3Ero^hCRXn0000<MNUMn
+GLSTXbJA~-~
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-mdpi/ic_emergency_number_24.png b/res/drawable-mdpi/ic_emergency_number_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..3db2d19a242c0899fbd10bad995890d3a26d97e4
+GIT binary patch
+literal 126
+zcmeAS@N?(olHy`uVBq!ia0vp^5+KaM0wlfaz7_*1S5Ftm5R22v2@-1_)Iaz?{r|_t
+z@c(}UO&^5wG3f`I3NU`iIG}H}!}I~q7sVxs7Dt#hJKu{se$@{!{ULlpQ2*a=zFT+r
+Z8D6_S+Obxt^f1ss22WQ%mvv4FO#r9;EgS#<
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-mdpi/ic_location_on_white_18.png b/res/drawable-mdpi/ic_location_on_white_18.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..5c5b0fb1253d302b46aafe98021a0f1e848c546f
+GIT binary patch
+literal 224
+zcmeAS@N?(olHy`uVBq!ia0vp^LLkh+0wn(&ce?|mmV3H5hG>Y+J?P8Dn8<MaVg1Y_
+zj2=4~l(}ziOk16^gLB=Z%@(aitkIS&>u3J`G4o~aD^p{U^U8m_WNOuXUQ7%&yEUhC
+zZiXhWxcqE)Ur!l>8k?TI_W}>zn52Hb@5JOyIVFZMtr-a=DT_M|13DDloXuq9T-N!_
+zEL1K!e$iS?<?K|KxeU<`v6*W&>P~Gn3QrREI(2Nu4UhR76*pZn7qKi_vf%xSpsV(A
+YOOHOd;g{1q59nkDPgg&ebxsLQ08Is0a{vGU
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xhdpi/ic_emergency_number_24.png b/res/drawable-xhdpi/ic_emergency_number_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..b538c02fa8276704f4c3543c43bf2b388af2953d
+GIT binary patch
+literal 189
+zcmeAS@N?(olHy`uVBq!ia0vp^1|ZDA0wn)(8}b0D7Ec$)kch)?uRY{)Fc4`=3_q+F
+zXDHtGL3llPf_Cw=7uEIaKVQjuEz%lvEbyYy#9L17-M#vf6}Kc5S8P1d-gu8?#^D25
+zOag4%#2YV1GBT}e{Of<<ZGFT6cLtU_44-UF7@79*-q4A=*{J&c)9slIz7hpJ{l~vg
+n*=T?9;mphW?P^wWE0^#UsI@)VFuBwM=pF`7S3j3^P6<r_KEFwI
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xhdpi/ic_location_on_white_18.png b/res/drawable-xhdpi/ic_location_on_white_18.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..7c281c3f52a13ac89d34337cddbe47c904b8b19c
+GIT binary patch
+literal 371
+zcmV-(0gV2MP)<h;3K|Lk000e1NJLTq001Na001Ni1ONa4O9@aD0003xNkl<ZNDbw|
+z&nv@m9LMojJ4}=B^5gVvSN;d(x@5^2cSFQDbCnZkm-!#aN;ye#z=7o-P~2>4ao7(}
+z6!qS+&*!^2?(vX%5dm3_d8A5}M~+xvK%FASCM8<EkRzt(NODFyrv!?Iey(u2B%vtC
+z<8vTCCh+@UTt1x8ti~<ZRB3i3H%6#q6$tf(kOEeXLAfx4bx&MBh*QLxmJ6F$OEOr*
+z+K>y|SZNugv9{#G8dg>YOIWLNVG8S>xPH*b1J<Nm7^Z<$Ak-I9oMJT?k{cH^t8&9F
+zHJY8vhZUk&mJdlP_*4kw$38xLih_`LT;2#34ZFDPC@KP;Y3GSR(J@aubLtEQ{&J#D
+zk)lki5-D|#Ia<xCI~-!=)h+rd^6QR-y2lu=d@D1m{~<$zIvM>RIo8$7J^{$2H}FUq
+Rr&0g_002ovPDHLkV1h^dopb;I
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxhdpi/ic_emergency_number_24.png b/res/drawable-xxhdpi/ic_emergency_number_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..13f253b55171382695164f901bc7dcb62d960007
+GIT binary patch
+literal 251
+zcmeAS@N?(olHy`uVBq!ia0vp^9w5xY0wn)GsXhaw4tcsbhGg7(doz%$*+9VcV$Dq3
+z7ed`Hw75f8zVPB={kZt;Yc4KjwdBnAu?`kIjVx*`N=loSIBnJ2rR~0&ZEIJw#ZtGY
+zd10yZ&xOkQYUM1LyeBJX!Di_d+Z*%p793@(+R>Q8Y|FTmsn&*3K*6EmTVq@U!&0_Z
+z7e*$Q7txMD;<=-{{kjGQAfF>Z@4`QZrHpIy<Q``w7BH8Z1-xckmAhcY%~oS6@e0Ki
+xm!2HZ++K5hvDDY7Pcf;btIl3lRQmP(-eb8prTYrcr2u`y;OXk;vd$@?2>^GkVBr7&
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxhdpi/ic_location_on_white_18.png b/res/drawable-xxhdpi/ic_location_on_white_18.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..b345cffca44890f843298ba4c267fc8d4b66055e
+GIT binary patch
+literal 521
+zcmV+k0`~ohP)<h;3K|Lk000e1NJLTq001@s001@!1ONa4CQPDM0005dNkl<ZSPAXH
+z-)qfr9LMq3PFy(7Zsca2qZYNce*p6j%p^C$T#VG@$1>cY6Kz+1+)S<{xlz**DYRsB
+zFL%fMm>(C*ouP#hv+|UpPT$Yx>zw!J`~A9LkB7A2A4dz_^i!rxKi#w_8?0c6Nur)I
+zNKt8GIT!dwoH@?3OzB_~@2KZ38<iYo8uOi_N`^r!jw>9!SoJ6jtN4V~EUgN`C?Rgi
+zj!r_YmK7D^JfT8`N#cyih5}#ksj^1D(8&ZopUKOD4fxz=scKN*0X|)_U<lV&S{1=c
+z=5U>m1tYkw%7bgTF3W;DxDLvLL%2p|!5FSSdC-UJt}LkFIw=p%;JP9U&f<DTlOo9R
+z64$US*on`8A~=jsuPkWCXPzCZ!7k?UX_F1F@EfCt4m#M*J^ZF*#W_L^%Zhb`S}Qvy
+z2vJoC_7P&QLXc+~tJf@17>;3eM4@Qr4HnZB6pjN}>{k*j<^_#<&LSnldK%TG<hVg2
+zt}6|c_&`1HDJmW8p`P7J3r&pkC*w*JC1!{-Ls98s8*#QOeO$ulqOw4q$3#6MuWZoH
+zEVVw;rtGkVTAP(EPV?I-WsMxS`ROJ(WshbaQl+53gAyez_%Hkb+>8tKfRb_800000
+LNkvXXu0mjfN6+p|
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable/phone_type_icon_background.xml b/res/drawable/phone_type_icon_background.xml
+new file mode 100644
+index 000000000..b51c3b2b6
+--- /dev/null
++++ b/res/drawable/phone_type_icon_background.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<shape xmlns:android="http://schemas.android.com/apk/res/android"
++       android:shape="oval">
++    <solid android:color="@color/emergency_shortcut_confirm_button_background_color"/>
++</shape>
+\ No newline at end of file
+diff --git a/res/layout/emergency_dialer.xml b/res/layout/emergency_dialer.xml
+index 41da3b1f8..b98b5c4f8 100644
+--- a/res/layout/emergency_dialer.xml
++++ b/res/layout/emergency_dialer.xml
+@@ -33,6 +33,7 @@
+             android:layout_height="match_parent"
+             android:orientation="vertical">
+             <include layout="@layout/emergency_information"/>
++            <include layout="@layout/emergency_shortcut_buttons_group"/>
+         </LinearLayout>
+ 
+         <FrameLayout
+diff --git a/res/layout/emergency_shortcut_button.xml b/res/layout/emergency_shortcut_button.xml
+new file mode 100644
+index 000000000..5e30d4e50
+--- /dev/null
++++ b/res/layout/emergency_shortcut_button.xml
+@@ -0,0 +1,122 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<com.android.phone.EmergencyShortcutButton
++    xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_height="64dp"
++    android:layout_width="match_parent">
++    <!-- Normal emergency call button view -->
++    <FrameLayout
++        android:id="@+id/emergency_call_number_info_view"
++        android:layout_height="match_parent"
++        android:layout_width="match_parent"
++        android:focusable="true"
++        android:clickable="true">
++        <LinearLayout
++            android:layout_height="wrap_content"
++            android:layout_width="wrap_content"
++            android:layout_gravity="center_vertical|start"
++            android:gravity="center_vertical"
++            android:orientation="horizontal">
++            <FrameLayout
++                android:layout_height="40dp"
++                android:layout_width="40dp"
++                android:layout_marginLeft="16dp"
++                android:layout_marginRight="16dp"
++                android:background="@drawable/phone_type_icon_background">
++                <ImageView
++                    android:id="@+id/phone_type_icon"
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:layout_gravity="center"/>
++            </FrameLayout>
++            <LinearLayout
++                android:layout_height="wrap_content"
++                android:layout_width="wrap_content"
++                android:gravity="center_vertical|start"
++                android:orientation="vertical">
++                <TextView
++                    android:id="@+id/phone_number"
++                    android:layout_height="wrap_content"
++                    android:layout_width="wrap_content"
++                    android:autoSizeTextType="uniform"
++                    android:maxLines="1"
++                    android:textStyle="bold"
++                    android:textAppearance="?android:attr/textAppearanceLarge"/>
++                <TextView
++                    android:id="@+id/phone_number_description"
++                    android:layout_height="wrap_content"
++                    android:layout_width="wrap_content"
++                    android:autoSizeTextType="uniform"
++                    android:maxLines="1"/>
++            </LinearLayout>
++        </LinearLayout>
++        <ImageView
++            android:id="@+id/microphone_icon"
++            android:layout_height="wrap_content"
++            android:layout_width="wrap_content"
++            android:layout_gravity="center_vertical|end"
++            android:src="@drawable/fab_ic_call"/>
++    </FrameLayout>
++
++    <!-- "Tap again to call" view -->
++    <FrameLayout
++        android:id="@+id/emergency_call_confirm_view"
++        android:layout_height="match_parent"
++        android:layout_width="match_parent"
++        android:background="@color/emergency_shortcut_confirm_button_background_color"
++        android:focusable="true"
++        android:clickable="true"
++        android:visibility="invisible">
++        <LinearLayout
++            android:layout_height="wrap_content"
++            android:layout_width="wrap_content"
++            android:layout_gravity="center_vertical|start"
++            android:gravity="center_vertical"
++            android:orientation="horizontal">
++            <FrameLayout
++                android:layout_height="40dp"
++                android:layout_width="40dp"
++                android:layout_marginLeft="16dp"
++                android:layout_marginRight="16dp"
++                android:background="@drawable/phone_type_icon_background">
++                <ImageView
++                    android:id="@+id/confirmed_phone_type_icon"
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:layout_gravity="center"/>
++            </FrameLayout>
++            <FrameLayout
++                android:layout_height="wrap_content"
++                android:layout_width="wrap_content"
++                android:gravity="center_vertical|start"
++                android:orientation="vertical">
++                <TextView
++                    android:id="@+id/phone_call_hint"
++                    android:layout_height="wrap_content"
++                    android:layout_width="wrap_content"
++                    android:autoSizeTextType="uniform"
++                    android:maxLines="1"
++                    android:textColor="@android:color/white"
++                    android:textStyle="italic|bold"/>
++            </FrameLayout>
++        </LinearLayout>
++        <ImageView
++            android:layout_height="wrap_content"
++            android:layout_width="wrap_content"
++            android:layout_gravity="center_vertical|end"
++            android:src="@drawable/fab_ic_call"/>
++    </FrameLayout>
++</com.android.phone.EmergencyShortcutButton>
+\ No newline at end of file
+diff --git a/res/layout/emergency_shortcut_buttons_group.xml b/res/layout/emergency_shortcut_buttons_group.xml
+new file mode 100644
+index 000000000..5ba0533dc
+--- /dev/null
++++ b/res/layout/emergency_shortcut_buttons_group.xml
+@@ -0,0 +1,63 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<LinearLayout
++    xmlns:android="http://schemas.android.com/apk/res/android"
++    android:id="@+id/emergency_shortcut_buttons_group"
++    android:layout_height="wrap_content"
++    android:layout_width="match_parent"
++    android:layout_marginTop="58dp"
++    android:orientation="vertical">
++    <FrameLayout
++        android:layout_height="wrap_content"
++        android:layout_width="match_parent"
++        android:paddingBottom="12dp">
++        <TextView
++            android:id="@+id/emergency_number_title"
++            android:layout_height="wrap_content"
++            android:layout_width="wrap_content"
++            android:layout_gravity="center_vertical|start"
++            android:textStyle="bold"
++            android:maxLines="1"
++            android:text="@string/single_emergency_number_title"/>
++        <LinearLayout
++            android:id="@+id/location_info"
++            android:layout_height="wrap_content"
++            android:layout_width="wrap_content"
++            android:layout_gravity="center_vertical|end"
++            android:gravity="center_vertical"
++            android:orientation="horizontal">
++            <ImageView
++                android:id="@+id/location_icon"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:src="@drawable/ic_location_on_white_18"/>
++            <TextView
++                android:id="@+id/location_text"
++                android:layout_height="wrap_content"
++                android:layout_width="wrap_content"
++                android:maxLines="1"
++                android:textStyle="italic"/>
++        </LinearLayout>
++    </FrameLayout>
++    <LinearLayout
++        android:id="@+id/emergency_shortcut_buttons_container"
++        android:layout_height="wrap_content"
++        android:layout_width="match_parent"
++        android:gravity="center"
++        android:orientation="vertical"
++        android:background="@drawable/btn_emergency_shortcuts">
++    </LinearLayout>
++</LinearLayout>
+\ No newline at end of file
+diff --git a/res/values/colors.xml b/res/values/colors.xml
+index 870d6927f..98ffff770 100644
+--- a/res/values/colors.xml
++++ b/res/values/colors.xml
+@@ -54,4 +54,5 @@
+ 
+     <color name="dialer_dialpad_touch_tint">#330288d1</color>
+     <color name="floating_action_button_touch_tint">#80ffffff</color>
++    <color name="emergency_shortcut_confirm_button_background_color">#E25142</color>
+ </resources>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index d5c972081..1bb7c53af 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -1133,6 +1133,12 @@
+     <string name="emergency_enable_radio_dialog_title">Emergency call</string>
+     <!-- Title for the emergency dialpad UI -->
+     <string name="emergency_dialpad_title">Emergency calls only</string>
++    <!-- Emergency dialer: Title of single emergency shortcut button -->
++    <string name="single_emergency_number_title">Emergency number</string>
++    <!-- Emergency dialer: Title of numerous emergency shortcut buttons -->
++    <string name="numerous_emergency_numbers_title">Emergency numbers</string>
++    <!-- Emergency dialer: Hint of selected emergency shortcut button -->
++    <string name="emergency_call_shortcut_hint">Tap again to call <xliff:g id="emergency_number">%s</xliff:g></string>
+     <!-- Status message for the "radio enable" UI for emergency calls -->
+     <string name="emergency_enable_radio_dialog_message">Turning on radio\u2026</string>
+     <!-- Status message for the "radio enable" UI for emergency calls -->
+diff --git a/src/com/android/phone/EmergencyDialer.java b/src/com/android/phone/EmergencyDialer.java
+index 2c8a40b53..919592905 100644
+--- a/src/com/android/phone/EmergencyDialer.java
++++ b/src/com/android/phone/EmergencyDialer.java
+@@ -58,7 +58,9 @@ import android.view.KeyEvent;
+ import android.view.MenuItem;
+ import android.view.MotionEvent;
+ import android.view.View;
++import android.view.ViewGroup;
+ import android.view.WindowManager;
++import android.widget.TextView;
+ 
+ import com.android.internal.colorextraction.ColorExtractor;
+ import com.android.internal.colorextraction.ColorExtractor.GradientColors;
+@@ -67,6 +69,9 @@ import com.android.phone.common.dialpad.DialpadKeyButton;
+ import com.android.phone.common.util.ViewUtil;
+ import com.android.phone.common.widget.ResizingTextEditText;
+ 
++import java.util.ArrayList;
++import java.util.List;
++
+ /**
+  * EmergencyDialer is a special dialer that is used ONLY for dialing emergency calls.
+  *
+@@ -85,15 +90,15 @@ import com.android.phone.common.widget.ResizingTextEditText;
+  * also?
+  *
+  * TODO: Implement emergency dialer shortcut.
+- *  emergency dialer shortcut offer a local emergency number list. Directly click a number to
+- *  make an emergency phone call without entering numbers from dialpad.
++ *  Emergency dialer shortcut offer a local emergency number list. Directly clicking a call button
++ *  to place an emergency phone call without entering numbers from dialpad.
+  *  TODO item:
+- *     1.implement emergency shortcut list UI.
+- *     2.integrate emergency phone number table.
++ *     1.integrate emergency phone number table.
+  */
+ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         View.OnLongClickListener, View.OnKeyListener, TextWatcher,
+-        DialpadKeyButton.OnPressedListener, ColorExtractor.OnColorsChangedListener {
++        DialpadKeyButton.OnPressedListener, ColorExtractor.OnColorsChangedListener,
++        EmergencyShortcutButton.OnConfirmClickListener {
+     // Keys used with onSaveInstanceState().
+     private static final String LAST_NUMBER = "lastNumber";
+ 
+@@ -131,6 +136,8 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+     private View mEmergencyShortcutView;
+     private View mDialpadView;
+ 
++    private List<EmergencyShortcutButton> mEmergencyShortcutButtonList;
++
+     private ToneGenerator mToneGenerator;
+     private Object mToneGeneratorLock = new Object();
+ 
+@@ -413,12 +420,27 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+ 
+     @Override
+     public boolean dispatchTouchEvent(MotionEvent ev) {
+-        mEmergencyActionGroup.onPreTouchEvent(ev);
++        onPreTouchEvent(ev);
+         boolean handled = super.dispatchTouchEvent(ev);
+-        mEmergencyActionGroup.onPostTouchEvent(ev);
++        onPostTouchEvent(ev);
+         return handled;
+     }
+ 
++    @Override
++    public void onConfirmClick(EmergencyShortcutButton button) {
++        if (button == null) return;
++
++        String phoneNumber = button.getPhoneNumber();
++
++        if (!TextUtils.isEmpty(phoneNumber)) {
++            Log.d(LOG_TAG, "dial emergency number: " + phoneNumber);
++            TelecomManager tm = (TelecomManager) getSystemService(TELECOM_SERVICE);
++            tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, phoneNumber, null), null);
++        } else {
++            Log.d(LOG_TAG, "emergency number is empty");
++        }
++    }
++
+     @Override
+     public void onClick(View view) {
+         switch (view.getId()) {
+@@ -859,9 +881,82 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         final View emergencyDialpadTitle = findViewById(R.id.emergency_dialpad_title_container);
+         emergencyDialpadTitle.setVisibility(View.VISIBLE);
+ 
++        // TODO: Integrating emergency phone number table will get location information.
++        // Using null to present no location status.
++        setLocationInfo(null);
++
++        mEmergencyShortcutButtonList = new ArrayList<>();
++        setupEmergencyCallShortcutButton();
++
+         switchView(mEmergencyShortcutView, mDialpadView, false);
+     }
+ 
++    private void setLocationInfo(String country) {
++        final View locationInfo = findViewById(R.id.location_info);
++
++        if (TextUtils.isEmpty(country)) {
++            locationInfo.setVisibility(View.INVISIBLE);
++        } else {
++            final TextView location = (TextView) locationInfo.findViewById(R.id.location_text);
++            location.setText(country);
++            locationInfo.setVisibility(View.VISIBLE);
++        }
++    }
++
++    // TODO: Integrate emergency phone number table.
++    // Using default layout(no location, phone number is 112, description is Emergency,
++    // and icon is cross shape) until integrating emergency phone number table.
++    private void setupEmergencyCallShortcutButton() {
++        final ViewGroup shortcutButtonContainer = findViewById(
++                R.id.emergency_shortcut_buttons_container);
++        shortcutButtonContainer.setClipToOutline(true);
++
++        final EmergencyShortcutButton button =
++                (EmergencyShortcutButton) getLayoutInflater().inflate(
++                        R.layout.emergency_shortcut_button,
++                        shortcutButtonContainer, false);
++
++        button.setPhoneNumber("112");
++        button.setPhoneDescription("Emergency");
++        button.setPhoneTypeIcon(R.drawable.ic_emergency_number_24);
++        button.setOnConfirmClickListener(this);
++
++        shortcutButtonContainer.addView(button);
++        mEmergencyShortcutButtonList.add(button);
++
++        //Set emergency number title for numerous buttons.
++        if (shortcutButtonContainer.getChildCount() > 1) {
++            final TextView emergencyNumberTitle = findViewById(R.id.emergency_number_title);
++            emergencyNumberTitle.setText(getString(R.string.numerous_emergency_numbers_title));
++        }
++    }
++
++    /**
++     * Called by the activity before a touch event is dispatched to the view hierarchy.
++     */
++    private void onPreTouchEvent(MotionEvent event) {
++        mEmergencyActionGroup.onPreTouchEvent(event);
++
++        if (mEmergencyShortcutButtonList != null) {
++            for (EmergencyShortcutButton button : mEmergencyShortcutButtonList) {
++                button.onPreTouchEvent(event);
++            }
++        }
++    }
++
++    /**
++     * Called by the activity after a touch event is dispatched to the view hierarchy.
++     */
++    private void onPostTouchEvent(MotionEvent event) {
++        mEmergencyActionGroup.onPostTouchEvent(event);
++
++        if (mEmergencyShortcutButtonList != null) {
++            for (EmergencyShortcutButton button : mEmergencyShortcutButtonList) {
++                button.onPostTouchEvent(event);
++            }
++        }
++    }
++
+     /**
+      * Switch two view.
+      *
+diff --git a/src/com/android/phone/EmergencyShortcutButton.java b/src/com/android/phone/EmergencyShortcutButton.java
+new file mode 100644
+index 000000000..f2582cc5e
+--- /dev/null
++++ b/src/com/android/phone/EmergencyShortcutButton.java
+@@ -0,0 +1,256 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.phone;
++
++import android.animation.Animator;
++import android.animation.AnimatorListenerAdapter;
++import android.annotation.NonNull;
++import android.content.Context;
++import android.util.AttributeSet;
++import android.view.MotionEvent;
++import android.view.View;
++import android.view.ViewAnimationUtils;
++import android.view.accessibility.AccessibilityManager;
++import android.widget.FrameLayout;
++import android.widget.ImageView;
++import android.widget.TextView;
++
++/**
++ * Emergency shortcut button displays a local emergency phone number information(including phone
++ * number, and phone type). To decrease false clicking, it need to click twice to confirm to place
++ * an emergency phone call.
++ *
++ * <p> The button need to be set an {@link OnConfirmClickListener} from activity to handle dial
++ * function.
++ *
++ * <p> First clicking on the button, it would change the view of call number information to
++ * the view of confirmation. And then clicking on the view of confirmation, it will place an
++ * emergency call.
++ *
++ * <p> For screen reader, it changed to click twice on the view of call number information to
++ * place an emergency call. The view of confirmation will not display.
++ */
++public class EmergencyShortcutButton extends FrameLayout implements View.OnClickListener {
++    // Time to hide view of confirmation.
++    private static final long HIDE_DELAY = 3000;
++
++    private static final int[] ICON_VIEWS = {R.id.phone_type_icon, R.id.confirmed_phone_type_icon};
++    private View mCallNumberInfoView;
++    private View mConfirmView;
++
++    private TextView mPhoneNumber;
++    private TextView mPhoneTypeDescription;
++    private TextView mPhoneCallHint;
++    private MotionEvent mPendingTouchEvent;
++    private OnConfirmClickListener mOnConfirmClickListener;
++
++    private boolean mConfirmViewHiding;
++
++    public EmergencyShortcutButton(Context context, AttributeSet attrs) {
++        super(context, attrs);
++    }
++
++    /**
++     * Interface definition for a callback to be invoked when the view of confirmation on shortcut
++     * button is clicked.
++     */
++    public interface OnConfirmClickListener {
++        /**
++         * Called when the view of confirmation on shortcut button has been clicked.
++         *
++         * @param button The shortcut button that was clicked.
++         */
++        void onConfirmClick(EmergencyShortcutButton button);
++    }
++
++    /**
++     * Register a callback {@link OnConfirmClickListener} to be invoked when view of confirmation
++     * is clicked.
++     *
++     * @param onConfirmClickListener The callback that will run.
++     */
++    public void setOnConfirmClickListener(OnConfirmClickListener onConfirmClickListener) {
++        mOnConfirmClickListener = onConfirmClickListener;
++    }
++
++    /**
++     * Set icon for different phone number type.
++     *
++     * @param resId The resource identifier of the drawable.
++     */
++    public void setPhoneTypeIcon(int resId) {
++        for (int iconView : ICON_VIEWS) {
++            ImageView phoneTypeIcon = findViewById(iconView);
++            phoneTypeIcon.setImageResource(resId);
++        }
++    }
++
++    /**
++     * Set emergency phone number description.
++     */
++    public void setPhoneDescription(@NonNull String description) {
++        mPhoneTypeDescription.setText(description);
++    }
++
++    /**
++     * Set emergency phone number.
++     */
++    public void setPhoneNumber(@NonNull String number) {
++        mPhoneNumber.setText(number);
++        mPhoneCallHint.setText(
++                getContext().getString(R.string.emergency_call_shortcut_hint, number));
++
++        // Set content description for phone number.
++        if (number.length() > 1) {
++            StringBuilder stringBuilder = new StringBuilder();
++            for (char c : number.toCharArray()) {
++                stringBuilder.append(c).append(" ");
++            }
++            mPhoneNumber.setContentDescription(stringBuilder.toString().trim());
++        }
++    }
++
++    /**
++     * Get emergency phone number.
++     *
++     * @return phone number, or {@code null} if {@code mPhoneNumber} does not be set.
++     */
++    public String getPhoneNumber() {
++        return mPhoneNumber != null ? mPhoneNumber.getText().toString() : null;
++    }
++
++    /**
++     * Called by the activity before a touch event is dispatched to the view hierarchy.
++     */
++    public void onPreTouchEvent(MotionEvent event) {
++        mPendingTouchEvent = event;
++    }
++
++    @Override
++    public boolean dispatchTouchEvent(MotionEvent event) {
++        boolean handled = super.dispatchTouchEvent(event);
++        if (mPendingTouchEvent == event && handled) {
++            mPendingTouchEvent = null;
++        }
++        return handled;
++    }
++
++    /**
++     * Called by the activity after a touch event is dispatched to the view hierarchy.
++     */
++    public void onPostTouchEvent(MotionEvent event) {
++        // Hide the confirmation button if a touch event was delivered to the activity but not to
++        // this view.
++        if (mPendingTouchEvent != null) {
++            hideSelectedButton();
++        }
++        mPendingTouchEvent = null;
++    }
++
++    @Override
++    protected void onFinishInflate() {
++        super.onFinishInflate();
++        mCallNumberInfoView = findViewById(R.id.emergency_call_number_info_view);
++        mConfirmView = findViewById(R.id.emergency_call_confirm_view);
++
++        mCallNumberInfoView.setOnClickListener(this);
++        mConfirmView.setOnClickListener(this);
++
++        mPhoneNumber = (TextView) mCallNumberInfoView.findViewById(R.id.phone_number);
++        mPhoneTypeDescription = (TextView) mCallNumberInfoView.findViewById(
++                R.id.phone_number_description);
++
++        mPhoneCallHint = (TextView) mConfirmView.findViewById(R.id.phone_call_hint);
++
++        mConfirmViewHiding = true;
++    }
++
++    @Override
++    public void onClick(View view) {
++        switch (view.getId()) {
++            case R.id.emergency_call_number_info_view:
++                if (AccessibilityManager.getInstance(mContext).isTouchExplorationEnabled()) {
++                    if (mOnConfirmClickListener != null) {
++                        mOnConfirmClickListener.onConfirmClick(this);
++                    }
++                } else {
++                    revealSelectedButton();
++                }
++                break;
++            case R.id.emergency_call_confirm_view:
++                if (mOnConfirmClickListener != null) {
++                    mOnConfirmClickListener.onConfirmClick(this);
++                }
++                break;
++        }
++    }
++
++    private void revealSelectedButton() {
++        mConfirmViewHiding = false;
++
++        mConfirmView.setVisibility(View.VISIBLE);
++        int centerX = mCallNumberInfoView.getLeft() + mCallNumberInfoView.getWidth() / 2;
++        int centerY = mCallNumberInfoView.getTop() + mCallNumberInfoView.getHeight() / 2;
++        Animator reveal = ViewAnimationUtils.createCircularReveal(
++                mConfirmView,
++                centerX,
++                centerY,
++                0,
++                Math.max(centerX, mConfirmView.getWidth() - centerX)
++                        + Math.max(centerY, mConfirmView.getHeight() - centerY));
++        reveal.start();
++
++        postDelayed(mCancelSelectedButtonRunnable, HIDE_DELAY);
++        mConfirmView.requestFocus();
++    }
++
++    private void hideSelectedButton() {
++        if (mConfirmViewHiding || mConfirmView.getVisibility() != VISIBLE) {
++            return;
++        }
++
++        mConfirmViewHiding = true;
++
++        removeCallbacks(mCancelSelectedButtonRunnable);
++        int centerX = mConfirmView.getLeft() + mConfirmView.getWidth() / 2;
++        int centerY = mConfirmView.getTop() + mConfirmView.getHeight() / 2;
++        Animator reveal = ViewAnimationUtils.createCircularReveal(
++                mConfirmView,
++                centerX,
++                centerY,
++                Math.max(centerX, mCallNumberInfoView.getWidth() - centerX)
++                        + Math.max(centerY, mCallNumberInfoView.getHeight() - centerY),
++                0);
++        reveal.addListener(new AnimatorListenerAdapter() {
++            @Override
++            public void onAnimationEnd(Animator animation) {
++                mConfirmView.setVisibility(INVISIBLE);
++            }
++        });
++        reveal.start();
++
++        mCallNumberInfoView.requestFocus();
++    }
++
++    private final Runnable mCancelSelectedButtonRunnable = new Runnable() {
++        @Override
++        public void run() {
++            if (!isAttachedToWindow()) return;
++            hideSelectedButton();
++        }
++    };
++}
+-- 
+2.17.1
+

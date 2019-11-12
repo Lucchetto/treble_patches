@@ -1,0 +1,96 @@
+From 91e74bcc37e0f03165e1383eb12a29e29d8227f2 Mon Sep 17 00:00:00 2001
+From: Selim Cinek <cinek@google.com>
+Date: Mon, 29 Jan 2018 12:40:32 -0800
+Subject: [PATCH 087/306] Added a timeout to the launch animation
+
+After the timeout was hit, we stop blocking touches.
+
+Bug: 69168591
+Test: launch notification from service
+Change-Id: I6bbb0d603631164cefdbadf0eb9d92af0aaeb84e
+(cherry picked from commit fc5c199fd844e00cf8d4fbb4ebf02a61373fc4b5)
+---
+ .../notification/ActivityLaunchAnimator.java         | 12 +++++++++++-
+ .../android/systemui/statusbar/phone/StatusBar.java  |  4 ++++
+ .../statusbar/phone/StatusBarWindowView.java         | 10 ++++++++++
+ 3 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/ActivityLaunchAnimator.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/ActivityLaunchAnimator.java
+index 907af690a61..11d20b22105 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/ActivityLaunchAnimator.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/ActivityLaunchAnimator.java
+@@ -56,10 +56,15 @@ public class ActivityLaunchAnimator {
+     public static final long ANIMATION_DELAY_ICON_FADE_IN = ANIMATION_DURATION -
+             CollapsedStatusBarFragment.FADE_IN_DURATION - CollapsedStatusBarFragment.FADE_IN_DELAY
+             - 16;
++    private static final long LAUNCH_TIMEOUT = 500;
+     private final NotificationPanelView mNotificationPanel;
+     private final NotificationListContainer mNotificationContainer;
+     private final StatusBarWindowView mStatusBarWindow;
+-    private final StatusBar mStatusBar;
++    private StatusBar mStatusBar;
++    private final Runnable mTimeoutRunnable = () -> {
++        setAnimationPending(false);
++        mStatusBar.collapsePanel(true /* animate */);
++    };
+     private boolean mAnimationPending;
+ 
+     public ActivityLaunchAnimator(StatusBarWindowView statusBarWindow,
+@@ -92,6 +97,11 @@ public class ActivityLaunchAnimator {
+     private void setAnimationPending(boolean pending) {
+         mAnimationPending = pending;
+         mStatusBarWindow.setExpandAnimationPending(pending);
++        if (pending) {
++            mStatusBarWindow.postDelayed(mTimeoutRunnable, LAUNCH_TIMEOUT);
++        } else {
++            mStatusBarWindow.removeCallbacks(mTimeoutRunnable);
++        }
+     }
+ 
+     class AnimationRunner extends IRemoteAnimationRunner.Stub {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index b51982415bb..426268ba490 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -2656,6 +2656,10 @@ public class StatusBar extends SystemUI implements DemoMode,
+         if (mStatusBarView != null) {
+             dumpBarTransitions(pw, "mStatusBarView", mStatusBarView.getBarTransitions());
+         }
++        pw.println("  StatusBarWindowView: ");
++        if (mStatusBarWindow != null) {
++            mStatusBarWindow.dump(fd, pw, args);
++        }
+ 
+         pw.println("  mMediaManager: ");
+         if (mMediaManager != null) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarWindowView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarWindowView.java
+index e32914fa368..a79a41b0779 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarWindowView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarWindowView.java
+@@ -62,6 +62,9 @@ import com.android.systemui.statusbar.DragDownHelper;
+ import com.android.systemui.statusbar.StatusBarState;
+ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
+ 
++import java.io.FileDescriptor;
++import java.io.PrintWriter;
++
+ 
+ public class StatusBarWindowView extends FrameLayout {
+     public static final String TAG = "StatusBarWindowView";
+@@ -398,6 +401,13 @@ public class StatusBarWindowView extends FrameLayout {
+         mExpandAnimationPending = pending;
+     }
+ 
++    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
++        pw.print("  mExpandAnimationPending="); pw.println(mExpandAnimationPending);
++        pw.print("  mExpandAnimationRunning="); pw.println(mExpandAnimationRunning);
++        pw.print("  mTouchCancelled="); pw.println(mTouchCancelled);
++        pw.print("  mTouchActive="); pw.println(mTouchActive);
++    }
++
+     public class LayoutParams extends FrameLayout.LayoutParams {
+ 
+         public boolean ignoreRightInset;
+-- 
+2.17.1
+

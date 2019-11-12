@@ -1,0 +1,1126 @@
+From 5a4269d21e3e3a14dc5e2ff34a2ccca4550b760f Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Sat, 22 Sep 2018 11:38:37 -0700
+Subject: [PATCH 40/71] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: I4317549e4010bb2cf75b07ade3cb8d54ba6dc708
+---
+ res/values-ar/strings.xml     | 18 +++++++++---------
+ res/values-as/strings.xml     | 24 ++++++++++++------------
+ res/values-az/strings.xml     |  8 ++++----
+ res/values-be/strings.xml     |  4 ++--
+ res/values-bn/strings.xml     |  2 +-
+ res/values-cs/strings.xml     |  2 +-
+ res/values-de/strings.xml     | 30 +++++++++++++++---------------
+ res/values-et/strings.xml     |  4 ++--
+ res/values-eu/strings.xml     | 10 +++++-----
+ res/values-fr/strings.xml     | 10 +++++-----
+ res/values-gl/strings.xml     | 12 ++++++------
+ res/values-hy/strings.xml     |  4 ++--
+ res/values-iw/strings.xml     |  8 ++++----
+ res/values-ja/strings.xml     |  8 ++++----
+ res/values-kk/strings.xml     |  4 ++--
+ res/values-km/strings.xml     |  2 +-
+ res/values-kn/strings.xml     |  4 ++--
+ res/values-ko/strings.xml     |  4 ++--
+ res/values-ky/strings.xml     |  2 +-
+ res/values-lo/strings.xml     |  8 ++++----
+ res/values-ml/strings.xml     |  6 +++---
+ res/values-mr/strings.xml     | 14 +++++++-------
+ res/values-my/strings.xml     |  2 +-
+ res/values-ne/strings.xml     |  4 ++--
+ res/values-pa/strings.xml     |  8 ++++----
+ res/values-sk/strings.xml     |  4 ++--
+ res/values-sl/strings.xml     |  4 ++--
+ res/values-sq/strings.xml     |  6 +++---
+ res/values-sw/strings.xml     |  8 ++++----
+ res/values-ta/strings.xml     | 10 +++++-----
+ res/values-tl/strings.xml     |  8 ++++----
+ res/values-ur/strings.xml     |  4 ++--
+ res/values-uz/strings.xml     | 28 ++++++++++++++--------------
+ res/values-vi/strings.xml     |  4 ++--
+ res/values-zh-rHK/strings.xml |  2 +-
+ 35 files changed, 140 insertions(+), 140 deletions(-)
+
+diff --git a/res/values-ar/strings.xml b/res/values-ar/strings.xml
+index 1d8e852062..0506941590 100644
+--- a/res/values-ar/strings.xml
++++ b/res/values-ar/strings.xml
+@@ -1146,11 +1146,11 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"يمكنك تحسين مستوى السطوع حسب الإضاءة. وعند تشغيل هذه الميزة، سيظل بإمكانك ضبط السطوع مؤقتًا."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"سيتم ضبط سطوع الشاشة تلقائيًا حسب البيئة المحيطة والأنشطة. ويمكنك تحريك شريط التمرير يدويًا لضبط السطوع التكيُّفي وفقًا لتفضيلاتك."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"الإضاءة الليلية"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"تؤدي الإضاءة الليلية إلى تلوين الشاشة باللون الكهرماني الخفيف. ويساعد هذا في تسهيل النظر إلى الشاشة في الإضاءة المعتمة ويمكن أن يساعدك في الشعور بالنعاس أيضًا."</string>
++    <string name="night_display_text" msgid="1837277457033025056">"تؤدي الإضاءة الليلية إلى تلوين الشاشة باللون الكهرماني الخفيف، ما يسهّل النظر إلى الشاشة في الإضاءة الخافتة ويمكن أن يساعدك على الشعور بالنعاس أيضًا."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"تحديد جدول زمني"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"عدم التشغيل أو الإيقاف مطلقًا"</string>
+-    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"تشغيل في وقت مخصص"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"تشغيل من غروب الشمس إلى شروقها"</string>
++    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"التفعيل في وقت مخصّّص"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"التفعيل من غروب الشمس حتى شروقها"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"وقت البدء"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"وقت الانتهاء"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"الحالة"</string>
+@@ -1165,10 +1165,10 @@
+     <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"سيتم الإيقاف تلقائيًا عند شروق الشمس"</string>
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"التفعيل الآن"</string>
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"إيقاف الوضع الآن"</string>
+-    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"تشغيل حتى الشروق"</string>
+-    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"إيقاف حتى الغروب"</string>
+-    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"إيقاف حتى <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+-    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"إيقاف حتى <xliff:g id="ID_1">%1$s</xliff:g>"</string>
++    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"تفعيل الميزة حتى الشروق"</string>
++    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"إيقاف الميزة حتى الغروب"</string>
++    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"تفعيل الميزة حتى <xliff:g id="ID_1">%1$s</xliff:g>"</string>
++    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"إيقاف الميزة حتى <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"السكون"</string>
+     <string name="screen_timeout_title" msgid="5130038655092628247">"إيقاف الشاشة"</string>
+     <string name="screen_timeout_summary" msgid="327761329263064327">"بعد <xliff:g id="TIMEOUT_DESCRIPTION">%1$s</xliff:g> من عدم النشاط"</string>
+@@ -2985,7 +2985,7 @@
+     <string name="restriction_menu_change_pin" msgid="740081584044302775">"‏تغيير رمز PIN"</string>
+     <string name="app_notifications_switch_label" msgid="9124072219553687583">"إظهار الإشعارات"</string>
+     <string name="help_label" msgid="6886837949306318591">"المساعدة والتعليقات"</string>
+-    <string name="support_summary" msgid="2705726826263742491">"مقالات المساعدة، الهاتف والمحادثة، البدء"</string>
++    <string name="support_summary" msgid="2705726826263742491">"مقالات المساعدة، الاتصال الهاتفي والمحادثة، البدء"</string>
+     <string name="user_account_title" msgid="1127193807312271167">"حساب المحتوى"</string>
+     <string name="user_picture_title" msgid="7297782792000291692">"معرف الصورة"</string>
+     <string name="extreme_threats_title" msgid="6549541803542968699">"التهديدات القصوى"</string>
+@@ -3967,7 +3967,7 @@
+     <string name="condition_device_vibrate_title" product="default" msgid="1087633233379991925">"تم ضبط الهاتف إلى الاهتزاز."</string>
+     <string name="condition_device_vibrate_summary" product="tablet" msgid="433514444618164607">"سيهتز الجهاز عند تلقي المكالمات والإشعارات."</string>
+     <string name="condition_device_vibrate_summary" product="default" msgid="5877034997839162763">"سيهتز الهاتف عند تلقي المكالمات والإشعارات."</string>
+-    <string name="night_display_suggestion_title" msgid="6602129097059325291">"تعيين جدول زمني للإضاءة الليلية"</string>
++    <string name="night_display_suggestion_title" msgid="6602129097059325291">"تحديد جدول زمني للإضاءة الليلية"</string>
+     <string name="night_display_suggestion_summary" msgid="228346372178218442">"تلوين الشاشة كل ليلة تلقائيًا"</string>
+     <string name="condition_night_display_title" msgid="5599814941976856183">"تم تشغيل الإضاءة الليلية"</string>
+     <string name="condition_night_display_summary" msgid="5443722724310650381">"الشاشة ملوّنة بلون كهرماني خفيف، وهذا قد يساعدك على النوم."</string>
+diff --git a/res/values-as/strings.xml b/res/values-as/strings.xml
+index f6f929d7f4..d91b6037df 100644
+--- a/res/values-as/strings.xml
++++ b/res/values-as/strings.xml
+@@ -1096,13 +1096,13 @@
+     <string name="auto_brightness_very_high_summary" msgid="4551003097086220709">"বেটাৰিৰ বৰ্ধিত ব্যৱহাৰ"</string>
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"উপলব্ধ পোহৰ অনুযায়ী উজ্জ্বলতাৰ স্তৰ অপ্টিমাইজ কৰক। এই সুবিধাটো অন হৈ থাকিলেও আপুনি সাময়িকভাৱে উজ্জ্বলতা সাল-সলনি কৰিব পাৰিব।"</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"আপোনাৰ স্ক্ৰীণৰ উজ্জ্বলতা আপোনাৰ পৰিবেশ আৰু কাৰ্যকলাপবোৰৰ লগত স্ৱয়ংক্ৰিয়ভাৱে খাপ খায়। আপুনি অনুকূলনযোগ্য় উজ্জ্বলতাক আপোনাৰ অগ্ৰাধিকাৰসমূহ বুজিবলৈ সহায় কৰিবৰ বাবে শ্লাইডাৰক মেনুয়েলভাৱে স্থানান্তৰ কৰিব পাৰে।"</string>
+-    <string name="night_display_title" msgid="2626451512200357686">"ৰাতিৰ লাইট"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"ৰাতিৰ পোহৰে আপোনাৰ স্ক্ৰিণ সংকেতক ৰঙীণ বনাই দিয়ে। এই কাৰ্যই আপোনাক নিজৰ স্ক্ৰিণ চাবলৈ বা কম পোহৰতো পঢ়িবলৈ সুবিধা দিয়ে আৰু আপোনাক শান্তিৰে শোৱাত সহায়ও কৰিব পাৰে।"</string>
++    <string name="night_display_title" msgid="2626451512200357686">"ৰাতিৰ পোহৰ"</string>
++    <string name="night_display_text" msgid="1837277457033025056">"ৰাতিৰ পোহৰে আপোনাৰ স্ক্ৰীণখন মৌ-বৰণীয়া কৰি তোলে। এই কাৰ্যই আপোনাক স্ক্ৰীণখন চাবলৈ বা কম পোহৰতো পঢ়িবলৈ সুবিধা দিয়ে আৰু ই আপোনাক সহজে টোপনি যোৱাতো সহায় কৰিব পাৰে।"</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"সূচী"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"নাই"</string>
+-    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"নিজৰ অনুসৰি কৰা সময়ত অন হ’ব"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"সূৰ্যাস্তৰ পৰা সূৰ্যোদয়লৈ অন কৰি ৰাখক"</string>
+-    <string name="night_display_start_time_title" msgid="8918016772613689584">"আৰম্ভণিৰ সময়"</string>
++    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"কাষ্টম সময়ত অন হ’ব"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"সূৰ্যাস্তৰ পৰা সূৰ্যোদয়লৈ অন হয়"</string>
++    <string name="night_display_start_time_title" msgid="8918016772613689584">"আৰম্ভ হোৱাৰ সময়"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"সমাপ্ত হোৱাৰ সময়"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"স্থিতি"</string>
+     <string name="night_display_temperature_title" msgid="1435292789272017136">"তীব্ৰতা"</string>
+@@ -1118,7 +1118,7 @@
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"এতিয়া অফ কৰক"</string>
+     <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"সূৰ্যোদয় নোহোৱালৈকে অন কৰি ৰাখক"</string>
+     <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"সূৰ্যাস্ত নোহোৱালৈকে অফ কৰি ৰাখক"</string>
+-    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> নবজালৈকে অফ কৰি ৰাখক"</string>
++    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> নবজালৈকে অন কৰি ৰাখক"</string>
+     <string name="night_display_activation_off_custom" msgid="6169984658293744715">"<xliff:g id="ID_1">%1$s</xliff:g> নবজালৈকে অফ কৰি ৰাখক"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"সুপ্ত অৱস্থা"</string>
+     <string name="screen_timeout_title" msgid="5130038655092628247">"স্ক্ৰীণ অফ হৈ যায়"</string>
+@@ -1923,7 +1923,7 @@
+     <string name="app_name_label" msgid="5440362857006046193">"এপ্"</string>
+     <string name="last_time_used_label" msgid="8459441968795479307">"অন্তিমবাৰ ব্যৱহাৰ হৈছে"</string>
+     <string name="usage_time_label" msgid="295954901452833058">"ব্যৱহাৰৰ সময়"</string>
+-    <string name="accessibility_settings" msgid="3975902491934816215">"দিব্যাংগসকলৰ বাবে সুবিধাসমূহ"</string>
++    <string name="accessibility_settings" msgid="3975902491934816215">"সাধ্য সুবিধা"</string>
+     <string name="accessibility_settings_title" msgid="2130492524656204459">"দিব্যাংগসকলৰ বাবে থকা সুবিধাসমূহৰ ছেটিংসমূহ"</string>
+     <string name="accessibility_settings_summary" msgid="981260486011624939">"স্ক্ৰীণ ৰিডাৰ, ডিছপ্লে, ভাব-বিনিময় নিয়ন্ত্ৰণ"</string>
+     <string name="vision_settings_title" msgid="4204111425716868288">"দৃষ্টি সম্পৰ্কীয় ছেটিংসমূহ"</string>
+@@ -2958,9 +2958,9 @@
+     <string name="account_dashboard_title" msgid="5895948991491438911">"একাউণ্টসমূহ"</string>
+     <string name="account_dashboard_default_summary" msgid="3998347400161811075">"কোনো একাউণ্ট যোগ কৰা হোৱা নাই"</string>
+     <string name="app_default_dashboard_title" msgid="7342549305933047317">"ডিফ\'ল্ট এপসমূহ"</string>
+-    <string name="system_dashboard_summary" msgid="5797743225249766685">"ভাষা, সময়, বেকআপ, আপডেইট"</string>
++    <string name="system_dashboard_summary" msgid="5797743225249766685">"ভাষা, সময়, বেক আপ, আপডে’ট"</string>
+     <string name="search_results_title" msgid="1796252422574886932">"ছেটিংসমূহ"</string>
+-    <string name="search_menu" msgid="6283419262313758339">"ছেটিংবোৰ সন্ধান কৰক"</string>
++    <string name="search_menu" msgid="6283419262313758339">"ছেটিংসমূহ-ত সন্ধান কৰক"</string>
+     <string name="keywords_wifi" msgid="3646884600964177062">"ৱাইফাই, ৱাই-ফাই, নেটৱৰ্ক সংযোগ, ইণ্টাৰনেট, বেঁতাৰ, ডেটা, ৱাই ফাই"</string>
+     <string name="keywords_change_wifi_state" msgid="627068244033681010">"ৱাইফাই, ৱাই-ফাই, ট\'গল, নিয়ন্ত্ৰণ"</string>
+     <string name="keywords_more_default_sms_app" msgid="8597706109432491909">"পাঠ বাৰ্তা, পাঠ বাৰ্তা প্ৰেৰণ, বাৰ্তা, বাৰ্তা প্ৰেৰণ, ডিফ\'ল্ট"</string>
+@@ -3636,8 +3636,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"ফ্ৰিকুৱেন্সী"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"সৰ্বাধিক ব্যৱহাৰ"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"কোনো ডেটা ব্যৱহাৰ হোৱা নাই"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g>ক অসুবিধা নিদিবত প্ৰৱেশ কৰিবলৈ অনুমতি দিবনে?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"এই এপে অসুবিধা নিদিবক অন/অফ কৰিব পাৰিব আৰু তাৰ লগত জড়িত ছেটিংসমূহ সলনি কৰিব পাৰিব।"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g>ক অসুবিধা নিদিব-ক এক্সেছ কৰিবলৈ অনুমতি দিবনে?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"এই এপটোৱে অসুবিধা নিদিব-ক অন/অফ কৰিব পাৰিব আৰু তাৰ লগত জড়িত ছেটিংসমূহ সলনি কৰিব পাৰিব।"</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"জাননীৰ প্ৰৱেশ অন হৈ থকাৰ বাবে অন কৰি ৰাখিবৈ লাগিব"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"<xliff:g id="APP">%1$s</xliff:g>ৰ অসুবিধা নিদিবলৈ থকা প্ৰৱেশৰ অনুমতি প্ৰত্যাহাৰ কৰিবনে?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"এই এপে সৃষ্টি কৰা সকলো অসুবিধা নিদিব নিয়ম আঁতৰোৱা হ\'ব।"</string>
+@@ -3906,7 +3906,7 @@
+     <string name="notification_suggestion_title" msgid="387052719462473500">"লক স্ক্ৰীণত নিয়ন্ত্ৰণসম্পৰ্কীয় তথ্য"</string>
+     <string name="notification_suggestion_summary" msgid="8521159741445416875">"জাননীৰ সমল দেখুৱাওক বা লুকুৱাওক"</string>
+     <string name="page_tab_title_summary" msgid="4070309266374993258">"সকলো"</string>
+-    <string name="page_tab_title_support" msgid="4407600495101788249">"কিটিপ আৰু সহায়"</string>
++    <string name="page_tab_title_support" msgid="4407600495101788249">"উপদেশ আৰু সহায়"</string>
+     <string name="developer_smallest_width" msgid="7516950434587313360">"সকলোতকৈ সৰু পুতল"</string>
+     <string name="premium_sms_none" msgid="8268105565738040566">"ইনষ্টল কৰি ৰখা কোনো এপে প্ৰিমিয়াম এছএমএছ পঠাবলৈ অনুমতি বিচাৰি অনুৰোধ কৰা নাই"</string>
+     <string name="premium_sms_warning" msgid="9086859595338944882">"প্ৰিমিয়াম এছএমএছৰ কাৰণে আপুনি খৰচ বহন কৰিবলগীয়া হ \'ব পাৰে যাৰ বাবে বাহকে আপোনালৈ পঠিওৱা বিলত দেয়ৰ পৰিমাণ বাঢ়িব পাৰে। আপুনি যদি কোনো এপক অনুমতি দিয়ে, তেন্তে আপুনি সেই এপটো ব্যৱহাৰ কৰি প্ৰিমিয়াম এছএমএছ পঠাব পাৰিব।"</string>
+diff --git a/res/values-az/strings.xml b/res/values-az/strings.xml
+index 2a89fa571c..5de95c83cd 100644
+--- a/res/values-az/strings.xml
++++ b/res/values-az/strings.xml
+@@ -1102,7 +1102,7 @@
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Cədvəl"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Heç biri"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Xüsusi vaxtda aktiv edir"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Qürubdan şəfəqə qədər aktiv edir"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Gün çıxandan batana qədər aktiv edir"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"Başlama vaxtı"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"Bitmə tarixi"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"Status"</string>
+@@ -1117,9 +1117,9 @@
+     <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"Şəfəq vaxtı avtomatik deaktiv edəcək"</string>
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"İndi aktiv edin"</string>
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"İndi deaktiv edin"</string>
+-    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"Şəfəqə qədər deaktiv edin"</string>
+-    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Qüruba qədər deaktiv edin"</string>
+-    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> olana qədər deaktiv edin"</string>
++    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"Gün çıxanadək aktiv olsun"</string>
++    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Gün batımına qədər deaktiv edin"</string>
++    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> olana qədər aktiv edin"</string>
+     <string name="night_display_activation_off_custom" msgid="6169984658293744715">"<xliff:g id="ID_1">%1$s</xliff:g> olanaq qədər deaktiv edin"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"Yuxu"</string>
+     <string name="screen_timeout_title" msgid="5130038655092628247">"Ekran sönür"</string>
+diff --git a/res/values-be/strings.xml b/res/values-be/strings.xml
+index 06f33223f7..93d68a8769 100644
+--- a/res/values-be/strings.xml
++++ b/res/values-be/strings.xml
+@@ -3740,8 +3740,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Частата"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Максімальнае выкарыстанне"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Даныя не выкарыстоўваюцца"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Адкрыць доступ да рэжыму «Не турбаваць» для <xliff:g id="APP">%1$s</xliff:g>?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Дадатак зможа уключаць/выключаць рэжым «Не турбаваць» і змяняць звязаныя з ім налады."</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Даць праграме \"<xliff:g id="APP">%1$s</xliff:g>\" доступ да рэжыму \"Не турбаваць\"?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Праграма зможа уключаць і выключаць рэжым «Не турбаваць» і змяняць адпаведныя налады."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Павінен заставацца ўключаным, таму што ўключаны доступ да апавяшчэнняў"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Адклікаць доступ да рэжыму «Не турбаваць» для <xliff:g id="APP">%1$s</xliff:g>?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Усе правілы рэжыму «Не турбаваць», створаныя гэтай праграмай, будуць выдалены."</string>
+diff --git a/res/values-bn/strings.xml b/res/values-bn/strings.xml
+index f2b57a4d0a..ae431bcbe0 100644
+--- a/res/values-bn/strings.xml
++++ b/res/values-bn/strings.xml
+@@ -1098,7 +1098,7 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"উপলব্ধ আলোর জন্য মানানসই উজ্জ্বলতার স্তর। যখন এই বৈশিষ্ট্যটি চালু থাকবে, তখনও অস্থায়ীভাবে আপনি উজ্জ্বলতা নিয়ন্ত্রণ করতে পারবেন।"</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"আপনার পারিপার্শ্বিক অবস্থা এবং অ্যাক্টিভিটি অনুযায়ী স্ক্রিনের উজ্জ্বলতা নিজে থেকেই অ্যাডজাস্ট করে নেওয়া হবে। স্ক্রিন কতখানি উজ্জ্বল হলে আপনার সুবিধা হয়, তা আপনি স্লাইডারের মাধ্যমে নির্দিষ্ট করে দিতে পারেন।"</string>
+     <string name="night_display_title" msgid="2626451512200357686">"নাইট লাইট"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"নাইট লাইট আপনার স্ক্রিনকে হলুদাভ করে দেয়৷ এটি আপনাকে অল্প আলোয় স্ক্রিনের দিকে স্বচ্ছন্দে তাকানোর সুবিধা দেয় এবং খুব ঘুমিয়ে পড়তে সাহায্য করতে পারে৷"</string>
++    <string name="night_display_text" msgid="1837277457033025056">"নাইট লাইট আপনার স্ক্রিনকে হলুদাভ করে দেয়৷ এটি আপনাকে অল্প আলোয় স্ক্রিনের দিকে স্বচ্ছন্দে তাকানোর সুবিধা দেয় এবং সহজে ঘুমিয়ে পড়তে সাহায্য করে৷"</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"সময়সূচি"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"কোনো কিছুই নয়"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"কাস্টম সময়ে চালু করুন"</string>
+diff --git a/res/values-cs/strings.xml b/res/values-cs/strings.xml
+index 21350840ee..30dcb6b747 100644
+--- a/res/values-cs/strings.xml
++++ b/res/values-cs/strings.xml
+@@ -1475,7 +1475,7 @@
+     <string name="restore_default_apn" msgid="8178010218751639581">"Obnovování výchozích nastavení přístupového bodu"</string>
+     <string name="menu_restore" msgid="8260067415075573273">"Obnovit výchozí"</string>
+     <string name="restore_default_apn_completed" msgid="2824775307377604897">"Výchozí nastavení přístupového bodu bylo obnoveno."</string>
+-    <string name="reset_dashboard_title" msgid="6254873816990678620">"Resetovat možnosti"</string>
++    <string name="reset_dashboard_title" msgid="6254873816990678620">"Možnosti resetu"</string>
+     <string name="reset_dashboard_summary" msgid="4851012632493522755">"Lze resetovat síť, aplikace nebo zařízení"</string>
+     <string name="reset_network_title" msgid="6166025966016873843">"Resetovat Wi-Fi, data a Bluetooth"</string>
+     <string name="reset_network_desc" msgid="5547979398298881406">"Budou resetována nastavení všech sítí, včetně následujících:\n\n"<li>"Wi‑Fi"</li>\n<li>"Mobilní data"</li>\n<li>"Bluetooth"</li></string>
+diff --git a/res/values-de/strings.xml b/res/values-de/strings.xml
+index 4427fe08df..ff9b73842d 100644
+--- a/res/values-de/strings.xml
++++ b/res/values-de/strings.xml
+@@ -208,7 +208,7 @@
+     <string name="proxy_error_empty_port" msgid="5539106187558215246">"Du musst das Feld für den Port ausfüllen."</string>
+     <string name="proxy_error_empty_host_set_port" msgid="2451694104858226781">"Das Feld für den Port muss leer sein, wenn das Feld für den Host leer ist."</string>
+     <string name="proxy_error_invalid_port" msgid="5988270202074492710">"Der eingegebene Port ist ungültig."</string>
+-    <string name="proxy_warning_limited_support" msgid="7229337138062837422">"Der HTTP-Proxy wird vom Browser verwendet, möglicherweise aber nicht von anderen Apps."</string>
++    <string name="proxy_warning_limited_support" msgid="7229337138062837422">"Der HTTP-Proxy wird vom Browser verwendet, eventuell aber nicht von anderen Apps."</string>
+     <string name="proxy_url_title" msgid="7185282894936042359">"PAC-URL: "</string>
+     <string name="radio_info_dl_kbps" msgid="6894556071523815984">"DL-Bandbreite (kbit/s):"</string>
+     <string name="radio_info_ul_kbps" msgid="946464073571185678">"UL-Bandbreite (kbit/s):"</string>
+@@ -444,7 +444,7 @@
+     <string name="security_settings_fingerprint_enroll_touch_dialog_title" msgid="1863561601428695160">"Das ist nicht der Sensor"</string>
+     <string name="security_settings_fingerprint_enroll_touch_dialog_message" msgid="2989019978041986175">"Sensor auf Rückseite mit Zeigefinger berühren."</string>
+     <string name="security_settings_fingerprint_enroll_error_dialog_title" msgid="3618021988442639280">"Registrierung wurde nicht abgeschlossen."</string>
+-    <string name="security_settings_fingerprint_enroll_error_timeout_dialog_message" msgid="2942551158278899627">"Zeitüberschreitung bei Fingerabdruckregistrierung. Versuche es erneut."</string>
++    <string name="security_settings_fingerprint_enroll_error_timeout_dialog_message" msgid="2942551158278899627">"Zeitüberschreitung bei Fingerabdruckregistrierung. Bitte versuche es noch einmal."</string>
+     <string name="security_settings_fingerprint_enroll_error_generic_dialog_message" msgid="3624760637222239293">"Fehler bei Fingerabdruckregistrierung. Versuche es erneut oder verwende einen anderen Finger."</string>
+     <string name="fingerprint_enroll_button_add" msgid="6317978977419045463">"Weitere hinzufügen"</string>
+     <string name="fingerprint_enroll_button_next" msgid="6247009337616342759">"Weiter"</string>
+@@ -469,8 +469,8 @@
+     <string name="crypt_keeper_desc" product="default" msgid="2579929266645543631">"Du kannst deine Konten, Einstellungen, heruntergeladenen Apps und die zugehörigen Daten, Medienelemente und andere Dateien verschlüsseln. Nachdem du dein Smartphone verschlüsselt hast, musst du, sofern du eine Displaysperre eingerichtet hast (also ein Muster, eine numerische PIN oder ein Passwort), bei jedem Einschalten des Smartphones das Display entsperren, um das Smartphone zu entschlüsseln. Der einzige andere Weg zur Entschlüsselung ist das Zurücksetzen auf die Werkseinstellungen. Hierdurch werden alle deine Daten gelöscht.\n\nDie Verschlüsselung dauert mindestens eine Stunde. Bei Beginn muss der Akku aufgeladen sein und das Smartphone muss sich während des gesamten Vorgangs im Netzbetrieb befinden. Wenn du den Vorgang unterbrichst, gehen einige oder alle deine Daten verloren."</string>
+     <string name="crypt_keeper_button_text" product="tablet" msgid="1189623490604750854">"Tablet verschlüsseln"</string>
+     <string name="crypt_keeper_button_text" product="default" msgid="2008346408473255519">"Smartphone verschlüsseln"</string>
+-    <string name="crypt_keeper_low_charge_text" msgid="2029407131227814893">"Lade den Akku auf und versuche es erneut."</string>
+-    <string name="crypt_keeper_unplugged_text" msgid="4785376766063053901">"Schließe dein Ladegerät an und versuche es erneut."</string>
++    <string name="crypt_keeper_low_charge_text" msgid="2029407131227814893">"Lade den Akku auf und versuche es noch einmal."</string>
++    <string name="crypt_keeper_unplugged_text" msgid="4785376766063053901">"Schließe dein Ladegerät an und versuche es noch einmal."</string>
+     <string name="crypt_keeper_dialog_need_password_title" msgid="4058971800557767">"Keine PIN oder kein Passwort für Displaysperre"</string>
+     <string name="crypt_keeper_dialog_need_password_message" msgid="4071395977297369642">"Du musst eine PIN oder ein Passwort für die Displaysperre festlegen, bevor du die Verschlüsselung starten kannst."</string>
+     <string name="crypt_keeper_confirm_title" msgid="5100339496381875522">"Verschlüsseln?"</string>
+@@ -666,8 +666,8 @@
+     <string name="bluetooth_enable_alphanumeric_pin" msgid="7222713483058171357">"Die PIN enthält Buchstaben oder Symbole."</string>
+     <string name="bluetooth_pin_values_hint" msgid="3815897557875873646">"In der Regel 0000 oder 1234"</string>
+     <string name="bluetooth_pin_values_hint_16_digits" msgid="7849359451584101077">"Muss aus 16 Ziffern bestehen"</string>
+-    <string name="bluetooth_enter_pin_other_device" msgid="4637977124526813470">"Möglicherweise musst du diese PIN auch auf dem anderen Gerät eingeben."</string>
+-    <string name="bluetooth_enter_passkey_other_device" msgid="2798719004030279602">"Möglicherweise musst du diesen Zugangscode auch auf dem anderen Gerät eingeben."</string>
++    <string name="bluetooth_enter_pin_other_device" msgid="4637977124526813470">"Eventuell musst du diese PIN auch auf dem anderen Gerät eingeben."</string>
++    <string name="bluetooth_enter_passkey_other_device" msgid="2798719004030279602">"Eventuell musst du diesen Zugangscode auch auf dem anderen Gerät eingeben."</string>
+     <!-- syntax error in translation for bluetooth_confirm_passkey_msg (3708312912841950052) org.xmlpull.v1.XmlPullParserException: name expected (position:START_TAG <null>@1:240 in     <string name="bluetooth_confirm_passkey_msg" msgid="3708312912841950052">"Zur Kopplung mit:&gt;&lt;b&gt;<xliff:g id="DEVICE_NAME">%1$s</xliff:g>&lt;/b&gt;&lt;br&gt;&lt;br&gt;Vergewissere dich, dass folgender Zugangscode angezeigt wird:<&lt;br&gt;&lt;b&gt;P<xliff:g id="PASSKEY">%2$s</xliff:g>&lt;/b&gt;."</string>
+ )  -->
+     <string name="bluetooth_incoming_pairing_msg" msgid="1615930853859551491">"Von:&lt;br&gt;&lt;b&gt;<xliff:g id="DEVICE_NAME">%1$s</xliff:g>&lt;/b&gt;&lt;br&gt;&lt;br&gt; Mit diesem Gerät koppeln?"</string>
+@@ -1174,7 +1174,7 @@
+     <string name="sim_change_pin" msgid="7328607264898359112">"PIN für SIM-Karte"</string>
+     <string name="sim_bad_pin" msgid="2345230873496357977">"Falsche PIN"</string>
+     <string name="sim_pins_dont_match" msgid="1695021563878890574">"Die PINs stimmen nicht überein."</string>
+-    <string name="sim_change_failed" msgid="3602072380172511475">"PIN kann nicht geändert werden.\nMöglicherweise ist es die falsche PIN."</string>
++    <string name="sim_change_failed" msgid="3602072380172511475">"PIN kann nicht geändert werden.\nEventuell ist es die falsche PIN."</string>
+     <string name="sim_change_succeeded" msgid="8556135413096489627">"SIM-PIN erfolgreich geändert"</string>
+     <string name="sim_lock_failed" msgid="2489611099235575984">"Status der SIM-Kartensperrung kann nicht geändert werden.\nMöglicherweise falsche PIN."</string>
+     <string name="sim_enter_ok" msgid="6475946836899218919">"OK"</string>
+@@ -1280,8 +1280,8 @@
+     <string name="dlg_confirm_unmount_text" product="default" msgid="6998379994779187692">"Wenn du die SD-Karte entfernst, werden einige von dir verwendete Apps angehalten und sind nicht mehr verfügbar, bis du die SD-Karte wieder einsetzt."</string>
+     <string name="dlg_error_unmount_title" product="nosdcard" msgid="4642742385125426529"></string>
+     <string name="dlg_error_unmount_title" product="default" msgid="4642742385125426529"></string>
+-    <string name="dlg_error_unmount_text" product="nosdcard" msgid="9191518889746166147">"USB-Speicher kann nicht getrennt werden. Bitte versuche es später erneut."</string>
+-    <string name="dlg_error_unmount_text" product="default" msgid="3500976899159848422">"SD-Karte kann nicht entfernt werden. Bitte versuche es später erneut."</string>
++    <string name="dlg_error_unmount_text" product="nosdcard" msgid="9191518889746166147">"USB-Speicher kann nicht getrennt werden. Bitte versuche es später noch einmal."</string>
++    <string name="dlg_error_unmount_text" product="default" msgid="3500976899159848422">"SD-Karte kann nicht entfernt werden. Bitte versuche es später noch einmal."</string>
+     <string name="unmount_inform_text" product="nosdcard" msgid="7120241136790744265">"USB-Speicher wird getrennt."</string>
+     <string name="unmount_inform_text" product="default" msgid="1904212716075458402">"SD-Karte wird getrennt."</string>
+     <string name="sd_ejecting_title" msgid="8824572198034365468">"Trennen..."</string>
+@@ -1625,7 +1625,7 @@
+     <string name="lockpattern_recording_intro_header" msgid="308287052221942814">"Zeichne ein Entsperrungsmuster."</string>
+     <string name="lockpattern_recording_intro_footer" msgid="1118579101409152113">"Menütaste drücken, um die Hilfe aufzurufen"</string>
+     <string name="lockpattern_recording_inprogress" msgid="6667844062721656773">"Lass die Tasten los, wenn du fertig bist."</string>
+-    <string name="lockpattern_recording_incorrect_too_short" msgid="1348234155120957561">"Verbinde mindestens <xliff:g id="NUMBER">%d</xliff:g> Punkte. Bitte versuche es erneut."</string>
++    <string name="lockpattern_recording_incorrect_too_short" msgid="1348234155120957561">"Verbinde mindestens <xliff:g id="NUMBER">%d</xliff:g> Punkte. Bitte versuche es noch einmal."</string>
+     <string name="lockpattern_pattern_entered_header" msgid="4316818983675591604">"Muster wurde aufgezeichnet."</string>
+     <string name="lockpattern_need_to_confirm" msgid="8054853451639221265">"Zeichne das Muster zur Bestätigung erneut."</string>
+     <string name="lockpattern_pattern_confirmed_header" msgid="8455614172231880211">"Dein neues Entsperrungsmuster:"</string>
+@@ -2163,7 +2163,7 @@
+     <string name="battery_tip_early_heads_up_title" msgid="5788492366387119807">"Energiesparmodus aktivieren"</string>
+     <string name="battery_tip_early_heads_up_summary" msgid="1639271439914224547">"Der Akku könnte früher als üblich leer sein"</string>
+     <string name="battery_tip_early_heads_up_done_title" msgid="4294083319255926811">"Energiesparmodus ist aktiviert"</string>
+-    <string name="battery_tip_early_heads_up_done_summary" msgid="7054036010928794364">"Einige Funktionen sind möglicherweise eingeschränkt"</string>
++    <string name="battery_tip_early_heads_up_done_summary" msgid="7054036010928794364">"Einige Funktionen sind eventuell eingeschränkt"</string>
+     <string name="battery_tip_high_usage_title" product="default" msgid="1282187115295901930">"Smartphone mehr als üblich genutzt"</string>
+     <string name="battery_tip_high_usage_title" product="tablet" msgid="7422137233845959351">"Tablet mehr als üblich genutzt"</string>
+     <string name="battery_tip_high_usage_title" product="device" msgid="5483320224273724068">"Gerät mehr als üblich genutzt"</string>
+@@ -2720,7 +2720,7 @@
+     <string name="vpn_lockdown_summary" msgid="2200032066376720339">"Wähle ein VPN-Profil für eine durchgehende Verbindung aus. Netzwerkverkehr ist nur möglich, wenn eine Verbindung zu diesem VPN besteht."</string>
+     <string name="vpn_lockdown_none" msgid="9214462857336483711">"Keines"</string>
+     <string name="vpn_lockdown_config_error" msgid="3898576754914217248">"Für ein durchgehend aktives VPN ist eine IP-Adresse für den Server und für das DNS erforderlich."</string>
+-    <string name="vpn_no_network" msgid="3050233675132726155">"Es ist keine Netzwerkverbindung verfügbar. Bitte versuche es später erneut."</string>
++    <string name="vpn_no_network" msgid="3050233675132726155">"Es ist keine Netzwerkverbindung verfügbar. Bitte versuche es später noch einmal."</string>
+     <string name="vpn_disconnected" msgid="280531508768927471">"Verbindung mit VPN getrennt"</string>
+     <string name="vpn_disconnected_summary" msgid="3082851661207900606">"Keine"</string>
+     <string name="vpn_missing_cert" msgid="5357192202207234745">"Ein Zertifikat fehlt. Versuche, das Profil zu ändern."</string>
+@@ -2748,7 +2748,7 @@
+     <string name="backup_pw_set_button_text" msgid="2387480910044648795">"Passwort festlegen"</string>
+     <string name="backup_pw_cancel_button_text" msgid="8845630125391744615">"Abbrechen"</string>
+     <string name="additional_system_update_settings_list_item_title" msgid="214987609894661992">"Zusätzliche Systemupdates"</string>
+-    <string name="ssl_ca_cert_warning" msgid="2045866713601984673">"Das Netzwerk wird möglicherweise überwacht."</string>
++    <string name="ssl_ca_cert_warning" msgid="2045866713601984673">"Das Netzwerk wird eventuell überwacht."</string>
+     <string name="done_button" msgid="1991471253042622230">"Fertig"</string>
+     <plurals name="ssl_ca_cert_dialog_title" formatted="false" msgid="7145092748045794650">
+       <item quantity="other">Zertifikaten vertrauen oder sie entfernen</item>
+@@ -3031,7 +3031,7 @@
+     <string name="setup_wifi_nfc_tag" msgid="9028353016222911016">"WLAN-NFC-Tag einrichten"</string>
+     <string name="write_tag" msgid="8571858602896222537">"Schreiben"</string>
+     <string name="status_awaiting_tap" msgid="2130145523773160617">"Zum Schreiben auf ein Tag tippen…"</string>
+-    <string name="status_invalid_password" msgid="2575271864572897406">"Ungültiges Passwort. Bitte versuche es erneut."</string>
++    <string name="status_invalid_password" msgid="2575271864572897406">"Ungültiges Passwort. Bitte versuche es noch einmal."</string>
+     <string name="status_write_success" msgid="5228419086308251169">"Erfolgreich ausgeführt!"</string>
+     <string name="status_failed_to_write" msgid="8072752734686294718">"Es können keine Daten in das NFC-Tag geschrieben werden. Sollte das Problem weiterhin bestehen, versuche es mit einem anderen Tag."</string>
+     <string name="status_tag_not_writable" msgid="2511611539977682175">"In das NFC-Tag kann nicht geschrieben werden. Bitte verwende ein anderes Tag."</string>
+@@ -3948,7 +3948,7 @@
+     <string name="double_tap_power_for_camera_title" msgid="64716226816032800">"Zur Kamera wechseln"</string>
+     <string name="double_tap_power_for_camera_summary" msgid="242037150983277829">"Ein-/Aus-Taste zweimal drücken, um Kamera direkt zu starten. Funktioniert bei jedem Display."</string>
+     <string name="double_tap_power_for_camera_suggestion_title" msgid="6500405261202883589">"Kamera schnell öffnen"</string>
+-    <string name="double_twist_for_camera_mode_title" msgid="4877834147983530479">"Kamera wechseln"</string>
++    <string name="double_twist_for_camera_mode_title" msgid="4877834147983530479">"Kamera umschalten"</string>
+     <string name="double_twist_for_camera_mode_summary" msgid="122977081337563340"></string>
+     <string name="double_twist_for_camera_suggestion_title" msgid="4689410222517954869">"Schnell Selfies aufnehmen"</string>
+     <string name="swipe_up_to_switch_apps_title" msgid="2513907834903543667">"Auf Startbildschirmtaste nach oben wischen"</string>
+diff --git a/res/values-et/strings.xml b/res/values-et/strings.xml
+index 6cb7ba80b4..9d1f7cf4ac 100644
+--- a/res/values-et/strings.xml
++++ b/res/values-et/strings.xml
+@@ -1098,7 +1098,7 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"Heledust optimeeritakse valgustingimuste järgi. Kui funktsioon on sisse lülitatud, saate heledust siiski ajutiselt reguleerida."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"Teie ekraanikuva eredust kohandatakse automaatselt teie keskkonna ja tegevuste järgi. Võite liugurit käsitsi liigutada, et aidata kohanduval eredusel teie eelistusi õppida."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"Öövalgus"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"Funktsioon Öövalgus toonib ekraani kollaseks. Nii on hämaras ekraani mugavam vaadata ja sellelt teksti lugeda. See võib aidata teil ka hõlpsamini magama jääda."</string>
++    <string name="night_display_text" msgid="1837277457033025056">"Funktsioon Öövalgus toonib ekraani oranžkollaseks. Nii on hämaras ekraani mugavam vaadata ja sellelt teksti lugeda. See võib aidata teil ka hõlpsamini magama jääda."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Ajastamine"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Mitte kunagi"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Lülitub sisse kohandatud ajal"</string>
+@@ -3634,7 +3634,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Sagedus"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Maksimaalne kasutus"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Andmeid pole kasutatud"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Kas lubada rakenduse <xliff:g id="APP">%1$s</xliff:g> juurdepääs funktsioonile Mitte segada?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Rakenduse <xliff:g id="APP">%1$s</xliff:g> juurdepääs funktsioonile Mitte segada"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Rakendus saab funktsiooni Mitte segada sisse/välja lülitada ja muuta sellega seotud seadeid."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Peab jääma sisselülitatud asendisse, kuna juurdepääs märguannetele on sisse lülitatud"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Kas tühistada rakenduse <xliff:g id="APP">%1$s</xliff:g> juurdepääs režiimile Mitte segada?"</string>
+diff --git a/res/values-eu/strings.xml b/res/values-eu/strings.xml
+index f880b7e54d..dfc315de21 100644
+--- a/res/values-eu/strings.xml
++++ b/res/values-eu/strings.xml
+@@ -1099,7 +1099,7 @@
+     <string name="auto_brightness_description" msgid="7310335517128283729">"Pantailaren distira automatikoki doituko da inguruneko argiaren eta egiten ari zarenaren arabera. Eskuz aldatu nahi baduzu distira, mugitu graduatzailea distira doigarriak zure hobespenak ikas ditzan."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"Gaueko argia"</string>
+     <string name="night_display_text" msgid="1837277457033025056">"Gaueko argiak tindu horikaraz janzten du pantaila. Horrela, ez zaizu horren nekagarria egingo argi gutxirekin pantailari begira egotea eta errazago hartuko duzu lo, gainera."</string>
+-    <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Programazioa"</string>
++    <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Ordutegia"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Bat ere ez"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Ordu jakinetan aktibatzen da"</string>
+     <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Iluntzetik egunsentira aktibatzen da"</string>
+@@ -1119,8 +1119,8 @@
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"Desaktibatu"</string>
+     <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"Aktibatu egunsentira arte"</string>
+     <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Desaktibatu ilunabarrera arte"</string>
+-    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"Aktibatu <xliff:g id="ID_1">%1$s</xliff:g> arte"</string>
+-    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"Desaktibatu <xliff:g id="ID_1">%1$s</xliff:g> arte"</string>
++    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"Aktibatu <xliff:g id="ID_1">%1$s</xliff:g>(a)k arte"</string>
++    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"Desaktibatu <xliff:g id="ID_1">%1$s</xliff:g>(a)k arte"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"Ezarri egonean moduan"</string>
+     <string name="screen_timeout_title" msgid="5130038655092628247">"Pantaila itzaltzen da"</string>
+     <string name="screen_timeout_summary" msgid="327761329263064327">"<xliff:g id="TIMEOUT_DESCRIPTION">%1$s</xliff:g> inaktibo egon ondoren"</string>
+@@ -3634,8 +3634,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Maiztasuna"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Gehieneko erabilera"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Ez da erabili daturik"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> aplikazioari \"Ez molestatu\" egoerarako sarbidea baimendu nahi diozu?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Aplikazioak \"Ez molestatu\" egoera aktibatu eta desaktibatu ahal izango du, eta horrekin erlazionatutako ezarpenetan aldaketak egin ahal izango ditu."</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> aplikazioari \"Ez molestatu\" modurako sarbidea eman?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Aplikazioak \"Ez molestatu\" egoera aktibatu eta desaktibatu ahal izango du, eta erlazionatutako ezarpenetan aldaketak egin ahal izango ditu."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Aktibatuta egon behar du, jakinarazpenetarako sarbidea aktibatuta dagoelako"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Ez molestatzeko arauetarako sarbidea kendu nahi diozu <xliff:g id="APP">%1$s</xliff:g> aplikazioari?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Kendu egingo dira aplikazioak sortu dituen ez molestatzeko arau guztiak."</string>
+diff --git a/res/values-fr/strings.xml b/res/values-fr/strings.xml
+index 3f2158bb4c..53d1d6fd32 100644
+--- a/res/values-fr/strings.xml
++++ b/res/values-fr/strings.xml
+@@ -2568,7 +2568,7 @@
+     <string name="misc_files_selected_count" msgid="4647048020823912088">"<xliff:g id="NUMBER">%1$d</xliff:g> fichiers sélectionnés sur <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
+     <string name="misc_files_selected_count_bytes" msgid="2876232009069114352">"<xliff:g id="NUMBER">%1$s</xliff:g> sur <xliff:g id="TOTAL">%2$s</xliff:g>"</string>
+     <string name="select_all" msgid="1562774643280376715">"Tout sélectionner"</string>
+-    <string name="data_usage_summary_title" msgid="3804110657238092929">"Conso. des données"</string>
++    <string name="data_usage_summary_title" msgid="3804110657238092929">"Conso des données"</string>
+     <string name="data_usage_app_summary_title" msgid="4147258989837459172">"Conso données"</string>
+     <string name="data_usage_accounting" msgid="7170028915873577387">"Le suivi de la consommation effectué par votre opérateur peut différer de celui de votre appareil."</string>
+     <string name="data_usage_app" msgid="4970478397515423303">"Consommation par application"</string>
+@@ -2947,7 +2947,7 @@
+     <string name="dashboard_suggestion_condition_footer_content_description" msgid="2898588191174845961">"Réduire"</string>
+     <string name="network_dashboard_title" msgid="3135144174846753758">"Réseau et Internet"</string>
+     <string name="network_dashboard_summary_mobile" msgid="3851083934739500429">"mobile"</string>
+-    <string name="network_dashboard_summary_data_usage" msgid="3843261364705042212">"conso. des données"</string>
++    <string name="network_dashboard_summary_data_usage" msgid="3843261364705042212">"conso des données"</string>
+     <string name="network_dashboard_summary_hotspot" msgid="8494210248613254574">"point d\'accès"</string>
+     <string name="connected_devices_dashboard_title" msgid="2355264951438890709">"Appareils connectés"</string>
+     <string name="connected_devices_dashboard_summary" msgid="2665221896894251402">"Bluetooth, mode Voiture, NFC"</string>
+@@ -3779,7 +3779,7 @@
+     <string name="ota_disable_automatic_update" msgid="2319639631655915050">"Mises à jour automatiques du système"</string>
+     <string name="ota_disable_automatic_update_summary" msgid="940729694354373087">"Appliquer les mises à jour au démarrage de l\'appareil"</string>
+     <string name="usage" msgid="2977875522080448986">"Consommation"</string>
+-    <string name="cellular_data_usage" msgid="2155683719898158203">"Conso. données mobiles"</string>
++    <string name="cellular_data_usage" msgid="2155683719898158203">"Conso des données mobiles"</string>
+     <string name="app_cellular_data_usage" msgid="5468472735806533448">"Consommation de données des applications"</string>
+     <string name="wifi_data_usage" msgid="771603760674507659">"Consommation des données Wi-Fi"</string>
+     <string name="ethernet_data_usage" msgid="5108764537574354616">"Consommation de données Ethernet"</string>
+@@ -3839,7 +3839,7 @@
+     <string name="data_saver_on" msgid="6774217590237934709">"Activé"</string>
+     <string name="data_saver_off" msgid="6892309031162738794">"Désactivé"</string>
+     <string name="data_saver_switch_title" msgid="836312690356005669">"Utiliser l\'économiseur de données"</string>
+-    <string name="unrestricted_app_title" msgid="4465437191723332066">"Conso. données non restreinte"</string>
++    <string name="unrestricted_app_title" msgid="4465437191723332066">"Conso données non restreinte"</string>
+     <string name="unrestricted_app_summary" msgid="6458008993501723912">"Autoriser l\'accès non restreint aux données lorsque l\'économiseur de données est activé"</string>
+     <string name="home_app" msgid="4066188520886810030">"Application sur la page d\'accueil"</string>
+     <string name="no_default_home" msgid="7184117487704520238">"Aucune page d\'accueil par défaut"</string>
+@@ -4098,7 +4098,7 @@
+     <string name="storage_manager_indicator_on" msgid="8625551710194584733">"Activé"</string>
+     <string name="install_type_instant" msgid="3174425974536078647">"Appli instantanée"</string>
+     <string name="automatic_storage_manager_deactivation_warning" msgid="5605210730828410482">"Désactiver le gestionnaire d\'espace de stockage ?"</string>
+-    <string name="storage_movies_tv" msgid="5498394447562086890">"Applications defilms et TV"</string>
++    <string name="storage_movies_tv" msgid="5498394447562086890">"Applications de films et TV"</string>
+     <string name="carrier_provisioning" msgid="4398683675591893169">"Informations de gestion des comptes opérateur"</string>
+     <string name="trigger_carrier_provisioning" msgid="3434865918009286187">"Déclencher la gestion des comptes opérateur"</string>
+     <string name="zen_suggestion_title" msgid="798067603460192693">"Mettre à jour le mode Ne pas déranger"</string>
+diff --git a/res/values-gl/strings.xml b/res/values-gl/strings.xml
+index 17c58c1770..03cad597d3 100644
+--- a/res/values-gl/strings.xml
++++ b/res/values-gl/strings.xml
+@@ -1101,8 +1101,8 @@
+     <string name="night_display_text" msgid="1837277457033025056">"A función Luz nocturna dálle un ton ámbar á pantalla pola noite para que che resulte máis fácil mirala con pouca luz e che axude a coller o sono."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Programar"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Nunca"</string>
+-    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Activar en horario personalizado"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Activar do anoitecer ao amencer"</string>
++    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Actívase en horario personalizado"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Activar do solpor ao amencer"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"Hora de inicio"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"Hora de finalización"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"Estado"</string>
+@@ -1926,7 +1926,7 @@
+     <string name="usage_time_label" msgid="295954901452833058">"Tempo de uso"</string>
+     <string name="accessibility_settings" msgid="3975902491934816215">"Accesibilidade"</string>
+     <string name="accessibility_settings_title" msgid="2130492524656204459">"Configuración de accesibilidade"</string>
+-    <string name="accessibility_settings_summary" msgid="981260486011624939">"Lectores de pantalla, pantalla, controis de interacción"</string>
++    <string name="accessibility_settings_summary" msgid="981260486011624939">"Lectores de pantalla, interacción, pantalla"</string>
+     <string name="vision_settings_title" msgid="4204111425716868288">"Configuración de visualización"</string>
+     <string name="vision_settings_description" msgid="5679491180156408260">"Podes personalizar este dispositivo segundo as túas necesidades. Podes cambiar estas funcións de accesibilidade máis tarde en Configuración."</string>
+     <string name="vision_settings_suggestion_title" msgid="8058794060304707004">"Cambiar tamaño do tipo de letra"</string>
+@@ -3635,11 +3635,11 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Frecuencia"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Uso máximo"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Non se utilizaron datos"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Queres que <xliff:g id="APP">%1$s</xliff:g> teña acceso ao modo Non molestar?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Queres permitir o acceso da aplicación <xliff:g id="APP">%1$s</xliff:g> ao modo Non molestar?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"A aplicación poderá activar ou desactivar o modo Non molestar e facer cambios na configuración relacionada."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Debe permanecer activado porque o acceso ás notificacións está activado"</string>
+-    <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Queres revogarlle o acceso a <xliff:g id="APP">%1$s</xliff:g> ás normas Non molestar?"</string>
+-    <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Eliminaranse todas as normas Non molestar creadas por esta aplicación."</string>
++    <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Queres revogar o acceso da aplicación <xliff:g id="APP">%1$s</xliff:g> ao modo Non molestar?"</string>
++    <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Eliminaranse todas as normas do modo Non molestar creadas por esta aplicación."</string>
+     <string name="ignore_optimizations_on" msgid="6915689518016285116">"Non optimizar"</string>
+     <string name="ignore_optimizations_off" msgid="6153196256410296835">"Optimizar"</string>
+     <string name="ignore_optimizations_on_desc" msgid="3549930955839111652">"A batería pódese esgotar máis rápido. Deixarase de restrinxir o uso da batería en segundo plano por parte da aplicación."</string>
+diff --git a/res/values-hy/strings.xml b/res/values-hy/strings.xml
+index c0fc00e542..cc96566ffd 100644
+--- a/res/values-hy/strings.xml
++++ b/res/values-hy/strings.xml
+@@ -1102,7 +1102,7 @@
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Ժամանակացույց"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Չկա"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Միանում է սահմանված ժամին"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Միանում է մայրամուտից մինչև արևածագ"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Միանում է մայրամուտից մինչև լուսաբաց"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"Սկիզբ"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"Ավարտ"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"Կարգավիճակ"</string>
+@@ -3634,7 +3634,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Հաճախականություն"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Առավելագույն օգտագործումը"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Առանց տվյալների օգտագործման"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Թույլատրե՞լ <xliff:g id="APP">%1$s</xliff:g> հավելվածին միացնել/անջատել «Չանհանգստացնել» գործառույթը:"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Թույլատրե՞լ <xliff:g id="APP">%1$s</xliff:g>-ին օգտագործել «Չանհանգստացնել» ռեժիմը"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Հավելվածը կարող է միացնել/անջատել «Չանհանգստացնել» գործառույթը և փոփոխել նրան առնչվող կարգավորումները:"</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Պետք է միացած մնա, քանի որ ծանուցումների օգտագործումն ակտիվացված է"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Չեղարկե՞լ <xliff:g id="APP">%1$s</xliff:g> հավելվածին տրամադրված «Չանհանգստացնել» գործառույթն օգտագործելու թույլտվությունը:"</string>
+diff --git a/res/values-iw/strings.xml b/res/values-iw/strings.xml
+index 1ebbf62633..8695835712 100644
+--- a/res/values-iw/strings.xml
++++ b/res/values-iw/strings.xml
+@@ -3247,7 +3247,7 @@
+     <string name="zen_onboarding_current_setting_title" msgid="776426065129609376">"ללא צליל מהודעות"</string>
+     <string name="zen_onboarding_new_setting_summary" msgid="6293026064871880706">"הודעות לא יוצגו ולא יושמעו. מותרות שיחות מאנשי קשר שמסומנים בכוכב וממתקשרים חוזרים."</string>
+     <string name="zen_onboarding_current_setting_summary" msgid="1280614488924843713">"(ההגדרה הנוכחית)"</string>
+-    <string name="zen_onboarding_dnd_visual_disturbances_header" msgid="1352808651270918932">"האם לשנות את ההגדרות של ההודעות במצב \'נא לא להפריע\'?"</string>
++    <string name="zen_onboarding_dnd_visual_disturbances_header" msgid="1352808651270918932">"האם לשנות את ההגדרות של ההתראות במצב \'נא לא להפריע\'?"</string>
+     <string name="sound_work_settings" msgid="6774324553228566442">"צלילי פרופיל עבודה"</string>
+     <string name="work_use_personal_sounds_title" msgid="1148331221338458874">"השתמש בצלילי הפרופיל האישי"</string>
+     <string name="work_use_personal_sounds_summary" msgid="6207040454949823153">"הצלילים זהים עבור הפרופיל האישי ופרופיל העבודה"</string>
+@@ -3370,8 +3370,8 @@
+     <string name="app_notification_block_summary" msgid="4744020456943215352">"לעולם אל תציג את ההודעות האלה"</string>
+     <string name="notification_content_block_title" msgid="5854232570963006360">"הצג הודעות"</string>
+     <string name="notification_content_block_summary" msgid="7746185794438882389">"אף פעם אל תציג הודעות בהצללה או במכשירים היקפיים"</string>
+-    <string name="notification_badge_title" msgid="6370122441168519809">"הצגה של סימן ההודעות"</string>
+-    <string name="notification_channel_badge_title" msgid="2240827899882847087">"הצגה של סימן ההודעות"</string>
++    <string name="notification_badge_title" msgid="6370122441168519809">"הצגה של סימן ההתראות"</string>
++    <string name="notification_channel_badge_title" msgid="2240827899882847087">"הצגה של סימן ההתראות"</string>
+     <string name="app_notification_override_dnd_title" msgid="7867458246395884830">"ביטול / שינוי של \'נא לא להפריע\'"</string>
+     <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"הודעות אלה יוכלו להמשיך ולהפריע כשמצב \'נא לא להפריע\' מופעל"</string>
+     <string name="app_notification_visibility_override_title" msgid="7821124557634786985">"במסך הנעילה"</string>
+@@ -3487,7 +3487,7 @@
+     <string name="zen_mode_screen_off" msgid="3144446765110327937">"כאשר המסך כבוי"</string>
+     <string name="zen_mode_screen_off_summary" msgid="7430034620565812258">"הודעות שהושתקו במצב \'נא לא להפריע\' יפעילו את המסך ואת האור המהבהב"</string>
+     <string name="zen_mode_screen_off_summary_no_led" msgid="2826121465026642017">"הודעות שהושתקו במצב \'נא לא להפריע\' יפעילו את המסך"</string>
+-    <string name="notification_app_settings_button" msgid="6685640230371477485">"הגדרות התראה"</string>
++    <string name="notification_app_settings_button" msgid="6685640230371477485">"הגדרת התראות"</string>
+     <string name="suggestion_button_text" msgid="3275010948381252006">"אישור"</string>
+     <string name="device_feedback" msgid="3238056036766293294">"שליחת משוב על המכשיר הזה"</string>
+     <string name="restr_pin_enter_admin_pin" msgid="1085834515677448072">"הזן את קוד הגישה של מנהל המכשיר"</string>
+diff --git a/res/values-ja/strings.xml b/res/values-ja/strings.xml
+index ee9f96d6ed..005902cde3 100644
+--- a/res/values-ja/strings.xml
++++ b/res/values-ja/strings.xml
+@@ -1097,8 +1097,8 @@
+     <string name="auto_brightness_very_high_summary" msgid="4551003097086220709">"電池使用量が増えます"</string>
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"周囲に合わせて明るさを最適化します。この機能が ON の場合でも、一時的に明るさを調整できます。"</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"画面の明るさは環境やアクティビティに応じて自動的に調整されます。スライダーを手動で動かして、明るさの自動調節機能に設定を学習させることもできます。"</string>
+-    <string name="night_display_title" msgid="2626451512200357686">"ナイトライト"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"読書灯を利用すると画面が黄味がかった色になります。薄明かりの下でも画面を見やすくなり、寝付きを良くする効果も期待できます。"</string>
++    <string name="night_display_title" msgid="2626451512200357686">"夜間モード"</string>
++    <string name="night_display_text" msgid="1837277457033025056">"夜間モードを利用すると画面が黄味がかった色になります。薄明かりの下でも画面を見やすくなり、寝付きを良くする効果も期待できます。"</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"スケジュール"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"使用しない"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"指定した時間に ON"</string>
+@@ -3759,9 +3759,9 @@
+     <string name="condition_device_vibrate_title" product="default" msgid="1087633233379991925">"スマートフォンはバイブレーションに設定されています"</string>
+     <string name="condition_device_vibrate_summary" product="tablet" msgid="433514444618164607">"着信と通知を端末のバイブレーションで知らせます"</string>
+     <string name="condition_device_vibrate_summary" product="default" msgid="5877034997839162763">"着信と通知をスマートフォンのバイブレーションで知らせます"</string>
+-    <string name="night_display_suggestion_title" msgid="6602129097059325291">"読書灯のスケジュールの設定"</string>
++    <string name="night_display_suggestion_title" msgid="6602129097059325291">"夜間モードのスケジュールの設定"</string>
+     <string name="night_display_suggestion_summary" msgid="228346372178218442">"夜間に画面の色みを自動的に変えて見やすくします"</string>
+-    <string name="condition_night_display_title" msgid="5599814941976856183">"読書灯 ON"</string>
++    <string name="condition_night_display_title" msgid="5599814941976856183">"夜間モード ON"</string>
+     <string name="condition_night_display_summary" msgid="5443722724310650381">"画面が黄味がかった色になります。寝付きを良くする効果も期待できます。"</string>
+     <string name="suggestions_title_v2" msgid="5601181602924147569">"おすすめ"</string>
+     <string name="suggestions_title" msgid="7280792342273268377">"候補"</string>
+diff --git a/res/values-kk/strings.xml b/res/values-kk/strings.xml
+index 3f76fdf664..059ac9e997 100644
+--- a/res/values-kk/strings.xml
++++ b/res/values-kk/strings.xml
+@@ -1098,7 +1098,7 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"Қолжетімді жарықтандыруға сәйкес жарық деңгейін оңтайландырыңыз. Бұл функция қосулы кезде, жарық деңгейін уақытша реттей аласыз."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"Экран жарықтығы қоршаған ортаға және әрекеттерге автоматты түрде бейімделеді. Бейімделгіш жарықтық параметрлерде сақталуы үшін, жүгірткіні қолмен жылжытуыңызға болады."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"Түнгі жарық"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"Түнгі жарық функциясы экраныңызға ашық сары реңк береді. Бұл қараңғыда экранға қарауды жеңілдетеді әрі жылдам ұйықтауға да көмектесуі мүмкін."</string>
++    <string name="night_display_text" msgid="1837277457033025056">"\"Түнгі жарық\" функциясы экраныңызға ашық сары реңк береді. Бұл қараңғыда экранға қарауды жеңілдетеді әрі жылдам ұйықтауға да көмектесуі мүмкін."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Уақыт кестесі"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Ешқашан"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Арнаулы уақытта қосылады"</string>
+@@ -3634,7 +3634,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Жиілік"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Ең көп пайдалануы"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Деректер пайдаланылмаған"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> үшін «Мазаламау» режиміне кіру рұқсатын бересіз бе?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> қолданбасына «Мазаламау» режиміне кіруге бола ма?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Қолданба «Мазаламау» режимін қосуы/өшіруі және қатысты параметрлерге өзгерістер енгізуі мүмкін."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Хабарландыру параметрі қосулы болғандықтан, міндетті түрде қосулы болуы тиіс"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"<xliff:g id="APP">%1$s</xliff:g> үшін \"Мазаламау\" режиміне қатынасты қайтару керек пе?"</string>
+diff --git a/res/values-km/strings.xml b/res/values-km/strings.xml
+index 06488371d5..11983e30e1 100644
+--- a/res/values-km/strings.xml
++++ b/res/values-km/strings.xml
+@@ -1212,7 +1212,7 @@
+     <string name="device_status_summary" product="tablet" msgid="3292717754497039686">"ស្ថានភាព​ថ្ម បណ្ដាញ និង​ព័ត៌មាន​ផ្សេងៗ"</string>
+     <string name="device_status_summary" product="default" msgid="2599162787451519618">"លេខ​ទូរស័ព្ទ សញ្ញា ។ល។"</string>
+     <string name="storage_settings" msgid="4211799979832404953">"ទំហំ​ផ្ទុក"</string>
+-    <string name="storage_usb_settings" msgid="7293054033137078060">"ឧបករណ៍​ផ្ទុក"</string>
++    <string name="storage_usb_settings" msgid="7293054033137078060">"ទំហំ​ផ្ទុក"</string>
+     <string name="storage_settings_title" msgid="8746016738388094064">"កំណត់​ការ​​ផ្ទុក"</string>
+     <string name="storage_settings_summary" product="nosdcard" msgid="3543813623294870759">"ផ្ដាច់​​ឧបករណ៍​ផ្ទុក​យូអេសប៊ី មើល​ទំហំ​ដែល​មាន"</string>
+     <string name="storage_settings_summary" product="default" msgid="9176693537325988610">"ផ្ដាច់​​កាត​អេស​ឌី មើល​ទំហំ​ដែល​មាន"</string>
+diff --git a/res/values-kn/strings.xml b/res/values-kn/strings.xml
+index 4e3f367172..4a380c6141 100644
+--- a/res/values-kn/strings.xml
++++ b/res/values-kn/strings.xml
+@@ -1101,8 +1101,8 @@
+     <string name="night_display_text" msgid="1837277457033025056">"ನೈಟ್ ಲೈಟ್ ನಿಮ್ಮ ಪರದೆಯನ್ನು ಕಡು ಕಂದು ಬಣ್ಣಕ್ಕೆ ತಿರುಗಿಸುತ್ತದೆ. ಇದರಿಂದಾಗಿ ಮಂದ ಬೆಳಕಿನಲ್ಲಿಯೂ ನಿಮ್ಮ ಪರದೆಯನ್ನು ನೋಡಲು ಅಥವಾ ಓದಲು ಸುಲಭವಾಗುತ್ತದೆ ಮತ್ತು ಸುಲಭವಾಗಿ ನಿದ್ರಿಸಲು ಇದು ನಿಮಗೆ ಸಹಾಯ ಮಾಡಬಹುದು."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"ಅವಧಿ"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"ಯಾವುದೂ ಅಲ್ಲ"</string>
+-    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ಕಸ್ಟಮ್ ಸಮಯದಲ್ಲಿ ಆನ್ ಮಾಡಿ"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"ಸೂರ್ಯಾಸ್ತದಿಂದ ಸೂರ್ಯೋದಯದವರೆಗೂ ಆನ್‌ ಮಾಡಿರುತ್ತದೆ"</string>
++    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ಕಸ್ಟಮ್ ಸಮಯದಲ್ಲಿ ಆನ್ ಆಗುತ್ತದೆ"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"ಸೂರ್ಯಾಸ್ತದಿಂದ ಸೂರ್ಯೋದಯದವರೆಗೂ ಆನ್‌ ಆಗಿರುತ್ತದೆ"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"ಪ್ರಾರಂಭದ ಸಮಯ"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"ಮುಕ್ತಾಯದ ಸಮಯ"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"ಸ್ಥಿತಿ"</string>
+diff --git a/res/values-ko/strings.xml b/res/values-ko/strings.xml
+index 237a97640f..b57030b2f5 100644
+--- a/res/values-ko/strings.xml
++++ b/res/values-ko/strings.xml
+@@ -1102,7 +1102,7 @@
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"예약"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"없음"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"맞춤 시간에 켜짐"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"일몰부터 일출까지 사용"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"일몰부터 일출까지 켜짐"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"시작 시간"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"종료 시간"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"상태"</string>
+@@ -2957,7 +2957,7 @@
+     <string name="app_and_notification_dashboard_title" msgid="7838365599185397539">"앱 및 알림"</string>
+     <string name="app_and_notification_dashboard_summary" msgid="2363314178802548682">"권한, 기본 앱"</string>
+     <string name="account_dashboard_title" msgid="5895948991491438911">"계정"</string>
+-    <string name="account_dashboard_default_summary" msgid="3998347400161811075">"추가된 계정이 없습니다."</string>
++    <string name="account_dashboard_default_summary" msgid="3998347400161811075">"추가된 계정 없음"</string>
+     <string name="app_default_dashboard_title" msgid="7342549305933047317">"기본 앱"</string>
+     <string name="system_dashboard_summary" msgid="5797743225249766685">"언어, 시간, 백업, 업데이트"</string>
+     <string name="search_results_title" msgid="1796252422574886932">"설정"</string>
+diff --git a/res/values-ky/strings.xml b/res/values-ky/strings.xml
+index f0e5979507..7076b79a10 100644
+--- a/res/values-ky/strings.xml
++++ b/res/values-ky/strings.xml
+@@ -3633,7 +3633,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Жыштык"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Эң көп керектелиши"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Колдонулган дайындар жок"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> колдонмосуна \"Тынчымды алба\" функциясын пайдаланууга уруксат берилсинби?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> колдонмосуна \"Тынчымды алба\" режимине уруксат бересизби?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Бул колдонмо \"Тынчымды алба\" режимин күйгүзүп/өчүрүп, тийиштүү жөндөөлөрдү өзгөртө алат."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Эскертмелерге уруксат берилгендиктен, күйүп турушу керек"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"<xliff:g id="APP">%1$s</xliff:g> колдонмосуна \"Тынчымды алба\" функциясын пайдалануу мүмкүнчүлүгү калыбына келтирилсинби?"</string>
+diff --git a/res/values-lo/strings.xml b/res/values-lo/strings.xml
+index a41697de97..65b3d56fc9 100644
+--- a/res/values-lo/strings.xml
++++ b/res/values-lo/strings.xml
+@@ -381,7 +381,7 @@
+     <string name="location_settings_title" msgid="1369675479310751735">"ສະຖານທີ່"</string>
+     <string name="location_settings_master_switch_title" msgid="3560242980335542411">"ໃຊ້​ສະຖານທີ່"</string>
+     <string name="account_settings_title" msgid="626177544686329806">"ບັນຊີ"</string>
+-    <string name="security_settings_title" msgid="4918904614964215087">"ຄວາມປອດໄພ &amp; ສະຖານທີ່"</string>
++    <string name="security_settings_title" msgid="4918904614964215087">"ຄວາມປອດໄພ ແລະ ສະຖານທີ່"</string>
+     <string name="encryption_and_credential_settings_title" msgid="6514904533438791561">"ການເຂົ້າລະຫັດ ແລະ ຂໍ້ມູນການເຂົ້າສູ່ລະບົບ"</string>
+     <string name="encryption_and_credential_settings_summary" product="default" msgid="8721883002237981248">"ເຂົ້າລະຫັດໂທລະສັບແລ້ວ"</string>
+     <string name="decryption_settings_summary" product="default" msgid="5671817824042639849">"ໂທລະສັບບໍ່ໄດ້ຖືກເຂົ້າລະຫັດ"</string>
+@@ -1098,7 +1098,7 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"ປັບແຕ່ງຄວາມສະຫວ່າງຂອງແສງ. ເມື່ອເປີດໃຊ້ຄຸນສົມບັດນີ້, ທ່ານຈະຍັງຄົງສາມາດປັບແຕ່ງລະດັບຄວາມສະຫວ່າງຊົ່ວຄາວໄດ້ຢູ່."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"ຄວາມສະຫວ່າງໜ້າຈໍຂອງທ່ານຈະຖືກປັບໂດຍອັດຕະໂນມັດໂດຍອ້າງອີງຈາກສະພາບແວດລ້ອມ ແລະ ກິດຈະກຳທີ່ທ່ານເຮັດ. ທ່ານສາມາດຍ້າຍຕົວເລື່ອນດ້ວຍຕົນເອງເພື່ອຊ່ວຍໃຫ້ລະບົບຮຽນຮູ້ການຕັ້ງຄ່າຂອງທ່ານໄດ້."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"ແສງກາງຄືນ"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"ຄຸນສົມບັດ ແສງກາງຄືນ ຈະໃສ່ສີໜ້າຈໍຂອງທ່ານເປັນສີແດງໃນເວລາກາງຄືນ. ນີ້ຈະເຮັດໃຫ້ສາມາດເບິ່ງໜ້າຈໍໄດ້ງ່າຍຂຶ້ນໃນສະພາບແສງໜ້ອຍ ແລະ ອາດຊ່ວຍໃຫ້ທ່ານນອນຫຼັບງ່າຍຂຶ້ນໄດ້ນຳ."</string>
++    <string name="night_display_text" msgid="1837277457033025056">"ຄຸນສົມບັດ ແສງກາງຄືນ ຈະໃສ່ສີໜ້າຈໍຂອງທ່ານເປັນສີອົມເຫຼືອງໃນເວລາກາງຄືນ. ນີ້ຈະເຮັດໃຫ້ສາມາດເບິ່ງໜ້າຈໍໄດ້ງ່າຍຂຶ້ນໃນສະພາບແສງໜ້ອຍ ແລະ ອາດຊ່ວຍໃຫ້ທ່ານນອນຫຼັບງ່າຍຂຶ້ນໄດ້ນຳ."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"ຕັ້ງເວລາ"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"ບໍ່ໃຊ້"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ເປີດໃຊ້ໃນເວລາທີ່ກຳນົດເອງ"</string>
+@@ -3634,8 +3634,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"ຄວາມຖີ່"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"ການ​ໃຊ້​ສູງ​ສຸດ"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"ບໍ່​ມີ​ຂໍ້​ມູນ​ທີ່​ໃຊ້​ແລ້ວ"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"ອະນຸຍາດ​ການ​ເຂົ້າ​ເຖິງ ບໍ່​ລົບ​ກວນ​ ສຳລັບ <xliff:g id="APP">%1$s</xliff:g> ບໍ?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"​ແອັບ​ຈະ​ສາມາດ​ເປີດ/ປິດ ບໍ່​ລົບ​ກວນ ​ແລະ​ເຮ​ັດການ​ປ່ຽນ​ແປງ​ຕໍ່​ກັບ​ການ​ຕັ້ງ​ຄ່າ​ທີ່​ກ່ຽວຂ້ອງ."</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"ອະນຸຍາດໃຫ້ເຂົ້າເຖິງໂໝດຫ້າມລົບກວນສຳລັບ <xliff:g id="APP">%1$s</xliff:g> ບໍ່?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"ແອັບຈະສາມາດເປີດ/ປີດ ໂໝດຫ້າມລົບກວນ ແລະ ປ່ຽນແປງການຕັ້ງຄ່າທີ່ກ່ຽວຂ້ອງໄດ້."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"ຕ້ອງເປີດໄວ້ເນື່ອງຈາກການເຂົ້າເຖິງການແຈ້ງເຕືອນຖືກເປີດໃຊ້"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"ຖອດຖອນ​ການ​ເຂົ້າ​ເຖິງຫ້າມ​ລົບ​ກວນສຳລັບ <xliff:g id="APP">%1$s</xliff:g> ບໍ?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"ທຸກກົດ​ລະບຽບຫ້າມ​ລົບ​ກວນທີ່​ສ້າງ​ຂຶ້ນ​ໂດຍ​ແອັບຯ​ນີ້​ຈະ​ຖືກລຶບ​ອອກ."</string>
+diff --git a/res/values-ml/strings.xml b/res/values-ml/strings.xml
+index 057d482654..a021ed28cd 100644
+--- a/res/values-ml/strings.xml
++++ b/res/values-ml/strings.xml
+@@ -1099,10 +1099,10 @@
+     <string name="auto_brightness_description" msgid="7310335517128283729">"നിങ്ങളുടെ പരിതസ്ഥിതിയ്ക്കും പ്രവർത്തനങ്ങൾക്കുമനുസരിച്ച് സ്‌ക്രീൻ തെളിച്ചം സ്വമേധയാ ക്രമീകരിക്കപ്പെടും. മുൻഗണനകൾ മനസ്സിലാക്കാൻ അനുയോജ്യമായ തെളിച്ചത്തിനെ സഹായിക്കുന്നതിന് നിങ്ങൾക്ക് സ്ലൈഡർ നേരിട്ട് നീക്കാം."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"നൈറ്റ് ലൈറ്റ്"</string>
+     <string name="night_display_text" msgid="1837277457033025056">"\'നൈറ്റ് ലൈറ്റ്\' നിങ്ങളുടെ സ്ക്രീനിന് ചെറിയ ആംബർ നിറം നൽകുന്നു. മങ്ങിയ വെളിച്ചത്തിൽ സ്ക്രീനിൽ നോക്കുന്നതും വായിക്കുന്നതും ഈ ഡിസ്പ്ലേ എളുപ്പമാക്കുന്നു, പെട്ടെന്ന് ഉറങ്ങാനും ഇത് നിങ്ങളെ സഹായിച്ചേക്കാം."</string>
+-    <string name="night_display_auto_mode_title" msgid="6574111412154833409">"സമയക്രമം"</string>
++    <string name="night_display_auto_mode_title" msgid="6574111412154833409">"ഷെഡ്യൂള്‍‌"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"ഒന്നുമില്ല"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ഇഷ്ടാനുസൃത സമയത്ത് ഓണാക്കുന്നു"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"സൂര്യോദയം മുതൽ അസ്തമയം വരെ ഓണാക്കുന്നു"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"സൂര്യാസ്തമയം മുതൽ ഉദയം വരെ ഓണാക്കുന്നു"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"ആരംഭിക്കുന്ന സമയം"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"അവസാനിക്കുന്ന സമയം"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"നില"</string>
+@@ -3635,7 +3635,7 @@
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"പരമാവധി ഉപയോഗം"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"ഡാറ്റയൊന്നും ഉപയോഗിച്ചില്ല"</string>
+     <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"\'ശല്യപ്പെടുത്തരുത്\' എന്നതിലേക്ക് <xliff:g id="APP">%1$s</xliff:g>-ന് ആക്സസ് അനുവദിക്കണോ?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"\'ശല്യപ്പെടുത്തരുത്\' ഓണാക്കാനും/ഓഫാക്കാനും ബന്ധപ്പെട്ട ക്രമീകരണത്തിലേക്ക് മാറ്റങ്ങൾ വരുത്താനും ആപ്പിന് കഴിയും."</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"\'ശല്യപ്പെടുത്തരുത്\' ഓൺ/ഓഫ് ആക്കാനും ബന്ധപ്പെട്ട ക്രമീകരണത്തിലേക്ക് മാറ്റങ്ങൾ വരുത്താനും ആപ്പിന് കഴിയും."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"അറിയിപ്പ് ആക്സസ്സ് ഓണായിരിക്കുന്നതിനാൽ ഇതും ഓണായി തുടരണം"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"\'ശല്യപ്പെടുത്തരുത്\' എന്നതിലേക്ക് <xliff:g id="APP">%1$s</xliff:g> ആപ്പിനുള്ള ആക്സസ് പിൻവലിക്കണോ?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"ഈ ആപ്പ് സൃഷ്ടിച്ചിട്ടുള്ള എല്ലാ \'ശല്യപ്പെടുത്തരുത്\' നിയമങ്ങളും നീക്കംചെയ്യപ്പെടും."</string>
+diff --git a/res/values-mr/strings.xml b/res/values-mr/strings.xml
+index 7503e7e7f8..e7e4c0f686 100644
+--- a/res/values-mr/strings.xml
++++ b/res/values-mr/strings.xml
+@@ -1098,13 +1098,13 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"उपलब्ध प्रकाशासाठी उज्ज्वलता स्तर अनुकूल करा. हे वैशिष्ट्य चालू असताना, तुम्ही तरीही उज्ज्वलता तात्पुरती समायोजित करू शकता."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"तुमच्या स्क्रीनची चमक तुमच्या वातावरण आणि अॅक्टिव्हिटीशी आपोआप समायोजित होईल. अनुकूलित चमकेला तुमची प्राधान्ये जाणून घेण्यात मदत करण्यासाठी तुम्ही स्लाइडर व्यक्तिचलितपणे हलवू शकता."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"रात्रीचा प्रकाश"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"रात्रीचा प्रकाश तुमच्या स्क्रीनला पिवळसर तपकिरी रंगछटा देतो. यामुळे मंद प्रकाशात तुमचा स्क्रीन पाहणे किंवा वाचणे सोपे होते आणि तुम्हाला झोप येण्यात मदत होऊ शकते."</string>
+-    <string name="night_display_auto_mode_title" msgid="6574111412154833409">"शेड्यूल"</string>
++    <string name="night_display_text" msgid="1837277457033025056">"रात्रीचा प्रकाश तुमच्या स्क्रीनला पिवळसर तपकिरी छटा देतो. यामुळे मंद प्रकाशात तुमची स्क्रीन पाहणे किंवा वाचणे सोपे होते आणि तुम्हाला झोप येण्यात मदत होऊ शकते."</string>
++    <string name="night_display_auto_mode_title" msgid="6574111412154833409">"शेड्युल"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"काहीही नाही"</string>
+-    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"कस्टम वेळी चालू होते"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"सूर्योदय ते सूर्यास्तादरम्यान चालू होते"</string>
++    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ठराविक वेळी चालू होतो"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"सूर्यास्त-सूर्योदय चालू राहतो"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"प्रारंभ वेळ"</string>
+-    <string name="night_display_end_time_title" msgid="8286061578083519350">"समाप्ती वेळ"</string>
++    <string name="night_display_end_time_title" msgid="8286061578083519350">"संपण्याची वेळ"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"स्थिती"</string>
+     <string name="night_display_temperature_title" msgid="1435292789272017136">"तीव्रता"</string>
+     <string name="night_display_summary_off" msgid="1792750041697946539">"बंद / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+@@ -3379,7 +3379,7 @@
+     <string name="zen_mode_when_never" msgid="8809494351918405602">"कधीही नाही"</string>
+     <string name="zen_mode_when_every_night" msgid="3122486110091921009">"प्रत्येक रात्री"</string>
+     <string name="zen_mode_when_weeknights" msgid="8354070633893273783">"आठवड्याच्या रात्री"</string>
+-    <string name="zen_mode_start_time" msgid="8102602297273744441">"प्रारंभ वेळ"</string>
++    <string name="zen_mode_start_time" msgid="8102602297273744441">"सुरू होण्याची वेळ"</string>
+     <string name="zen_mode_end_time" msgid="8774327885892705505">"समाप्ती वेळ"</string>
+     <string name="zen_mode_end_time_next_day_summary_format" msgid="4201521691238728701">"<xliff:g id="FORMATTED_TIME">%s</xliff:g> पुढील दिवशी"</string>
+     <string name="zen_mode_summary_alarms_only_indefinite" msgid="2061973221027570123">"अनिश्चितपणे केवळ अलार्म वर बदला"</string>
+@@ -3635,7 +3635,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"वारंवारता"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"कमाल वापर"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"कोणताही डेटा वापरला नाही"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> साठी व्यत्यय आणू नका ला प्रवेशाची अनुमती द्यायची?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> वर व्यत्यय आणू नका ला अॅक्सेस द्यायचा का?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"व्यत्यय आणू नका चालू/बंद करण्‍यात आणि संबंधित स्‍ट्रिंगमध्‍ये बदल करण्‍यात अ‍ॅप सक्षम असेल."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"सूचना प्रवेश चालू असल्याने चालू केलेले ठेवणे आवश्यक आहे"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"<xliff:g id="APP">%1$s</xliff:g> साठी व्यत्यय आणू नका मध्‍ये प्रवेश करणे रद्द करायचे?"</string>
+diff --git a/res/values-my/strings.xml b/res/values-my/strings.xml
+index 92bd1fd4c2..2666139b40 100644
+--- a/res/values-my/strings.xml
++++ b/res/values-my/strings.xml
+@@ -3635,7 +3635,7 @@
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"အများဆုံး အသုံးပြုမှု"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"မည်သည့်ဒေတာမျှ အသုံးမပြုပါ"</string>
+     <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g>အတွက် မနှောင့်ယှက်ရန်ကို အသုံးပြုခွင့်ပေးမလား?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"အပ်ဖ်သည် မနှောင့်ယှက်ရန်ကို အဖွင့်/အပိတ်ပြုလုပ်နိုင်ကာ သက်ဆိုင်ရာ ချိန်ညှိချက်များကို ပြောင်းလဲနိုင်ပါသည်။"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"အက်ပ်သည် မနှောင့်ယှက်ရန်ကို အဖွင့်/အပိတ်ပြုလုပ်နိုင်ကာ သက်ဆိုင်ရာ ချိန်ညှိချက်များကို ပြောင်းလဲနိုင်ပါသည်။"</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"အကြောင်းကြားချက် အသုံးပြုခွင့်ကိုဖွင့်ထားသောကြောင့် ဆက်လက်ဖွင့်ထားရပါမည်"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"<xliff:g id="APP">%1$s</xliff:g>အတွက် Do Not Disturb အား သုံးခွင့်ကို ပြန်ရုပ်သိမ်းမလား။"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"ဤအက်ပ်မှ ဖန်တီးခဲ့သည့် Do Not Disturb စည်းမျဉ်းများ အားလုံးကို ဖယ်ရှားပစ်ပါမည်။"</string>
+diff --git a/res/values-ne/strings.xml b/res/values-ne/strings.xml
+index 51bd1a1e4b..8de59c8b1c 100644
+--- a/res/values-ne/strings.xml
++++ b/res/values-ne/strings.xml
+@@ -1104,7 +1104,7 @@
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"आफू अनुकूल समयमा सक्रिय गर्छ"</string>
+     <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"सूर्यास्तदेखि सूर्योदयसम्म सक्रिय गर्छ"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"सुरु समय"</string>
+-    <string name="night_display_end_time_title" msgid="8286061578083519350">"समय समाप्ति"</string>
++    <string name="night_display_end_time_title" msgid="8286061578083519350">"समाप्ति समय"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"स्थिति"</string>
+     <string name="night_display_temperature_title" msgid="1435292789272017136">"तीव्रता"</string>
+     <string name="night_display_summary_off" msgid="1792750041697946539">"निष्क्रिय / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+@@ -3379,7 +3379,7 @@
+     <string name="zen_mode_when_every_night" msgid="3122486110091921009">"हरेक रात"</string>
+     <string name="zen_mode_when_weeknights" msgid="8354070633893273783">"सप्ताहरात"</string>
+     <string name="zen_mode_start_time" msgid="8102602297273744441">"सुरु हुने समय"</string>
+-    <string name="zen_mode_end_time" msgid="8774327885892705505">"समाप्ती समय"</string>
++    <string name="zen_mode_end_time" msgid="8774327885892705505">"समाप्ति समय"</string>
+     <string name="zen_mode_end_time_next_day_summary_format" msgid="4201521691238728701">"<xliff:g id="FORMATTED_TIME">%s</xliff:g> अर्को दिन"</string>
+     <string name="zen_mode_summary_alarms_only_indefinite" msgid="2061973221027570123">"अलार्महरूलाई अनिश्चितकालीन मात्र परिवर्तन गर्नुहोस्"</string>
+     <plurals name="zen_mode_summary_alarms_only_by_minute" formatted="false" msgid="6122003583875424601">
+diff --git a/res/values-pa/strings.xml b/res/values-pa/strings.xml
+index 6ee3d4164d..90b9fda0da 100644
+--- a/res/values-pa/strings.xml
++++ b/res/values-pa/strings.xml
+@@ -1097,11 +1097,11 @@
+     <string name="auto_brightness_very_high_summary" msgid="4551003097086220709">"ਬੈਟਰੀ ਵਰਤੋਂ ਵਧ ਜਾਵੇਗੀ"</string>
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"ਉਪਲਬਧ ਲਾਈਟ ਲਈ ਚਮਕ ਦੇ ਪੱਧਰ ਨੂੰ ਸੁਯੋਗ ਬਣਾਓ। ਇਸ ਵਿਸ਼ੇਸ਼ਤਾ ਦੇ ਚਾਲੂ ਹੋਣ \'ਤੇ ਵੀ ਤੁਸੀਂ ਚਮਕ ਨੂੰ ਅਸਥਾਈ ਤੌਰ \'ਤੇ ਵਿਵਸਥਿਤ ਕਰ ਸਕਦੇ ਹੋ।"</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"ਤੁਹਾਡੇ ਸਕ੍ਰੀਨ ਦੀ ਚਮਕ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਵਾਤਾਵਰਣ ਅਤੇ ਤੁਹਾਡੇ ਵੱਲੋਂ ਕੀਤੀਆਂ ਜਾਣ ਵਾਲੀਆਂ ਸਰਗਰਮੀ ਦੇ ਮੁਤਾਬਕ ਵੱਧ-ਘੱਟ ਹੋਵੇਗੀ। ਢਲਨਹਾਰ ਚਮਕ ਨੂੰ ਤੁਹਾਡੀਆਂ ਤਰਜੀਹਾਂ ਬਾਰੇ ਸਿੱਖਣ ਵਿੱਚ ਮਦਦ ਕਰਨ ਲਈ ਤੁਸੀਂ ਸਲਾਈਡਰ ਨੂੰ ਹੱਥੀਂ ਹਿਲਾ ਸਕਦੇ ਹੋ।"</string>
+-    <string name="night_display_title" msgid="2626451512200357686">"ਰਾਤਰੀ ਲਾਈਟ"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"ਰਾਤਰੀ ਲਾਈਟ ਤੁਹਾਡੀ ਸਕ੍ਰੀਨ ਨੂੰ ਭੂਰੇ ਪੀਲੇ ਰੰਗ ਦੀ ਭਾਹ ਦਿੰਦੀ ਹੈ। ਇਸ ਨਾਲ ਮੱਧਮ ਰੋਸ਼ਨੀ ਵਿੱਚ ਤੁਹਾਡੀ ਸਕ੍ਰੀਨ ਨੂੰ ਦੇਖਣਾ ਜਾਂ ਪੜ੍ਹਨਾ ਵਧੇਰੇ ਆਸਾਨ ਹੋ ਜਾਂਦਾ ਹੈ ਅਤੇ ਤੁਹਾਨੂੰ ਵਧੇਰੇ ਆਸਾਨੀ ਨਾਲ ਸੌਣ ਵਿੱਚ ਮਦਦ ਮਿਲ ਸਕਦੀ ਹੈ।"</string>
++    <string name="night_display_title" msgid="2626451512200357686">"ਰਾਤ ਦੀ ਰੋਸ਼ਨੀ"</string>
++    <string name="night_display_text" msgid="1837277457033025056">"\'ਰਾਤ ਦੀ ਰੋਸ਼ਨੀ\' ਤੁਹਾਡੀ ਸਕ੍ਰੀਨ ਨੂੰ ਭੂਰੇ ਪੀਲੇ ਰੰਗ ਦੀ ਭਾਹ ਦਿੰਦੀ ਹੈ। ਇਸ ਨਾਲ ਮੱਧਮ ਰੋਸ਼ਨੀ ਵਿੱਚ ਤੁਹਾਡੀ ਸਕ੍ਰੀਨ ਨੂੰ ਦੇਖਣਾ ਜਾਂ ਪੜ੍ਹਨਾ ਵਧੇਰੇ ਆਸਾਨ ਹੋ ਜਾਂਦਾ ਹੈ ਅਤੇ ਤੁਹਾਨੂੰ ਵਧੇਰੇ ਆਸਾਨੀ ਨਾਲ ਸੌਣ ਵਿੱਚ ਮਦਦ ਮਿਲ ਸਕਦੀ ਹੈ।"</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"ਸਮਾਂ-ਸੂਚੀ"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"ਕੋਈ ਨਹੀਂ"</string>
+-    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ਵਿਉਂਂਤੀ ਸਮੇਂ ਤੇ ਚਾਲੂ ਹੋ ਜਾਂਦੀ ਹੈ"</string>
++    <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"ਵਿਉਂਂਤੇ ਸਮੇਂ \'ਤੇ ਚਾਲੂ ਹੋ ਜਾਂਦੀ ਹੈ"</string>
+     <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"ਸੂਰਜ ਡੁੱਬਣ ਤੋਂ ਲੈਕੇ ਸੂਰਜ ਚੜ੍ਹਨ ਤੱਕ ਚਾਲੂ ਰਹਿੰਦੀ ਹੈ"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"ਸ਼ੁਰੂੂਆਤ ਦਾ ਸਮਾਂ"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"ਸਮਾਪਤੀ ਦਾ ਸਮਾਂ"</string>
+@@ -3635,7 +3635,7 @@
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"ਅਧਿਕਤਮ ਵਰਤੋਂ"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"ਕੋਈ  ਡਾਟਾ  ਨਹੀਂ ਵਰਤਿਆ"</string>
+     <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"ਕੀ <xliff:g id="APP">%1$s</xliff:g> ਨੂੰ ਪਰੇਸ਼ਾਨ ਨਾ ਕਰੋ ਤੱਕ ਪਹੁੰਚ ਦੀ ਆਗਿਆ ਦੇਣੀ ਹੈ?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"ਐਪ ਪਰੇਸ਼ਾਨ ਨਾ ਕਰੋ ਨੂੰ ਚਾਲੂ/ਬੰਦ ਕਰਨ ਅਤੇ ਸੰਬੰਧਿਤ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਬਦਲਾਵ ਕਰਨ ਵਿੱਚ ਸਮਰੱਥ ਹੋਵੇਗਾ।"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"ਐਪ \'ਪਰੇਸ਼ਾਨ ਨਾ ਕਰੋ\' ਨੂੰ ਚਾਲੂ/ਬੰਦ ਕਰਨ ਅਤੇ ਸੰਬੰਧਿਤ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਬਦਲਾਵ ਕਰਨ ਵਿੱਚ ਸਮਰੱਥ ਹੋਵੇਗੀ।"</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"ਸੂਚਨਾ ਪਹੁੰਚ ਦੇ ਚਾਲੂ ਹੋਣ ਕਾਰਨ ਇਸ ਦਾ ਚਾਲੂ ਰਹਿਣਾ ਲਾਜ਼ਮੀ ਹੈ"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"ਕੀ <xliff:g id="APP">%1$s</xliff:g> ਲਈ \'ਪਰੇਸ਼ਾਨ ਨਾ ਕਰੋ\' \'ਤੇ ਪਹੁੰਚ ਰੱਦ ਕਰਨੀ ਹੈ?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"ਇਸ ਐਪ ਵੱਲੋਂ ਬਣਾਏ ਸਾਰੇ \'ਪਰੇਸ਼ਾਨ ਨਾ ਕਰੋ\' ਨਿਯਮ ਹਟਾ ਦਿੱਤੇ ਜਾਣਗੇ।"</string>
+diff --git a/res/values-sk/strings.xml b/res/values-sk/strings.xml
+index 9e5681c4f4..64a71863c1 100644
+--- a/res/values-sk/strings.xml
++++ b/res/values-sk/strings.xml
+@@ -3738,8 +3738,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Frekvencia"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Maximálne využitie"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Neboli využité žiadne údaje"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Povoliť prístup k nastaveniu Nerušiť pre aplikáciu <xliff:g id="APP">%1$s</xliff:g>?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Aplikácia bude môcť vypnúť alebo zapnúť nastavenie Nerušiť a meniť súvisiace nastavenia."</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Povoliť aplikácii <xliff:g id="APP">%1$s</xliff:g> prístup k režimu Nerušiť?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Aplikácia bude môcť vypínať a zapínať režim Nerušiť a meniť súvisiace nastavenia."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Musí zostať zapnuté, pretože je zapnutý prístup k upozorneniam"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Odvolať prístup k nastaveniu Nerušiť pre aplikáciu <xliff:g id="APP">%1$s</xliff:g>?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Všetky pravidlá typu Nerušiť vytvorené touto aplikáciou budú odstránené."</string>
+diff --git a/res/values-sl/strings.xml b/res/values-sl/strings.xml
+index 023687c82a..862b47c4ff 100644
+--- a/res/values-sl/strings.xml
++++ b/res/values-sl/strings.xml
+@@ -4080,8 +4080,8 @@
+     <string name="swipe_up_to_switch_apps_suggestion_title" msgid="1465200107913259595">"Preskus novega gumba za začetni zaslon"</string>
+     <string name="swipe_up_to_switch_apps_suggestion_summary" msgid="4825314186907812743">"Vklop nove poteze za preklop aplikacij"</string>
+     <string name="ambient_display_title" product="default" msgid="5144814600610448504">"Preverjanje telefona z dvojnim dotikom"</string>
+-    <string name="ambient_display_title" product="tablet" msgid="8688795028609563837">"Dvakrat se dotaknite, da preverite tablični računalnik"</string>
+-    <string name="ambient_display_title" product="device" msgid="3423781975742145894">"Dvakrat se dotaknite, da preverite napravo"</string>
++    <string name="ambient_display_title" product="tablet" msgid="8688795028609563837">"Dvakratni dotik za preverjanje tabličnega računalnika"</string>
++    <string name="ambient_display_title" product="device" msgid="3423781975742145894">"Dvakratni dotik za preverjanje naprave"</string>
+     <string name="ambient_display_summary" msgid="525662960806416373">"Če želite preveriti uro, ikone obvestil in druge informacije, se dvakrat dotaknite zaslona."</string>
+     <string name="ambient_display_pickup_title" product="default" msgid="818688002837687268">"Preverjanje telefona z dvigom"</string>
+     <string name="ambient_display_pickup_title" product="tablet" msgid="4455864282995698097">"Primite tablični računalnik, da ga preverite"</string>
+diff --git a/res/values-sq/strings.xml b/res/values-sq/strings.xml
+index 7389326688..2aaf7c9c3d 100644
+--- a/res/values-sq/strings.xml
++++ b/res/values-sq/strings.xml
+@@ -1118,7 +1118,7 @@
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"Aktivizo tani"</string>
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"Çaktivizo tani"</string>
+     <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"Aktivizo deri në lindjen e diellit"</string>
+-    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Çaktivizo deri në perëndimin e diellit"</string>
++    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Çaktivizo deri në perëndim të diellit"</string>
+     <string name="night_display_activation_on_custom" msgid="5472029024427933598">"Çaktivizo deri në <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="night_display_activation_off_custom" msgid="6169984658293744715">"Çaktivizo deri në <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"Në gjendje gjumi"</string>
+@@ -1926,7 +1926,7 @@
+     <string name="usage_time_label" msgid="295954901452833058">"Koha e përdorimit"</string>
+     <string name="accessibility_settings" msgid="3975902491934816215">"Qasshmëria"</string>
+     <string name="accessibility_settings_title" msgid="2130492524656204459">"Cilësimet e qasjes"</string>
+-    <string name="accessibility_settings_summary" msgid="981260486011624939">"Lexues ekrani, ekran, kontrolle interaktive"</string>
++    <string name="accessibility_settings_summary" msgid="981260486011624939">"Lexues ekrani, ekran, kontrolle ndërveprimi"</string>
+     <string name="vision_settings_title" msgid="4204111425716868288">"Cilësimet e shikimit"</string>
+     <string name="vision_settings_description" msgid="5679491180156408260">"Mund ta personalizosh këtë pajisje për t\'iu përshtatur nevojave të tua. Këto funksione të qasjes mund të ndryshohen më vonë te \"Cilësimet\"."</string>
+     <string name="vision_settings_suggestion_title" msgid="8058794060304707004">"Ndrysho madhësinë e shkrimit"</string>
+@@ -3634,7 +3634,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Frekuenca"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Përdorimi maksimal"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Nuk janë përdorur të dhëna"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Të lejohet qasja te \"Mos shqetëso\" për <xliff:g id="APP">%1$s</xliff:g>?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Të lejohet qasja te \"Mos shqetëso\" për \"<xliff:g id="APP">%1$s</xliff:g>\"?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Aplikacioni do të jetë në gjendje të aktivizojë/çaktivizojë opsionin \"Mos shqetëso\", si dhe të bëjë ndryshimet në cilësimet përkatëse."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Duhet të qëndrojë e aktivizuar sepse qasja e njoftimeve është e aktivizuar"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Të anulohet qasja te \"Mos shqetëso\" për <xliff:g id="APP">%1$s</xliff:g>?"</string>
+diff --git a/res/values-sw/strings.xml b/res/values-sw/strings.xml
+index a752e84638..302d0b850e 100644
+--- a/res/values-sw/strings.xml
++++ b/res/values-sw/strings.xml
+@@ -20,7 +20,7 @@
+     <string name="no" msgid="6731231425810196216">"Hapana"</string>
+     <string name="create" msgid="3578857613172647409">"Unda"</string>
+     <string name="allow" msgid="3349662621170855910">"Ruhusu"</string>
+-    <string name="deny" msgid="6947806159746484865">"Kana"</string>
++    <string name="deny" msgid="6947806159746484865">"Kataa"</string>
+     <string name="dlg_close" msgid="7471087791340790015">"Funga"</string>
+     <string name="dlg_switch" msgid="6243971420240639064">"Swichi"</string>
+     <string name="device_info_default" msgid="7847265875578739287">"Haijulikani"</string>
+@@ -1098,7 +1098,7 @@
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"Imarisha kiwango cha ung\'avu kulingana na mwangaza uliopo. Kipengele hiki kikiwa kimewashwa, bado unaweza kubadilisha ung\'avu kwa muda."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"Itarekebisha mwangaza wa skrini kiotomatiki ili uendane na mazingira na shughuli zako. Unaweza kusogeza kitelezi mwenyewe ili kusaidia kipengele cha mwangaza unaojirekebisha kijifunze mapendeleo yako."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"Mwanga wa Usiku"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"Mwanga wa Usiku hugeuza rangi ya skrini yako kuwa manjano. Hali hii hufanya iwa rahisi kuangalia skrini yako au kusoma katika mwangaza hafifu na inaweza kukusaidia ulale kwa urahisi sana."</string>
++    <string name="night_display_text" msgid="1837277457033025056">"Mwanga wa Usiku hugeuza rangi ya skrini yako kuwa manjano. Hali hii hufanya iwe rahisi kuangalia skrini yako au kusoma katika mwangaza hafifu na inaweza kukusaidia ulale kwa urahisi zaidi."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Ratiba"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Hamna"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Huwashwa wakati maalum"</string>
+@@ -2957,7 +2957,7 @@
+     <string name="app_and_notification_dashboard_title" msgid="7838365599185397539">"Programu na arifa"</string>
+     <string name="app_and_notification_dashboard_summary" msgid="2363314178802548682">"Ruhusa, programu chaguomsingi"</string>
+     <string name="account_dashboard_title" msgid="5895948991491438911">"Akaunti"</string>
+-    <string name="account_dashboard_default_summary" msgid="3998347400161811075">"Hakuna akaunti zilizizoongezwa"</string>
++    <string name="account_dashboard_default_summary" msgid="3998347400161811075">"Hakuna akaunti zilizoongezwa"</string>
+     <string name="app_default_dashboard_title" msgid="7342549305933047317">"Programu chaguomsingi"</string>
+     <string name="system_dashboard_summary" msgid="5797743225249766685">"Lugha, saa, hifadhi rudufu, masasisho"</string>
+     <string name="search_results_title" msgid="1796252422574886932">"Mipangilio"</string>
+@@ -3634,7 +3634,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Masafa"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Upeo wa matumizi"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Hakuna data iliyotumika"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Je, ungependa kuruhusu ufikiaji kwa Usinisumbue kwenye <xliff:g id="APP">%1$s</xliff:g>?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Je, programu ya <xliff:g id="APP">%1$s</xliff:g> ifikie kipengele cha Usinisumbue?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Programu itaweza kuzima na kuwasha kipengee cha Usinisumbue na kufanya mabadiliko katika mipangilio inayohusiana."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Lazima kiwe kimewashwa kwa sababu kipengele cha ufikiaji wa arifa kimewashwa"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Ungependa kubatilisha idhini ya <xliff:g id="APP">%1$s</xliff:g> ya kufikia kipengele cha Usinisumbue?"</string>
+diff --git a/res/values-ta/strings.xml b/res/values-ta/strings.xml
+index b68fd720cf..899cd3f671 100644
+--- a/res/values-ta/strings.xml
++++ b/res/values-ta/strings.xml
+@@ -1097,12 +1097,12 @@
+     <string name="auto_brightness_very_high_summary" msgid="4551003097086220709">"பேட்டரியை அதிகமாகப் பயன்படுத்தும்"</string>
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"கிடைக்கும் ஒளிக்கேற்ப ஒளிர்வை மேம்படுத்து. இதை இயக்கியிருந்தால், தற்காலிகமாக ஒளிர்வைச் சரிசெய்யலாம்."</string>
+     <string name="auto_brightness_description" msgid="7310335517128283729">"நீங்கள் இருக்கும் சூழலுக்கும், செய்யும் வேலைகளுக்கும் ஏற்றவாறு, தானாகவே உங்களின் திரை ஒளிர்வு கூடும், குறையும். நீங்கள் எவ்வளவு வெளிச்சத்தை விரும்புகிறீர்கள் என்பதைச் சூழலுக்கேற்ற ஒளிர்வு தெரிந்துகொள்ள, ஸ்லைடரைக் கைமுறையாக நகர்த்தலாம்."</string>
+-    <string name="night_display_title" msgid="2626451512200357686">"இரவு ஒளி"</string>
+-    <string name="night_display_text" msgid="1837277457033025056">"இரவு ஒளி அம்சமானது உங்கள் திரையை மஞ்சளும் ஆரஞ்சும் கலந்த நிறத்திற்கு மாற்றும். இது மங்கலான ஒளியில் திரையைப் பார்ப்பதை அல்லது படிப்பதை எளிதாக்குவதோடு, விரைவாக உறங்க உதவக்கூடும்."</string>
++    <string name="night_display_title" msgid="2626451512200357686">"நைட் லைட்"</string>
++    <string name="night_display_text" msgid="1837277457033025056">"நைட் லைட் அம்சமானது உங்கள் திரையை மஞ்சளும் ஆரஞ்சும் கலந்த நிறத்திற்கு மாற்றும். இது மங்கலான ஒளியில் திரையைப் பார்ப்பதை அல்லது படிப்பதை எளிதாக்குவதோடு, விரைவாக உறங்க உதவக்கூடும்."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"திட்டமிடு"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"ஏதுமில்லை"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"தனிப்பயன் நேரத்தில் இயக்கும்"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"இயக்கும்: சூரிய அஸ்தமனம் - உதயம்"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"மாலை முதல் காலை வரை ஆன் செய்யும்"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"தொடக்க நேரம்"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"முடிவு நேரம்"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"நிலை"</string>
+@@ -1117,8 +1117,8 @@
+     <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"சூரிய உதயத்தின் போது தானாக முடக்கப்படும்"</string>
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"இப்போது ஆன் செய்"</string>
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"இப்போது ஆஃப் செய்"</string>
+-    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"சூரிய உதயம் வரை ஆன் செய்"</string>
+-    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"சூரிய அஸ்தமனம் வரை ஆஃப் செய்"</string>
++    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"காலை வரை ஆன் செய்"</string>
++    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"மாலை வரை ஆஃப் செய்"</string>
+     <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> வரை ஆஃப் செய்"</string>
+     <string name="night_display_activation_off_custom" msgid="6169984658293744715">"<xliff:g id="ID_1">%1$s</xliff:g> வரை ஆஃப் செய்"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"உறங்கு"</string>
+diff --git a/res/values-tl/strings.xml b/res/values-tl/strings.xml
+index 588c48948e..d9ba957c8f 100644
+--- a/res/values-tl/strings.xml
++++ b/res/values-tl/strings.xml
+@@ -1110,15 +1110,15 @@
+     <string name="night_display_summary_off" msgid="1792750041697946539">"Naka-off / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="night_display_summary_off_auto_mode_never" msgid="3583590137322963513">"Hindi awtomatikong mag-o-on kailanman"</string>
+     <string name="night_display_summary_off_auto_mode_custom" msgid="6365668239253173208">"Awtomatikong mag-o-on nang <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+-    <string name="night_display_summary_off_auto_mode_twilight" msgid="3596291693781757392">"Awtomatikong mag-o-on sa paglubog ng araw"</string>
++    <string name="night_display_summary_off_auto_mode_twilight" msgid="3596291693781757392">"Awtomatikong mag-o-on sa sunset"</string>
+     <string name="night_display_summary_on" msgid="1355713529996456744">"Naka-on / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="night_display_summary_on_auto_mode_never" msgid="9117830821363119835">"Hindi awtomatikong mag-o-off kailanman"</string>
+     <string name="night_display_summary_on_auto_mode_custom" msgid="5510753572245577263">"Awtomatikong mag-o-off nang <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+-    <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"Awtomatikong mag-o-off sa pagsikat ng araw"</string>
++    <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"Awtomatikong mag-o-off sa sunrise"</string>
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"I-on ngayon"</string>
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"I-off ngayon"</string>
+-    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"I-on hanggang pagsikat ng araw"</string>
+-    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"I-off hanggang paglubog ng araw"</string>
++    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"I-on hanggang sunrise"</string>
++    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"I-off hanggang sunset"</string>
+     <string name="night_display_activation_on_custom" msgid="5472029024427933598">"I-on hanggang <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="night_display_activation_off_custom" msgid="6169984658293744715">"I-off hanggang <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"Sleep"</string>
+diff --git a/res/values-ur/strings.xml b/res/values-ur/strings.xml
+index 4139e412fc..c13aaf4d6c 100644
+--- a/res/values-ur/strings.xml
++++ b/res/values-ur/strings.xml
+@@ -1119,8 +1119,8 @@
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"ابھی آف کریں"</string>
+     <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"طلوع آفتاب تک آن کریں"</string>
+     <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"غروب آفتاب تک بند کریں"</string>
+-    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> تک آن کریں"</string>
+-    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"<xliff:g id="ID_1">%1$s</xliff:g> تک بند کریں"</string>
++    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"‫<xliff:g id="ID_1">%1$s</xliff:g> تک آن کریں"</string>
++    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"‫<xliff:g id="ID_1">%1$s</xliff:g> تک بند کریں"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"سلیپ"</string>
+     <string name="screen_timeout_title" msgid="5130038655092628247">"اسکرین آف ہوجاتی ہے"</string>
+     <string name="screen_timeout_summary" msgid="327761329263064327">"غیر فعالیت کے <xliff:g id="TIMEOUT_DESCRIPTION">%1$s</xliff:g> بعد"</string>
+diff --git a/res/values-uz/strings.xml b/res/values-uz/strings.xml
+index 670701a3bf..1bd191219b 100644
+--- a/res/values-uz/strings.xml
++++ b/res/values-uz/strings.xml
+@@ -1102,11 +1102,11 @@
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Jadval"</string>
+     <string name="night_display_auto_mode_never" msgid="2483761922928753400">"Hech qachon"</string>
+     <string name="night_display_auto_mode_custom" msgid="2379394568898721765">"Muayyan vaqtda yoqiladi"</string>
+-    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Quyosh chiqishidan botishigacha"</string>
++    <string name="night_display_auto_mode_twilight" msgid="589042813708244059">"Quyosh botishidan to chiqishigacha"</string>
+     <string name="night_display_start_time_title" msgid="8918016772613689584">"Boshlanish vaqti"</string>
+     <string name="night_display_end_time_title" msgid="8286061578083519350">"Tugash vaqti"</string>
+     <string name="night_display_status_title" msgid="1784041143360286267">"Holati"</string>
+-    <string name="night_display_temperature_title" msgid="1435292789272017136">"Yorqinlik"</string>
++    <string name="night_display_temperature_title" msgid="1435292789272017136">"Intensivlik"</string>
+     <string name="night_display_summary_off" msgid="1792750041697946539">"O‘chiq / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="night_display_summary_off_auto_mode_never" msgid="3583590137322963513">"Hech qachon avtomatik yoqilmaydi"</string>
+     <string name="night_display_summary_off_auto_mode_custom" msgid="6365668239253173208">"<xliff:g id="ID_1">%1$s</xliff:g> da avtomatik yoqiladi"</string>
+@@ -1117,10 +1117,10 @@
+     <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"Quyosh chiqishi bilan avtomatik tugaydi"</string>
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"Yoqish"</string>
+     <string name="night_display_activation_off_manual" msgid="4074557720918572883">"O‘chirish"</string>
+-    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"Quyosh chiqqunicha yoqish"</string>
+-    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Quyosh botguncha o‘chirish"</string>
+-    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> gacha yoqish"</string>
+-    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"<xliff:g id="ID_1">%1$s</xliff:g> gacha o‘chirish"</string>
++    <string name="night_display_activation_on_twilight" msgid="6976051971534953845">"Quyosh chiqqunicha yoniq tursin"</string>
++    <string name="night_display_activation_off_twilight" msgid="7196227685059907233">"Quyosh botguncha yoqilmasin"</string>
++    <string name="night_display_activation_on_custom" msgid="5472029024427933598">"<xliff:g id="ID_1">%1$s</xliff:g> gacha yoniq tursin"</string>
++    <string name="night_display_activation_off_custom" msgid="6169984658293744715">"<xliff:g id="ID_1">%1$s</xliff:g> gacha yoqilmasin"</string>
+     <string name="screen_timeout" msgid="4351334843529712571">"Uyqu rejimi"</string>
+     <string name="screen_timeout_title" msgid="5130038655092628247">"Ekranning o‘chishi"</string>
+     <string name="screen_timeout_summary" msgid="327761329263064327">"<xliff:g id="TIMEOUT_DESCRIPTION">%1$s</xliff:g> harakatsizlikdan keyin"</string>
+@@ -1481,7 +1481,7 @@
+     <string name="erase_esim_storage" msgid="5684858600215441932">"eSIM kartani tozalash"</string>
+     <string name="erase_esim_storage_description" product="default" msgid="708691303677321598">"Telefondan barcha eSIM kartalarni tozalash. Bunda mobil xizmat tarif rejalari bekor qilinmaydi."</string>
+     <string name="erase_esim_storage_description" product="tablet" msgid="1780953956941209107">"Planshetdan barcha eSIM kartalarni tozalash. Bunda mobil xizmat tarif rejalari bekor qilinmaydi."</string>
+-    <string name="master_clear_button_text" product="tablet" msgid="3130786116528304116">"Planshetni dastlabki sozlamarga qaytarish"</string>
++    <string name="master_clear_button_text" product="tablet" msgid="3130786116528304116">"Planshet sozlamalarini asliga qaytarish"</string>
+     <string name="master_clear_button_text" product="default" msgid="7550632653343157971">"Telefon sozlamalarini tiklash"</string>
+     <string name="master_clear_final_desc" msgid="7318683914280403086">"Barcha shaxsiy ma’lumotlaringiz va yuklab olingan ilovalar o‘chirib tashlansinmi? Ularni keyin qayta tiklab bo‘lmaydi."</string>
+     <string name="master_clear_final_button_text" msgid="5390908019019242910">"Barchasini o‘chirish"</string>
+@@ -1672,7 +1672,7 @@
+     <string name="advanced_settings_summary" msgid="4016682978071086747">"Qo‘shimcha sozlamalar tanlamalarini yoqib qo‘yish"</string>
+     <string name="application_info_label" msgid="5736524913065714880">"Ilova haqida"</string>
+     <string name="storage_label" msgid="8700867073480107253">"Xotira"</string>
+-    <string name="auto_launch_label" msgid="2669236885531442195">"Birlamchi ilova"</string>
++    <string name="auto_launch_label" msgid="2669236885531442195">"Odatiy tarzda ochish"</string>
+     <string name="auto_launch_label_generic" msgid="3230569852551968694">"Birlamchi"</string>
+     <string name="screen_compatibility_label" msgid="663250687205465394">"Ekrandagi moslashuv"</string>
+     <string name="permissions_label" msgid="2605296874922726203">"Ruxsatlar"</string>
+@@ -2973,7 +2973,7 @@
+     <string name="app_and_notification_dashboard_title" msgid="7838365599185397539">"Ilovalar va bildirishnomalar"</string>
+     <string name="app_and_notification_dashboard_summary" msgid="2363314178802548682">"Ruxsatlar, birlamchi ilovalar"</string>
+     <string name="account_dashboard_title" msgid="5895948991491438911">"Hisoblar"</string>
+-    <string name="account_dashboard_default_summary" msgid="3998347400161811075">"Hech qanday hisob qo‘shilmagan"</string>
++    <string name="account_dashboard_default_summary" msgid="3998347400161811075">"Hech qanday hisobga kirilmagan"</string>
+     <string name="app_default_dashboard_title" msgid="7342549305933047317">"Birlamchi ilovalar"</string>
+     <string name="system_dashboard_summary" msgid="5797743225249766685">"Tillar, vaqt, zaxira, yangilanishlar"</string>
+     <string name="search_results_title" msgid="1796252422574886932">"Sozlamalar"</string>
+@@ -3450,9 +3450,9 @@
+     <string name="imei_information_title" msgid="8499085421609752290">"IMEI kod ma’lumotlari"</string>
+     <string name="imei_information_summary" msgid="2074095606556565233">"IMEI raqamiga aloqador ma’lumotlar"</string>
+     <string name="slot_number" msgid="3762676044904653577">"(<xliff:g id="SLOT_NUM">%1$d</xliff:g>-uya)"</string>
+-    <string name="launch_by_default" msgid="1840761193189009248">"Birlamchi ilova"</string>
++    <string name="launch_by_default" msgid="1840761193189009248">"Odatiy tarzda ochish"</string>
+     <string name="app_launch_domain_links_title" msgid="1160925981363706090">"Havolalarni ochish"</string>
+-    <string name="app_launch_open_domain_urls_title" msgid="8914721351596745701">"Mos havolalar ochilsin"</string>
++    <string name="app_launch_open_domain_urls_title" msgid="8914721351596745701">"Mos havolalarni ochish"</string>
+     <string name="app_launch_open_domain_urls_summary" msgid="5367573364240712217">"Avtomatik ochilsin"</string>
+     <string name="app_launch_supported_domain_urls_title" msgid="8250695258211477480">"Mos havolalar"</string>
+     <string name="app_launch_other_defaults_title" msgid="2516812499807835178">"Boshqa birlamchi sozlamalar"</string>
+@@ -3521,7 +3521,7 @@
+       <item quantity="other">Mos havolalarni <xliff:g id="COUNT">%d</xliff:g> ta ilovada ochish mumkin</item>
+       <item quantity="one">Mos havolalarni bitta ilovada ochish mumkin</item>
+     </plurals>
+-    <string name="app_link_open_always" msgid="2474058700623948148">"Ushbu ilovada ochilsin"</string>
++    <string name="app_link_open_always" msgid="2474058700623948148">"Shu ilovada ochish"</string>
+     <string name="app_link_open_ask" msgid="7800878430190575991">"Har safar so‘ralsin"</string>
+     <string name="app_link_open_never" msgid="3407647600352398543">"Bu ilovada ochilmasin"</string>
+     <string name="fingerprint_not_recognized" msgid="1739529686957438119">"Barmoq izi aniqlanmadi"</string>
+@@ -3650,8 +3650,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Yuz berish oralig‘i"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Maksimal foydalanish"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Trafik sarflanmagan"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> ilovasiga “Bezovta qilinmasin” rejimidan foydalanishga ruxsat berilsinmi?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Bu ilova “Bezovta qilinmasin” rejimini yoqishi/o‘chirishi hamda unga aloqador sozlamalarni o‘zgartirishi mumkin."</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> uchun Bezovta qilinmasin rejimiga ruxsat berilsinmi?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Bu ilova Bezovta qilinmasin rejimini yoqishi/o‘chirishi hamda unga aloqador sozlamalarni o‘zgartirish imkoniga ega bo‘ladi."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Yoniq turishi shart, sababi bildirishnomalardan foydalanishga ruxsat berilgan"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"<xliff:g id="APP">%1$s</xliff:g> ilovasi uchun “Bezovta qilinmasin” rejimiga ruxsati bekor qilinsinmi?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Ushbu ilova tomonidan yaratilgan barcha “Bezovta qilinmasin” rejimi qoidalari o‘chirib tashlanadi."</string>
+diff --git a/res/values-vi/strings.xml b/res/values-vi/strings.xml
+index c58e3b1859..302a6cd26b 100644
+--- a/res/values-vi/strings.xml
++++ b/res/values-vi/strings.xml
+@@ -3634,8 +3634,8 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Tần suất"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Mức sử dụng tối đa"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Không có dữ liệu nào được sử dụng"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Cho phép truy cập vào Không làm phiền cho <xliff:g id="APP">%1$s</xliff:g>?"</string>
+-    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Ứng dụng có thể bật/tắt Không làm phiền và thực hiện thay đổi đối với các cài đặt liên quan."</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"Cho phép <xliff:g id="APP">%1$s</xliff:g> truy cập chế độ Không làm phiền?"</string>
++    <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Ứng dụng có thể bật/tắt chế độ Không làm phiền và thay đổi các mục cài đặt liên quan."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Phải luôn bật vì quyền truy cập thông báo được bật"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Thu hồi quyền truy cập vào chế độ Không làm phiền của <xliff:g id="APP">%1$s</xliff:g>?"</string>
+     <string name="zen_access_revoke_warning_dialog_summary" msgid="5518216907304930148">"Mọi quy tắc Không làm phiền do ứng dụng này tạo sẽ đều bị xóa."</string>
+diff --git a/res/values-zh-rHK/strings.xml b/res/values-zh-rHK/strings.xml
+index 71f4073447..ff5251d1c5 100644
+--- a/res/values-zh-rHK/strings.xml
++++ b/res/values-zh-rHK/strings.xml
+@@ -3637,7 +3637,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"頻率"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"最高用量"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"並未使用數據"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"允許「<xliff:g id="APP">%1$s</xliff:g>」存取「請勿騷擾」？"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"允許「<xliff:g id="APP">%1$s</xliff:g>」存取「請勿騷擾」嗎？"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"應用程式能開啟或關閉「請勿騷擾」，並變更有關設定。"</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"請啟用功能，通知存取權已開放"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"要撤銷「<xliff:g id="APP">%1$s</xliff:g>」存取「請勿騷擾」的權限嗎？"</string>
+-- 
+2.17.1
+

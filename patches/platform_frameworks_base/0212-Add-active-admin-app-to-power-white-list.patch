@@ -1,0 +1,104 @@
+From 6ee81130c012a97679f0e7c89329c43c017aa15c Mon Sep 17 00:00:00 2001
+From: Lei Yu <jackqdyulei@google.com>
+Date: Thu, 28 Jun 2018 14:06:29 -0700
+Subject: [PATCH 212/306] Add active admin app to power white list.
+
+So user can't restrict it in settings app.
+
+Bug: 110337989
+Test: RunSettingsLibTests
+Change-Id: Ie32dc8b2204369c9ca8f704436d5c988f76481ae
+Merged-In: Ie32dc8b2204369c9ca8f704436d5c988f76481ae
+(cherry picked from commit f5a13f8b3a0ce1a3ee6e49802e32db3f3fb38d6d)
+---
+ .../fuelgauge/PowerWhitelistBackend.java        |  8 ++++++++
+ .../fuelgauge/PowerWhitelistBackendTest.java    | 17 +++++++++++++++--
+ 2 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/packages/SettingsLib/src/com/android/settingslib/fuelgauge/PowerWhitelistBackend.java b/packages/SettingsLib/src/com/android/settingslib/fuelgauge/PowerWhitelistBackend.java
+index 7234788b2e0..c9990e574ee 100644
+--- a/packages/SettingsLib/src/com/android/settingslib/fuelgauge/PowerWhitelistBackend.java
++++ b/packages/SettingsLib/src/com/android/settingslib/fuelgauge/PowerWhitelistBackend.java
+@@ -16,6 +16,7 @@
+ 
+ package com.android.settingslib.fuelgauge;
+ 
++import android.app.admin.DevicePolicyManager;
+ import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.pm.PackageManager;
+@@ -89,6 +90,13 @@ public class PowerWhitelistBackend {
+         if (TextUtils.equals(pkg, defaultDialer)) {
+             return true;
+         }
++
++        final DevicePolicyManager devicePolicyManager = mAppContext.getSystemService(
++                DevicePolicyManager.class);
++        if (devicePolicyManager.packageHasActiveAdmins(pkg)) {
++            return true;
++        }
++
+         return false;
+     }
+ 
+diff --git a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/fuelgauge/PowerWhitelistBackendTest.java b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/fuelgauge/PowerWhitelistBackendTest.java
+index a23eebcce79..5c932586dd2 100644
+--- a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/fuelgauge/PowerWhitelistBackendTest.java
++++ b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/fuelgauge/PowerWhitelistBackendTest.java
+@@ -21,8 +21,10 @@ import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.atLeastOnce;
+ import static org.mockito.Mockito.doNothing;
+ import static org.mockito.Mockito.doReturn;
++import static org.mockito.Mockito.spy;
+ import static org.mockito.Mockito.verify;
+ 
++import android.app.admin.DevicePolicyManager;
+ import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.pm.PackageManager;
+@@ -51,7 +53,8 @@ public class PowerWhitelistBackendTest {
+ 
+     @Mock
+     private IDeviceIdleController mDeviceIdleService;
+-
++    @Mock
++    private DevicePolicyManager mDevicePolicyManager;
+     private PowerWhitelistBackend mPowerWhitelistBackend;
+     private ShadowPackageManager mPackageManager;
+     private Context mContext;
+@@ -59,7 +62,9 @@ public class PowerWhitelistBackendTest {
+     @Before
+     public void setUp() throws Exception {
+         MockitoAnnotations.initMocks(this);
+-        mContext = RuntimeEnvironment.application;
++        mContext = spy(RuntimeEnvironment.application);
++        doReturn(mContext).when(mContext).getApplicationContext();
++        doReturn(mDevicePolicyManager).when(mContext).getSystemService(DevicePolicyManager.class);
+         doReturn(new String[] {}).when(mDeviceIdleService).getFullPowerWhitelist();
+         doReturn(new String[] {}).when(mDeviceIdleService).getSystemPowerWhitelist();
+         doReturn(new String[] {}).when(mDeviceIdleService).getSystemPowerWhitelistExceptIdle();
+@@ -68,6 +73,7 @@ public class PowerWhitelistBackendTest {
+         mPackageManager = Shadow.extract(mContext.getPackageManager());
+         mPackageManager.setSystemFeature(PackageManager.FEATURE_TELEPHONY, true);
+ 
++
+         mPowerWhitelistBackend = new PowerWhitelistBackend(mContext, mDeviceIdleService);
+     }
+ 
+@@ -122,6 +128,13 @@ public class PowerWhitelistBackendTest {
+         assertThat(mPowerWhitelistBackend.isWhitelisted(testDialer)).isTrue();
+     }
+ 
++    @Test
++    public void isWhitelisted_shouldWhitelistActiveDeviceAdminApp() {
++        doReturn(true).when(mDevicePolicyManager).packageHasActiveAdmins(PACKAGE_ONE);
++
++        assertThat(mPowerWhitelistBackend.isWhitelisted(PACKAGE_ONE)).isTrue();
++    }
++
+     @Test
+     public void testIsSystemWhitelisted() throws Exception {
+         doReturn(new String[] {PACKAGE_ONE}).when(mDeviceIdleService).getSystemPowerWhitelist();
+-- 
+2.17.1
+

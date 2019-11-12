@@ -1,0 +1,64 @@
+From a3aa0f37774eadac0b538964f768c60880e9e8a5 Mon Sep 17 00:00:00 2001
+From: Ray Essick <essick@google.com>
+Date: Thu, 12 Jul 2018 14:21:18 -0700
+Subject: [PATCH 11/80] Fix detected integer sanitization
+
+Rework mp3 decode for several identified integer overflow issues.
+
+Bug: 110307597
+Test: replay podcast episodes causing issues
+Change-Id: I1b69474d3501ffa41c527c8d1c22405a335ab841
+---
+ .../libstagefright/codecs/mp3dec/src/pvmp3_framedecoder.cpp | 6 +++++-
+ .../codecs/mp3dec/src/pvmp3_get_side_info.cpp               | 2 +-
+ .../libstagefright/codecs/mp3dec/src/pvmp3_stereo_proc.cpp  | 4 ++++
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/codecs/mp3dec/src/pvmp3_framedecoder.cpp b/media/libstagefright/codecs/mp3dec/src/pvmp3_framedecoder.cpp
+index 26bc25cd2..df6cd0393 100644
+--- a/media/libstagefright/codecs/mp3dec/src/pvmp3_framedecoder.cpp
++++ b/media/libstagefright/codecs/mp3dec/src/pvmp3_framedecoder.cpp
+@@ -299,7 +299,11 @@ ERROR_CODE pvmp3_framedecoder(tPVMP3DecoderExternal *pExt,
+         }
+ 
+ 
+-        bytes_to_discard = pVars->frame_start - pVars->sideInfo.main_data_begin - main_data_end;
++        // force signed computation; buffer sizes and offsets are all going to be
++        // well within the constraints of 32-bit signed math.
++        bytes_to_discard = pVars->frame_start
++                           - ((int32)pVars->sideInfo.main_data_begin)
++                           - ((int32)main_data_end);
+ 
+ 
+         if (main_data_end > BUFSIZE)   /* check overflow on the buffer */
+diff --git a/media/libstagefright/codecs/mp3dec/src/pvmp3_get_side_info.cpp b/media/libstagefright/codecs/mp3dec/src/pvmp3_get_side_info.cpp
+index 7eaa86073..e55c2e70b 100644
+--- a/media/libstagefright/codecs/mp3dec/src/pvmp3_get_side_info.cpp
++++ b/media/libstagefright/codecs/mp3dec/src/pvmp3_get_side_info.cpp
+@@ -154,7 +154,7 @@ ERROR_CODE pvmp3_get_side_info(tmp3Bits    *inputStream,
+                 tmp = getbits_crc(inputStream, 22, crc, info->error_protection);
+ 
+                 si->ch[ch].gran[gr].big_values            = (tmp << 10) >> 23;   /* 9 */
+-                si->ch[ch].gran[gr].global_gain           = ((tmp << 19) >> 24) - 210;   /* 8 */
++                si->ch[ch].gran[gr].global_gain        = (int32)((tmp << 19) >> 24) - 210; /* 8 */
+                 si->ch[ch].gran[gr].scalefac_compress     = (tmp << 27) >> 28;   /* 4 */
+                 si->ch[ch].gran[gr].window_switching_flag = tmp & 1;         /* 1 */
+ 
+diff --git a/media/libstagefright/codecs/mp3dec/src/pvmp3_stereo_proc.cpp b/media/libstagefright/codecs/mp3dec/src/pvmp3_stereo_proc.cpp
+index 10edfc3b3..4338c4380 100644
+--- a/media/libstagefright/codecs/mp3dec/src/pvmp3_stereo_proc.cpp
++++ b/media/libstagefright/codecs/mp3dec/src/pvmp3_stereo_proc.cpp
+@@ -178,6 +178,10 @@ const int32  is_ratio_factor[8] = {0,
+ ; FUNCTION CODE
+ ----------------------------------------------------------------------------*/
+ 
++#if __has_attribute(no_sanitize)
++// deliberately playing near overflow points of int32
++__attribute__((no_sanitize("integer")))
++#endif
+ void pvmp3_st_mid_side(int32 xr[SUBBANDS_NUMBER*FILTERBANK_BANDS],
+                        int32 xl[SUBBANDS_NUMBER*FILTERBANK_BANDS],
+                        int32 Start,
+-- 
+2.17.1
+

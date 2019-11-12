@@ -1,0 +1,98 @@
+From c89be17730845548a797427d237e5a59e6001235 Mon Sep 17 00:00:00 2001
+From: Suren Baghdasaryan <surenb@google.com>
+Date: Wed, 10 Oct 2018 14:17:17 -0700
+Subject: [PATCH 10/29] lmkd: Implement pid purge command to clear old pids
+ when zygote restarts
+
+lmkd keeps a list of pids registered by ActivityManager, however on rare
+occasions when framework restarts and lmkd survives that list has to be
+purged. Implement a command that can be used to clear the pid list.
+
+Bug: 116801366
+Test: locally by killing zygote process
+Change-Id: I71d6012f86bb83a73edd5b687e05a0848e0569b1
+Signed-off-by: Suren Baghdasaryan <surenb@google.com>
+---
+ lmkd/include/lmkd.h | 10 ++++++++++
+ lmkd/lmkd.c         | 30 ++++++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+)
+
+diff --git a/lmkd/include/lmkd.h b/lmkd/include/lmkd.h
+index fe6364d82..e8f51da77 100644
+--- a/lmkd/include/lmkd.h
++++ b/lmkd/include/lmkd.h
+@@ -30,6 +30,7 @@ enum lmk_cmd {
+     LMK_TARGET = 0,  /* Associate minfree with oom_adj_score */
+     LMK_PROCPRIO,    /* Register a process and set its oom_adj_score */
+     LMK_PROCREMOVE,  /* Unregister a process */
++    LMK_PROCPURGE,   /* Purge all registered processes */
+ };
+ 
+ /*
+@@ -142,6 +143,15 @@ inline size_t lmkd_pack_set_procremove(LMKD_CTRL_PACKET packet,
+     return 2 * sizeof(int);
+ }
+ 
++/*
++ * Prepare LMK_PROCPURGE packet and return packet size in bytes.
++ * Warning: no checks performed, caller should ensure valid parameters.
++ */
++inline size_t lmkd_pack_set_procpurge(LMKD_CTRL_PACKET packet) {
++    packet[0] = htonl(LMK_PROCPURGE);
++    return sizeof(int);
++}
++
+ __END_DECLS
+ 
+ #endif /* _LMKD_H_ */
+diff --git a/lmkd/lmkd.c b/lmkd/lmkd.c
+index bf265b0f2..e36f72b02 100644
+--- a/lmkd/lmkd.c
++++ b/lmkd/lmkd.c
+@@ -526,6 +526,31 @@ static void cmd_procremove(LMKD_CTRL_PACKET packet) {
+     pid_remove(params.pid);
+ }
+ 
++static void cmd_procpurge() {
++    int i;
++    struct proc *procp;
++    struct proc *next;
++
++    if (use_inkernel_interface) {
++        return;
++    }
++
++    for (i = 0; i <= ADJTOSLOT(OOM_SCORE_ADJ_MAX); i++) {
++        procadjslot_list[i].next = &procadjslot_list[i];
++        procadjslot_list[i].prev = &procadjslot_list[i];
++    }
++
++    for (i = 0; i < PIDHASH_SZ; i++) {
++        procp = pidhash[i];
++        while (procp) {
++            next = procp->pidhash_next;
++            free(procp);
++            procp = next;
++        }
++    }
++    memset(&pidhash[0], 0, sizeof(pidhash));
++}
++
+ static void cmd_target(int ntargets, LMKD_CTRL_PACKET packet) {
+     int i;
+     struct lmk_target target;
+@@ -634,6 +659,11 @@ static void ctrl_command_handler(int dsock_idx) {
+             goto wronglen;
+         cmd_procremove(packet);
+         break;
++    case LMK_PROCPURGE:
++        if (nargs != 0)
++            goto wronglen;
++        cmd_procpurge();
++        break;
+     default:
+         ALOGE("Received unknown command code %d", cmd);
+         return;
+-- 
+2.17.1
+

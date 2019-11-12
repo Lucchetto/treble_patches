@@ -1,0 +1,83 @@
+From 16e7004e3fc05ecb829e74e19bee4c1bf66c5316 Mon Sep 17 00:00:00 2001
+From: Hyunyoung Song <hyunyoungs@google.com>
+Date: Thu, 14 Jun 2018 16:08:47 -0700
+Subject: [PATCH 06/81] Fix unbundled branch by not having it pick up goldfish
+ dependency Bug: 110165361
+
+Change-Id: I0824b140fdfee296288c03fd03a3bac7966e9179
+---
+ target/product/aosp_arm.mk    | 2 +-
+ target/product/aosp_arm64.mk  | 2 +-
+ target/product/aosp_x86.mk    | 2 +-
+ target/product/aosp_x86_64.mk | 2 +-
+ target/product/emulator.mk    | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/target/product/aosp_arm.mk b/target/product/aosp_arm.mk
+index 4b94b7ead..b872f48fc 100644
+--- a/target/product/aosp_arm.mk
++++ b/target/product/aosp_arm.mk
+@@ -14,7 +14,7 @@
+ # limitations under the License.
+ #
+ 
+-include device/generic/goldfish/arm32-vendor.mk
++-include device/generic/goldfish/arm32-vendor.mk
+ 
+ # TODO(b/78308559): includes vr_hwc into GSI before vr_hwc move to vendor
+ PRODUCT_PACKAGES += \
+diff --git a/target/product/aosp_arm64.mk b/target/product/aosp_arm64.mk
+index 4b566f012..33defe144 100644
+--- a/target/product/aosp_arm64.mk
++++ b/target/product/aosp_arm64.mk
+@@ -19,7 +19,7 @@
+ # build quite specifically for the emulator, and might not be
+ # entirely appropriate to inherit from for on-device configurations.
+ 
+-include device/generic/goldfish/arm64-vendor.mk
++-include device/generic/goldfish/arm64-vendor.mk
+ 
+ # Copy different zygote settings for vendor.img to select by setting property
+ # ro.zygote=zygote64_32 or ro.zygote=zygote32_64:
+diff --git a/target/product/aosp_x86.mk b/target/product/aosp_x86.mk
+index bfc7e3829..9ba952343 100644
+--- a/target/product/aosp_x86.mk
++++ b/target/product/aosp_x86.mk
+@@ -14,7 +14,7 @@
+ # limitations under the License.
+ #
+ 
+-include device/generic/goldfish/x86-vendor.mk
++-include device/generic/goldfish/x86-vendor.mk
+ 
+ # TODO(b/78308559): includes vr_hwc into GSI before vr_hwc move to vendor
+ PRODUCT_PACKAGES += \
+diff --git a/target/product/aosp_x86_64.mk b/target/product/aosp_x86_64.mk
+index a810368ac..7afc7825d 100644
+--- a/target/product/aosp_x86_64.mk
++++ b/target/product/aosp_x86_64.mk
+@@ -19,7 +19,7 @@
+ # build quite specifically for the emulator, and might not be
+ # entirely appropriate to inherit from for on-device configurations.
+ 
+-include device/generic/goldfish/x86_64-vendor.mk
++-include device/generic/goldfish/x86_64-vendor.mk
+ 
+ # Copy different zygote settings for vendor.img to select by setting property
+ # ro.zygote=zygote64_32 or ro.zygote=zygote32_64:
+diff --git a/target/product/emulator.mk b/target/product/emulator.mk
+index 4d482fa86..f6e101143 100644
+--- a/target/product/emulator.mk
++++ b/target/product/emulator.mk
+@@ -43,7 +43,7 @@ PRODUCT_CHARACTERISTICS := emulator
+ PRODUCT_FULL_TREBLE_OVERRIDE := true
+ 
+ # goldfish vendor partition configurations
+-$(call inherit-product, device/generic/goldfish/vendor.mk)
++$(call inherit-product-if-exists, device/generic/goldfish/vendor.mk)
+ 
+ #watchdog tiggers reboot because location service is not
+ #responding, disble it for now.
+-- 
+2.17.1
+

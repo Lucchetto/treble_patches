@@ -1,0 +1,305 @@
+From 87ed136e3dc12e605202bb9dca07e8290f908539 Mon Sep 17 00:00:00 2001
+From: Roshan Pius <rpius@google.com>
+Date: Mon, 9 Jul 2018 10:36:03 -0700
+Subject: [PATCH 15/32] SoftApManager: Set country code before channel
+ selection
+
+If the country code is not set for some reason previously
+(For example: STA was off when telephony sent the country
+code update), we should first set the country code before
+performing channel selection for AP.
+
+Also, added an extra error check for country code when the band
+selected is 5Ghz.
+
+Bug: 111135704
+Test: Unit tests
+Test: Able to toggle hotspot on/off.
+Test: Ran SoftapManager ACTS tests locally.
+Change-Id: Icbc16dac9acf7ba4a35905703ea4cff44fa542ee
+(cherry picked from commit 3c57f9c394c6158b3407fd5c5b67857874433168)
+---
+ .../android/server/wifi/SoftApManager.java    |  32 ++--
+ .../server/wifi/SoftApManagerTest.java        | 148 ++++++++++++++++--
+ 2 files changed, 156 insertions(+), 24 deletions(-)
+
+diff --git a/service/java/com/android/server/wifi/SoftApManager.java b/service/java/com/android/server/wifi/SoftApManager.java
+index 1afe9ed9d..c880ab639 100644
+--- a/service/java/com/android/server/wifi/SoftApManager.java
++++ b/service/java/com/android/server/wifi/SoftApManager.java
+@@ -232,6 +232,26 @@ public class SoftApManager implements ActiveModeManager {
+             Log.e(TAG, "Unable to start soft AP without valid configuration");
+             return ERROR_GENERIC;
+         }
++        // Setup country code
++        if (TextUtils.isEmpty(mCountryCode)) {
++            if (config.apBand == WifiConfiguration.AP_BAND_5GHZ) {
++                // Country code is mandatory for 5GHz band.
++                Log.e(TAG, "Invalid country code, required for setting up "
++                        + "soft ap in 5GHz");
++                return ERROR_GENERIC;
++            }
++            // Absence of country code is not fatal for 2Ghz & Any band options.
++        } else if (!mWifiNative.setCountryCodeHal(
++                mApInterfaceName, mCountryCode.toUpperCase(Locale.ROOT))) {
++            if (config.apBand == WifiConfiguration.AP_BAND_5GHZ) {
++                // Return an error if failed to set country code when AP is configured for
++                // 5GHz band.
++                Log.e(TAG, "Failed to set country code, required for setting up "
++                        + "soft ap in 5GHz");
++                return ERROR_GENERIC;
++            }
++            // Failure to set country code is not fatal for 2Ghz & Any band options.
++        }
+ 
+         // Make a copy of configuration for updating AP band and channel.
+         WifiConfiguration localConfig = new WifiConfiguration(config);
+@@ -245,18 +265,6 @@ public class SoftApManager implements ActiveModeManager {
+             return result;
+         }
+ 
+-        // Setup country code if it is provided.
+-        if (mCountryCode != null) {
+-            // Country code is mandatory for 5GHz band, return an error if failed to set
+-            // country code when AP is configured for 5GHz band.
+-            if (!mWifiNative.setCountryCodeHal(
+-                    mApInterfaceName, mCountryCode.toUpperCase(Locale.ROOT))
+-                    && config.apBand == WifiConfiguration.AP_BAND_5GHZ) {
+-                Log.e(TAG, "Failed to set country code, required for setting up "
+-                        + "soft ap in 5GHz");
+-                return ERROR_GENERIC;
+-            }
+-        }
+         if (localConfig.hiddenSSID) {
+             Log.d(TAG, "SoftAP is a hidden network");
+         }
+diff --git a/tests/wifitests/src/com/android/server/wifi/SoftApManagerTest.java b/tests/wifitests/src/com/android/server/wifi/SoftApManagerTest.java
+index 6a2c21242..21c3797b3 100644
+--- a/tests/wifitests/src/com/android/server/wifi/SoftApManagerTest.java
++++ b/tests/wifitests/src/com/android/server/wifi/SoftApManagerTest.java
+@@ -114,6 +114,9 @@ public class SoftApManagerTest {
+         when(mContext.getResources()).thenReturn(mResources);
+         when(mResources.getInteger(R.integer.config_wifi_framework_soft_ap_timeout_delay))
+                 .thenReturn(600000);
++        when(mWifiNative.setCountryCodeHal(
++                TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT)))
++                .thenReturn(true);
+     }
+ 
+     private WifiConfiguration createDefaultApConfig() {
+@@ -122,7 +125,7 @@ public class SoftApManagerTest {
+         return defaultConfig;
+     }
+ 
+-    private SoftApManager createSoftApManager(SoftApModeConfiguration config) throws Exception {
++    private SoftApManager createSoftApManager(SoftApModeConfiguration config, String countryCode) {
+         if (config.getWifiConfiguration() == null) {
+             when(mWifiApConfigStore.getApConfiguration()).thenReturn(mDefaultApConfig);
+         }
+@@ -130,7 +133,7 @@ public class SoftApManagerTest {
+                                                            mLooper.getLooper(),
+                                                            mFrameworkFacade,
+                                                            mWifiNative,
+-                                                           TEST_COUNTRY_CODE,
++                                                           countryCode,
+                                                            mCallback,
+                                                            mWifiApConfigStore,
+                                                            config,
+@@ -311,12 +314,55 @@ public class SoftApManagerTest {
+                 WifiManager.SAP_START_FAILURE_GENERAL);
+     }
+ 
++    /**
++     * Tests that the generic error is propagated and properly reported when starting softap and no
++     * country code is provided.
++     */
++    @Test
++    public void startSoftApOn5GhzFailGeneralErrorForNoCountryCode() throws Exception {
++        WifiConfiguration config = new WifiConfiguration();
++        config.apBand = WifiConfiguration.AP_BAND_5GHZ;
++        config.SSID = TEST_SSID;
++        SoftApModeConfiguration softApConfig =
++                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, config);
++
++        when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
++
++        SoftApManager newSoftApManager = new SoftApManager(mContext,
++                mLooper.getLooper(),
++                mFrameworkFacade,
++                mWifiNative,
++                null,
++                mCallback,
++                mWifiApConfigStore,
++                softApConfig,
++                mWifiMetrics,
++                mSarManager);
++        mLooper.dispatchAll();
++        newSoftApManager.start();
++        mLooper.dispatchAll();
++
++        verify(mWifiNative, never()).setCountryCodeHal(eq(TEST_INTERFACE_NAME), any());
++
++        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
++        verify(mContext, times(2)).sendStickyBroadcastAsUser(intentCaptor.capture(),
++                eq(UserHandle.ALL));
++
++        List<Intent> capturedIntents = intentCaptor.getAllValues();
++        checkApStateChangedBroadcast(capturedIntents.get(0), WIFI_AP_STATE_ENABLING,
++                WIFI_AP_STATE_DISABLED, HOTSPOT_NO_ERROR, TEST_INTERFACE_NAME,
++                softApConfig.getTargetMode());
++        checkApStateChangedBroadcast(capturedIntents.get(1), WIFI_AP_STATE_FAILED,
++                WIFI_AP_STATE_ENABLING, WifiManager.SAP_START_FAILURE_GENERAL, TEST_INTERFACE_NAME,
++                softApConfig.getTargetMode());
++    }
++
+     /**
+      * Tests that the generic error is propagated and properly reported when starting softap and the
+-     * specified channel cannot be used.
++     * country code cannot be set.
+      */
+     @Test
+-    public void startSoftApFailGeneralErrorForConfigChannel() throws Exception {
++    public void startSoftApOn5GhzFailGeneralErrorForCountryCodeSetFailure() throws Exception {
+         WifiConfiguration config = new WifiConfiguration();
+         config.apBand = WifiConfiguration.AP_BAND_5GHZ;
+         config.SSID = TEST_SSID;
+@@ -324,13 +370,15 @@ public class SoftApManagerTest {
+                 new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, config);
+ 
+         when(mWifiNative.setupInterfaceForSoftApMode(any())).thenReturn(TEST_INTERFACE_NAME);
+-        when(mWifiNative.setCountryCodeHal(eq(TEST_INTERFACE_NAME), any())).thenReturn(false);
++        when(mWifiNative.setCountryCodeHal(
++                TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT)))
++                .thenReturn(false);
+ 
+         SoftApManager newSoftApManager = new SoftApManager(mContext,
+                                                            mLooper.getLooper(),
+                                                            mFrameworkFacade,
+                                                            mWifiNative,
+-                                                           "US",
++                                                           TEST_COUNTRY_CODE,
+                                                            mCallback,
+                                                            mWifiApConfigStore,
+                                                            softApConfig,
+@@ -340,6 +388,9 @@ public class SoftApManagerTest {
+         newSoftApManager.start();
+         mLooper.dispatchAll();
+ 
++        verify(mWifiNative).setCountryCodeHal(
++                TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT));
++
+         ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+         verify(mContext, times(2)).sendStickyBroadcastAsUser(intentCaptor.capture(),
+                 eq(UserHandle.ALL));
+@@ -353,6 +404,76 @@ public class SoftApManagerTest {
+                 softApConfig.getTargetMode());
+     }
+ 
++    /**
++     * Tests that there is no failure in starting softap in 2Ghz band when no country code is
++     * provided.
++     */
++    @Test
++    public void startSoftApOn24GhzNoFailForNoCountryCode() throws Exception {
++        WifiConfiguration config = new WifiConfiguration();
++        config.apBand = WifiConfiguration.AP_BAND_2GHZ;
++        config.SSID = TEST_SSID;
++        SoftApModeConfiguration softApConfig =
++                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, config);
++
++        startSoftApAndVerifyEnabled(softApConfig, null);
++        verify(mWifiNative, never()).setCountryCodeHal(eq(TEST_INTERFACE_NAME), any());
++    }
++
++    /**
++     * Tests that there is no failure in starting softap in ANY band when no country code is
++     * provided.
++     */
++    @Test
++    public void startSoftApOnAnyGhzNoFailForNoCountryCode() throws Exception {
++        WifiConfiguration config = new WifiConfiguration();
++        config.apBand = WifiConfiguration.AP_BAND_ANY;
++        config.SSID = TEST_SSID;
++        SoftApModeConfiguration softApConfig =
++                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, config);
++
++        startSoftApAndVerifyEnabled(softApConfig, null);
++        verify(mWifiNative, never()).setCountryCodeHal(eq(TEST_INTERFACE_NAME), any());
++    }
++
++    /**
++     * Tests that there is no failure in starting softap in 2Ghz band when country code cannot be
++     * set.
++     */
++    @Test
++    public void startSoftApOn2GhzNoFailForCountryCodeSetFailure() throws Exception {
++        WifiConfiguration config = new WifiConfiguration();
++        config.apBand = WifiConfiguration.AP_BAND_2GHZ;
++        config.SSID = TEST_SSID;
++        SoftApModeConfiguration softApConfig =
++                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, config);
++
++        when(mWifiNative.setCountryCodeHal(eq(TEST_INTERFACE_NAME), any())).thenReturn(false);
++
++        startSoftApAndVerifyEnabled(softApConfig, TEST_COUNTRY_CODE);
++        verify(mWifiNative).setCountryCodeHal(
++                TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT));
++    }
++
++    /**
++     * Tests that there is no failure in starting softap in ANY band when country code cannot be
++     * set.
++     */
++    @Test
++    public void startSoftApOnAnyNoFailForCountryCodeSetFailure() throws Exception {
++        WifiConfiguration config = new WifiConfiguration();
++        config.apBand = WifiConfiguration.AP_BAND_ANY;
++        config.SSID = TEST_SSID;
++        SoftApModeConfiguration softApConfig =
++                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, config);
++
++        when(mWifiNative.setCountryCodeHal(eq(TEST_INTERFACE_NAME), any())).thenReturn(false);
++
++        startSoftApAndVerifyEnabled(softApConfig, TEST_COUNTRY_CODE);
++        verify(mWifiNative).setCountryCodeHal(
++                TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT));
++    }
++
+     /**
+      * Tests that the NO_CHANNEL error is propagated and properly reported when starting softap and
+      * a valid channel cannot be determined.
+@@ -432,7 +553,8 @@ public class SoftApManagerTest {
+     @Test
+     public void stopWhenNotStarted() throws Exception {
+         mSoftApManager = createSoftApManager(
+-                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null));
++                new SoftApModeConfiguration(WifiManager.IFACE_IP_MODE_TETHERED, null),
++                TEST_COUNTRY_CODE);
+         mSoftApManager.stop();
+         mLooper.dispatchAll();
+         /* Verify no state changes. */
+@@ -911,14 +1033,16 @@ public class SoftApManagerTest {
+     /** Starts soft AP and verifies that it is enabled successfully. */
+     protected void startSoftApAndVerifyEnabled(
+             SoftApModeConfiguration softApConfig) throws Exception {
++        startSoftApAndVerifyEnabled(softApConfig, TEST_COUNTRY_CODE);
++    }
++
++    /** Starts soft AP and verifies that it is enabled successfully. */
++    protected void startSoftApAndVerifyEnabled(
++            SoftApModeConfiguration softApConfig, String countryCode) throws Exception {
+         WifiConfiguration expectedConfig;
+         InOrder order = inOrder(mCallback, mWifiNative);
+ 
+-        when(mWifiNative.setCountryCodeHal(
+-                TEST_INTERFACE_NAME, TEST_COUNTRY_CODE.toUpperCase(Locale.ROOT)))
+-                .thenReturn(true);
+-
+-        mSoftApManager = createSoftApManager(softApConfig);
++        mSoftApManager = createSoftApManager(softApConfig, countryCode);
+         WifiConfiguration config = softApConfig.getWifiConfiguration();
+         if (config == null) {
+             when(mWifiApConfigStore.getApConfiguration()).thenReturn(mDefaultApConfig);
+-- 
+2.17.1
+

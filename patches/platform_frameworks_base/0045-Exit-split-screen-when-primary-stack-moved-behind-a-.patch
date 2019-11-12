@@ -1,0 +1,91 @@
+From 18a527496cc9fe77cd3ea0bfe31d8abc24840236 Mon Sep 17 00:00:00 2001
+From: Bryce Lee <brycelee@google.com>
+Date: Fri, 5 Jan 2018 09:00:49 -0800
+Subject: [PATCH 045/306] Exit split-screen when primary stack moved behind a
+ fullscreen stack.
+
+Activities can request their task be moved to the back of the stack,
+which subsequently causes the stack to move as well. When the stack
+is a split screen primary stack, this causes an ordering issue where
+the secondary will not move back while a fullscreen stack has moved
+in front of the primary. This leads to further ordering issues once
+the front secondary is dismissed as other stacks are also in the
+secondary windowing mode.
+
+To address this issue, we exit split-screen mode when the primary
+split-screen stack is moved back.
+
+Test: atest ActivityStackTests#testPrimarySplitScreenToFullscreenWhenMovedToBack
+Change-Id: Ic0597831e046a254b3cba216e1cb2fb11191f2c6
+Fixes: 69662547
+(cherry picked from commit 8cab4a02bb529f2f1f49fcf2c2c5b5a8531fc033)
+---
+ .../com/android/server/am/ActivityStack.java  |  8 ++++++
+ .../android/server/am/ActivityStackTests.java | 25 ++++++++++++++++++-
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityStack.java b/services/core/java/com/android/server/am/ActivityStack.java
+index 10c801da7c0..e9fa20c63fe 100644
+--- a/services/core/java/com/android/server/am/ActivityStack.java
++++ b/services/core/java/com/android/server/am/ActivityStack.java
+@@ -1013,6 +1013,14 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
+             return;
+         }
+ 
++        /**
++         * The intent behind moving a primary split screen stack to the back is usually to hide
++         * behind the home stack. Exit split screen in this case.
++         */
++        if (getWindowingMode() == WINDOWING_MODE_SPLIT_SCREEN_PRIMARY) {
++            setWindowingMode(WINDOWING_MODE_FULLSCREEN);
++        }
++
+         getDisplay().positionChildAtBottom(this);
+         mStackSupervisor.setFocusStackUnchecked(reason, getDisplay().getTopStack());
+         if (task != null) {
+diff --git a/services/tests/servicestests/src/com/android/server/am/ActivityStackTests.java b/services/tests/servicestests/src/com/android/server/am/ActivityStackTests.java
+index 6b09363cff0..bcbf40e191e 100644
+--- a/services/tests/servicestests/src/com/android/server/am/ActivityStackTests.java
++++ b/services/tests/servicestests/src/com/android/server/am/ActivityStackTests.java
+@@ -47,7 +47,7 @@ import org.junit.Test;
+  * Tests for the {@link ActivityStack} class.
+  *
+  * Build/Install/Run:
+- *  bit FrameworksServicesTests:com.android.server.am.ActivityStackTests
++ *  atest ActivityStackTests
+  */
+ @SmallTest
+ @Presubmit
+@@ -103,6 +103,29 @@ public class ActivityStackTests extends ActivityTestsBase {
+         assertEquals(mStack.mResumedActivity, r);
+     }
+ 
++    @Test
++    public void testPrimarySplitScreenToFullscreenWhenMovedToBack() throws Exception {
++        // Create primary splitscreen stack. This will create secondary stacks and places the
++        // existing fullscreen stack on the bottom.
++        final ActivityStack primarySplitScreen = mService.mStackSupervisor.getDefaultDisplay()
++                .createStack(WINDOWING_MODE_SPLIT_SCREEN_PRIMARY, ACTIVITY_TYPE_STANDARD,
++                        true /* onTop */);
++
++        // Assert windowing mode.
++        assertEquals(primarySplitScreen.getWindowingMode(), WINDOWING_MODE_SPLIT_SCREEN_PRIMARY);
++
++        // Move primary to back.
++        primarySplitScreen.moveToBack("testPrimarySplitScreenToFullscreenWhenMovedToBack",
++                null /* task */);
++
++        // Assert that stack is at the bottom.
++        assertEquals(mService.mStackSupervisor.getDefaultDisplay().getIndexOf(primarySplitScreen),
++                0);
++
++        // Ensure no longer in splitscreen.
++        assertEquals(primarySplitScreen.getWindowingMode(), WINDOWING_MODE_FULLSCREEN);
++    }
++
+     @Test
+     public void testStopActivityWhenActivityDestroyed() throws Exception {
+         final ActivityRecord r = new ActivityBuilder(mService).setTask(mTask).build();
+-- 
+2.17.1
+

@@ -1,0 +1,83 @@
+From ef46b321b27a2e368ab9c9b25361c27e9a8659ad Mon Sep 17 00:00:00 2001
+From: Andy Chou <andychou@google.com>
+Date: Mon, 26 Nov 2018 02:21:45 -0800
+Subject: [PATCH 54/70] Create USCC ERI file
+
+Bug: 110808862
+Test: Build pass
+
+Change-Id: I42a3293934250e15e02c320d3fc24a0b1b3d5d93
+Merged-In: I42a3293934250e15e02c320d3fc24a0b1b3d5d93
+(cherry picked from commit 4da153d3a2c973b9c04f014078c747a13cf95f30)
+---
+ assets/eri_311220.xml | 58 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+ create mode 100644 assets/eri_311220.xml
+
+diff --git a/assets/eri_311220.xml b/assets/eri_311220.xml
+new file mode 100644
+index 000000000..f32bc4eff
+--- /dev/null
++++ b/assets/eri_311220.xml
+@@ -0,0 +1,58 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++/*
++** Licensed under the Apache License, Version 2.0 (the "License");
++** you may not use this file except in compliance with the License.
++** You may obtain a copy of the License at
++**
++**     http://www.apache.org/licenses/LICENSE-2.0
++**
++** Unless required by applicable law or agreed to in writing, software
++** distributed under the License is distributed on an "AS IS" BASIS,
++** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++** See the License for the specific language governing permissions and
++** limitations under the License.
++*/
++-->
++
++<!-- Note that IconMode can be only 0, ON or 1, FLASHING
++     The icon is turned OFF if then IconIndex = 1 -->
++
++<EriFile VersionNumber="1"
++         NumberOfEriEntries="3"
++         EriFileType="2">
++
++         <CallPromptId Id="0"
++                       CallPromptText="CallPromptId0"/>
++
++         <CallPromptId Id="1"
++                       CallPromptText="CallPromptId1"/>
++
++         <CallPromptId Id="2"
++                       CallPromptText="CallPromptId2"/>
++
++         <EriInfo RoamingIndicator="0"
++                  IconIndex="0"
++                  IconMode="0"
++                  EriText="Extended"
++                  CallPromptId="0"
++                  AlertId="0"
++                  DataServiceSupport="1"/>
++
++         <EriInfo RoamingIndicator="1"
++                  IconIndex="1"
++                  IconMode="0"
++                  EriText="Extended"
++                  CallPromptId="0"
++                  AlertId="0"
++                  DataServiceSupport="1"/>
++
++         <EriInfo RoamingIndicator="2"
++                  IconIndex="2"
++                  IconMode="1"
++                  EriText="Extended"
++                  CallPromptId="0"
++                  AlertId="0"
++                  DataServiceSupport="1"/>
++
++</EriFile>
+-- 
+2.17.1
+

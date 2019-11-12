@@ -1,0 +1,44 @@
+From 55dfd8a86bf47af46ce2af4199630557a1ac1abb Mon Sep 17 00:00:00 2001
+From: Beverly <beverlyt@google.com>
+Date: Thu, 7 Jun 2018 10:43:32 -0400
+Subject: [PATCH 07/71] Add help uri for prevent ringing gesture
+
+Test: build
+Bug: 79270169
+Change-Id: Iea5598f26649854521202363cad6ee297cef3057
+(cherry picked from commit 486d1facfab222c686e03c344619aaf19280ea2a)
+---
+ res/values/strings.xml                                         | 3 +++
+ .../settings/gestures/PreventRingingGestureSettings.java       | 2 +-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 30290a788c..cd2b78362a 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -9928,6 +9928,9 @@
+     <!-- Help URI, smart battery page [DO NOT TRANSLATE] -->
+     <string name="help_uri_smart_battery_settings" translatable="false"></string>
+ 
++    <!-- Help URI, prevent ringing gesture [DO NOT TRANSLATE] -->
++    <string name="help_uri_prevent_ringing_gesture" translatable="false"></string>
++
+     <!-- Title label for dnd suggestion, which is displayed in Settings homepage [CHAR LIMIT=100] -->
+     <string name="zen_suggestion_title">Update Do Not Disturb</string>
+ 
+diff --git a/src/com/android/settings/gestures/PreventRingingGestureSettings.java b/src/com/android/settings/gestures/PreventRingingGestureSettings.java
+index 09570dfb4f..241e5c0bf5 100644
+--- a/src/com/android/settings/gestures/PreventRingingGestureSettings.java
++++ b/src/com/android/settings/gestures/PreventRingingGestureSettings.java
+@@ -58,7 +58,7 @@ public class PreventRingingGestureSettings extends DashboardFragment {
+ 
+     @Override
+     public int getHelpResource() {
+-        return 0;
++        return R.string.help_uri_prevent_ringing_gesture;
+     }
+ 
+     public static final SearchIndexProvider SEARCH_INDEX_DATA_PROVIDER =
+-- 
+2.17.1
+

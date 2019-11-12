@@ -1,0 +1,34 @@
+From 56eb975447788a58b3a8f858655c964d35e0ba75 Mon Sep 17 00:00:00 2001
+From: Dan Stoza <stoza@google.com>
+Date: Tue, 31 Jul 2018 16:23:38 -0700
+Subject: [PATCH 15/48] SF: Layer children should call parents' onFirstRef
+
+Classes which inherit indirectly from Layer and which override
+onFirstRef need to also call their parents' onFirstRef to ensure that
+Layer is initialized correctly.
+
+Bug: 111854867
+Test: atest UiAutomationTest#testWindowContentFrameStats
+
+Change-Id: I5e29b6619d1a2e48277ad465a64d1f13bb92905c
+Merged-In: I5ceb531a5d59587ab489342d0b19a42c1a286402
+---
+ services/surfaceflinger/BufferLayer.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/services/surfaceflinger/BufferLayer.cpp b/services/surfaceflinger/BufferLayer.cpp
+index 12267adbc..7ac143219 100644
+--- a/services/surfaceflinger/BufferLayer.cpp
++++ b/services/surfaceflinger/BufferLayer.cpp
+@@ -701,6 +701,8 @@ bool BufferLayer::isOpaque(const Layer::State& s) const {
+ }
+ 
+ void BufferLayer::onFirstRef() {
++    Layer::onFirstRef();
++
+     // Creates a custom BufferQueue for SurfaceFlingerConsumer to use
+     sp<IGraphicBufferProducer> producer;
+     sp<IGraphicBufferConsumer> consumer;
+-- 
+2.17.1
+

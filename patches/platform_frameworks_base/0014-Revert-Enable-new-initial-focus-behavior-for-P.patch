@@ -1,0 +1,33 @@
+From 7542ccd40c41c3acdbe911f0d0339cace1d15a69 Mon Sep 17 00:00:00 2001
+From: Evan Rosky <erosky@google.com>
+Date: Thu, 9 Nov 2017 19:25:24 +0000
+Subject: [PATCH 014/306] Revert "Enable new initial-focus behavior for P"
+
+This reverts commit 4dc3289c942398507a8b6240559da599d11a3284.
+
+Reason for revert: Pushback from bundled apps.
+
+Bug: 68841055
+Bug: 34520588
+Change-Id: Id771a11c9b44baf5810240cca164bae9f468b5ad
+(cherry picked from commit b34cad00d374e09eed4df028dee5f82ea32a07d7)
+---
+ core/java/android/view/ViewRootImpl.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/android/view/ViewRootImpl.java b/core/java/android/view/ViewRootImpl.java
+index 37829f0bf22..e30496fb718 100644
+--- a/core/java/android/view/ViewRootImpl.java
++++ b/core/java/android/view/ViewRootImpl.java
+@@ -513,7 +513,7 @@ public final class ViewRootImpl implements ViewParent,
+         mDisplayManager = (DisplayManager)context.getSystemService(Context.DISPLAY_SERVICE);
+ 
+         if (!sCompatibilityDone) {
+-            sAlwaysAssignFocus = mTargetSdkVersion < Build.VERSION_CODES.P;
++            sAlwaysAssignFocus = true;
+ 
+             sCompatibilityDone = true;
+         }
+-- 
+2.17.1
+

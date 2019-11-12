@@ -1,0 +1,31 @@
+From 31b2f7e57f852d96ff94c911f72f4f5926989208 Mon Sep 17 00:00:00 2001
+From: Weilun Du <wdu@google.com>
+Date: Sun, 17 Jun 2018 15:37:53 -0700
+Subject: [PATCH 07/81] Increase system image size to 2.5 GB
+
+Fixed build breakge caused by insufficient image size.
+BUG: 110198136
+
+Change-Id: I12a4a43b522b7867ff789854cf5b76d13f2f5499
+Signed-off-by: Weilun Du <wdu@google.com>
+---
+ target/board/generic_arm64/BoardConfig.mk | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/target/board/generic_arm64/BoardConfig.mk b/target/board/generic_arm64/BoardConfig.mk
+index 0fa05e86c..56f15deec 100644
+--- a/target/board/generic_arm64/BoardConfig.mk
++++ b/target/board/generic_arm64/BoardConfig.mk
+@@ -73,8 +73,7 @@ BUILD_QEMU_IMAGES := true
+ USE_OPENGL_RENDERER := true
+ 
+ TARGET_USERIMAGES_USE_EXT4 := true
+-# Partition size is default 1.5GB (1536MB) for 64 bits projects
+-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1610612736
++BOARD_SYSTEMIMAGE_PARTITION_SIZE := 2684354560 # 2.5 GB
+ BOARD_USERDATAIMAGE_PARTITION_SIZE := 576716800
+ TARGET_COPY_OUT_VENDOR := vendor
+ # ~100 MB vendor image. Please adjust system image / vendor image sizes
+-- 
+2.17.1
+

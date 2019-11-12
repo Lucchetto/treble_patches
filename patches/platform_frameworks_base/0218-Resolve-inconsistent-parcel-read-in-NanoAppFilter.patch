@@ -1,0 +1,37 @@
+From 031ecc1fef917393eb3432bc689b926b4c17de09 Mon Sep 17 00:00:00 2001
+From: Arthur Ishiguro <arthuri@google.com>
+Date: Mon, 25 Jun 2018 11:31:33 -0700
+Subject: [PATCH 218/306] Resolve inconsistent parcel read in NanoAppFilter
+
+Bug: 77599679
+Test: Compile only
+Change-Id: Ib417a5cb4d51744442d2fb14437cabbe5fd1c266
+(cherry picked from commit abe5a73a4a81e312a1690fbc10a6b99ce98b699a)
+---
+ core/java/android/hardware/location/NanoAppFilter.java | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/core/java/android/hardware/location/NanoAppFilter.java b/core/java/android/hardware/location/NanoAppFilter.java
+index 4d8e7344cd7..562065e2081 100644
+--- a/core/java/android/hardware/location/NanoAppFilter.java
++++ b/core/java/android/hardware/location/NanoAppFilter.java
+@@ -85,7 +85,7 @@ public class NanoAppFilter implements Parcelable {
+         mAppId = in.readLong();
+         mAppVersion = in.readInt();
+         mVersionRestrictionMask = in.readInt();
+-        mAppIdVendorMask = in.readInt();
++        mAppIdVendorMask = in.readLong();
+     }
+ 
+     public int describeContents() {
+@@ -93,7 +93,6 @@ public class NanoAppFilter implements Parcelable {
+     }
+ 
+     public void writeToParcel(Parcel out, int flags) {
+-
+         out.writeLong(mAppId);
+         out.writeInt(mAppVersion);
+         out.writeInt(mVersionRestrictionMask);
+-- 
+2.17.1
+

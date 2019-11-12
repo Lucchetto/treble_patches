@@ -1,0 +1,68 @@
+From 31e962fe1970b12ec216cf3e376d126d082144a4 Mon Sep 17 00:00:00 2001
+From: Jaegeuk Kim <jaegeuk@google.com>
+Date: Sun, 29 Jul 2018 06:56:57 -0700
+Subject: [PATCH 01/11] vold: meta encryption: fix /dev/block/by-name/userdata
+ to dm-3
+
+This fixes F2FS GC failure in idle-maint.
+07-28 18:25:54.838   603 11187 D vold    : idle maintenance started
+07-28 18:25:54.846   603 11187 D vold    : Start GC on /sys/fs/f2fs/sda21
+07-28 18:25:54.847   603 11187 W vold    : Set discard gralunarity failed on/sys/fs/f2fs/sda21: No such file or directory
+07-28 18:25:54.847   603 11187 W vold    : Start GC failed on /sys/fs/f2fs/sda21: No such file or directory
+
+Bug: 111953875
+Change-Id: I1d10802121d5641cf9ba780fee249affd2cf6ffe
+Signed-off-by: Jaegeuk Kim <jaegeuk@google.com>
+---
+ IdleMaint.cpp         | 8 +++++---
+ model/PrivateVolume.h | 1 +
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/IdleMaint.cpp b/IdleMaint.cpp
+index 7744024..5a19b8c 100644
+--- a/IdleMaint.cpp
++++ b/IdleMaint.cpp
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include "IdleMaint.h"
++#include "FileDeviceUtils.h"
+ #include "Utils.h"
+ #include "VolumeManager.h"
+ #include "model/PrivateVolume.h"
+@@ -85,8 +86,8 @@ static void addFromVolumeManager(std::list<std::string>* paths,
+             } else if (path_type == PathTypes::kBlkDevice) {
+                 std::string gc_path;
+                 const std::string& fs_type = vol->getFsType();
+-                if (fs_type == "f2fs" &&
+-                    Realpath(vol->getRawDevPath(), &gc_path)) {
++                if (fs_type == "f2fs" && (Realpath(vol->getRawDmDevPath(), &gc_path) ||
++                                          Realpath(vol->getRawDevPath(), &gc_path))) {
+                     paths->push_back(std::string("/sys/fs/") + fs_type +
+                                      "/" + Basename(gc_path));
+                 }
+@@ -130,7 +131,8 @@ static void addFromFstab(std::list<std::string>* paths, PathTypes path_type) {
+         } else if (path_type == PathTypes::kBlkDevice) {
+             std::string gc_path;
+             if (std::string(fstab->recs[i].fs_type) == "f2fs" &&
+-                Realpath(fstab->recs[i].blk_device, &gc_path)) {
++                Realpath(android::vold::BlockDeviceForPath(
++                    std::string(fstab->recs[i].mount_point) + "/"), &gc_path)) {
+                 paths->push_back(std::string("/sys/fs/") + fstab->recs[i].fs_type +
+                                  "/" + Basename(gc_path));
+             }
+diff --git a/model/PrivateVolume.h b/model/PrivateVolume.h
+index 9508671..9a61f8d 100644
+--- a/model/PrivateVolume.h
++++ b/model/PrivateVolume.h
+@@ -41,6 +41,7 @@ public:
+     virtual ~PrivateVolume();
+     const std::string& getFsType() { return mFsType; };
+     const std::string& getRawDevPath() { return mRawDevPath; };
++    const std::string& getRawDmDevPath() { return mDmDevPath; };
+ 
+ protected:
+     status_t doCreate() override;
+-- 
+2.17.1
+

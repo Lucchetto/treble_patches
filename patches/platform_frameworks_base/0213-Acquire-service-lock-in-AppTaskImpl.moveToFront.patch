@@ -1,0 +1,32 @@
+From 5ece11b5dc4a045af0ecde33b23d9c310715640e Mon Sep 17 00:00:00 2001
+From: Wale Ogunwale <ogunwale@google.com>
+Date: Wed, 11 Jul 2018 15:22:01 -0700
+Subject: [PATCH 213/306] Acquire service lock in AppTaskImpl.moveToFront()
+
+Oversight from previous refactor in O release done in ag/2987716
+
+Change-Id: I2e2d6e55251eb319ddee0db97eedc1c574736ead
+Merged-In: I2e2d6e55251eb319ddee0db97eedc1c574736ead
+Fixes: 111336376
+Test: builds
+(cherry picked from commit bc4d0326a04c19500f44283fbfab581257d3c75e)
+---
+ services/core/java/com/android/server/am/AppTaskImpl.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/AppTaskImpl.java b/services/core/java/com/android/server/am/AppTaskImpl.java
+index 5f5a504bb01..bb6c6a0cbf7 100644
+--- a/services/core/java/com/android/server/am/AppTaskImpl.java
++++ b/services/core/java/com/android/server/am/AppTaskImpl.java
+@@ -98,7 +98,7 @@ class AppTaskImpl extends IAppTask.Stub {
+         final int callingUid = Binder.getCallingUid();
+         final long origId = Binder.clearCallingIdentity();
+         try {
+-            synchronized (this) {
++            synchronized (mService) {
+                 mService.mStackSupervisor.startActivityFromRecents(callingPid, callingUid, mTaskId,
+                         null);
+             }
+-- 
+2.17.1
+

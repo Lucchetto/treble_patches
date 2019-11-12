@@ -1,0 +1,42 @@
+From dcc6fd78ccd0cfd4eed3f5a7aa8f4bbec90253ad Mon Sep 17 00:00:00 2001
+From: Varun Anand <vaanand@google.com>
+Date: Thu, 28 Feb 2019 22:11:54 -0800
+Subject: [PATCH 29/39] Remove getAllVpnInfo from ConnectivityServiceMock.
+
+See http://ag/6580635 for context.
+
+Test: atest FrameworksNetTests
+Bug: 126245192
+Change-Id: I02aa2d86aca9cef18024b66e3ca6fd2f5bf39f2b
+Merged-In: If2ea101c1a69097118dff451fb352ed1d709d4fd
+---
+ .../internal/telephony/mocks/ConnectivityServiceMock.java   | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/mocks/ConnectivityServiceMock.java b/tests/telephonytests/src/com/android/internal/telephony/mocks/ConnectivityServiceMock.java
+index 8b892696e..1e2739d6f 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/mocks/ConnectivityServiceMock.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/mocks/ConnectivityServiceMock.java
+@@ -50,7 +50,6 @@ import android.util.Slog;
+ import com.android.internal.annotations.VisibleForTesting;
+ import com.android.internal.net.LegacyVpnInfo;
+ import com.android.internal.net.VpnConfig;
+-import com.android.internal.net.VpnInfo;
+ import com.android.internal.net.VpnProfile;
+ import com.android.internal.util.AsyncChannel;
+ import com.android.server.connectivity.NetworkAgentInfo;
+@@ -635,11 +634,6 @@ public class ConnectivityServiceMock extends IConnectivityManager.Stub
+         throw new RuntimeException("not implemented");
+     }
+ 
+-    @Override
+-    public VpnInfo[] getAllVpnInfo() {
+-        throw new RuntimeException("not implemented");
+-    }
+-
+     @Override
+     public VpnConfig getVpnConfig(int userId) {
+         throw new RuntimeException("not implemented");
+-- 
+2.17.1
+

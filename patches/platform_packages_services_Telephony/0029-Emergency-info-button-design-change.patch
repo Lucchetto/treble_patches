@@ -1,0 +1,241 @@
+From a7f55ffa33f769939ce5e9a2359a4d624da75eaf Mon Sep 17 00:00:00 2001
+From: "Wesley.CW Wang" <wesleycwwang@google.com>
+Date: Tue, 24 Jul 2018 12:20:20 +0800
+Subject: [PATCH 29/70] Emergency info button design change
+
+ - Remove emergency info observer , emergency info name will set by
+ user name.
+ - User icon will be default icon if user do not set photo.
+
+Test: Manually
+
+Bug: 112168722
+Bug: 80406570
+
+Change-Id: I2ad8c7d00b5a98e06d7a91a20c82d8222e14723e
+Merged-In: I2ad8c7d00b5a98e06d7a91a20c82d8222e14723e
+---
+ AndroidManifest.xml                           |  2 -
+ src/com/android/phone/EmergencyDialer.java    | 74 -------------------
+ src/com/android/phone/EmergencyInfoGroup.java | 44 ++++-------
+ 3 files changed, 16 insertions(+), 104 deletions(-)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 982332bf5..30760dc68 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -182,8 +182,6 @@
+     <!-- Needed for emergency contact notification. -->
+     <uses-permission android:name="android.permission.WRITE_BLOCKED_NUMBERS" />
+     <uses-permission android:name="android.permission.NETWORK_SETTINGS" />
+-    <!-- Needed for emergency info user name. -->
+-    <uses-permission android:name="com.android.emergency.permission.READ_EMERGENCY_INFO_NAME"/>
+ 
+     <!-- This tells the activity manager to not delay any of our activity
+          start requests, even if they happen immediately after the user
+diff --git a/src/com/android/phone/EmergencyDialer.java b/src/com/android/phone/EmergencyDialer.java
+index 61061d9bb..951fae9ca 100644
+--- a/src/com/android/phone/EmergencyDialer.java
++++ b/src/com/android/phone/EmergencyDialer.java
+@@ -25,12 +25,9 @@ import android.app.AlertDialog;
+ import android.app.Dialog;
+ import android.app.WallpaperManager;
+ import android.content.BroadcastReceiver;
+-import android.content.ContentResolver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+-import android.database.ContentObserver;
+-import android.database.Cursor;
+ import android.graphics.Color;
+ import android.graphics.Point;
+ import android.media.AudioManager;
+@@ -38,7 +35,6 @@ import android.media.ToneGenerator;
+ import android.net.Uri;
+ import android.os.AsyncTask;
+ import android.os.Bundle;
+-import android.os.Handler;
+ import android.os.PersistableBundle;
+ import android.provider.Settings;
+ import android.telecom.PhoneAccount;
+@@ -177,25 +173,6 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+ 
+     private boolean mAreEmergencyDialerShortcutsEnabled;
+ 
+-    /** Key of emergency information user name */
+-    private static final String KEY_EMERGENCY_INFO_NAME = "name";
+-
+-    /** Authority of emergency information */
+-    private static final String AUTHORITY = "com.android.emergency.info.name";
+-
+-    /** Content path of emergency information name */
+-    private static final String CONTENT_PATH = "name";
+-
+-    /** Content URI of emergency information */
+-    private static final Uri CONTENT_URI = new Uri.Builder()
+-            .scheme(ContentResolver.SCHEME_CONTENT)
+-            .authority(AUTHORITY)
+-            .path(CONTENT_PATH)
+-            .build();
+-
+-    /** ContentObserver for monitoring emergency info name changes */
+-    private ContentObserver mEmergencyInfoNameObserver;
+-
+     @Override
+     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+         // Do nothing
+@@ -353,10 +330,6 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+             }
+         }
+         unregisterReceiver(mBroadcastReceiver);
+-        if (mEmergencyInfoNameObserver != null) {
+-            getContentResolver().unregisterContentObserver(mEmergencyInfoNameObserver);
+-            mEmergencyInfoNameObserver = null;
+-        }
+     }
+ 
+     @Override
+@@ -935,19 +908,6 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         setupEmergencyCallShortcutButton();
+ 
+         switchView(mEmergencyShortcutView, mDialpadView, false);
+-
+-        mEmergencyInfoNameObserver = new ContentObserver(new Handler()) {
+-            @Override
+-            public void onChange(boolean selfChange) {
+-                super.onChange(selfChange);
+-                getEmergencyInfoNameAsync();
+-            }
+-        };
+-        // Register ContentProvider for monitoring emergency info name changes.
+-        getContentResolver().registerContentObserver(CONTENT_URI, false,
+-                mEmergencyInfoNameObserver);
+-        // Query emergency info name.
+-        getEmergencyInfoNameAsync();
+     }
+ 
+     private void setLocationInfo(String country) {
+@@ -1068,38 +1028,4 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+                     }
+                 });
+     }
+-
+-    /**
+-     * Get emergency info name from EmergencyInfo and then update EmergencyInfoGroup.
+-     */
+-    private void getEmergencyInfoNameAsync() {
+-        new AsyncTask<Void, Void, String>() {
+-            @Override
+-            protected String doInBackground(Void... params) {
+-                String name = "";
+-                try (Cursor cursor = getContentResolver().query(CONTENT_URI, null, null, null,
+-                        null)) {
+-                    if (cursor != null && cursor.moveToFirst()) {
+-                        int index = cursor.getColumnIndex(KEY_EMERGENCY_INFO_NAME);
+-                        name = index > -1 ? cursor.getString(index) : "";
+-                    }
+-                } catch (IllegalArgumentException ex) {
+-                    Log.w(LOG_TAG, "getEmergencyInfoNameAsync failed", ex);
+-                }
+-                return name;
+-            }
+-
+-            @Override
+-            protected void onPostExecute(String result) {
+-                super.onPostExecute(result);
+-                if (!isFinishing() && !isDestroyed()) {
+-                    // Update emergency info with emergency info name
+-                    EmergencyInfoGroup group = findViewById(R.id.emergency_info_button);
+-                    if (group != null) {
+-                        group.updateEmergencyInfo(result);
+-                    }
+-                }
+-            }
+-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+-    }
+ }
+diff --git a/src/com/android/phone/EmergencyInfoGroup.java b/src/com/android/phone/EmergencyInfoGroup.java
+index 092bc41fa..828ae88bc 100644
+--- a/src/com/android/phone/EmergencyInfoGroup.java
++++ b/src/com/android/phone/EmergencyInfoGroup.java
+@@ -96,6 +96,7 @@ public class EmergencyInfoGroup extends FrameLayout {
+ 
+             visible = true;
+         }
++        mEmergencyInfoName.setText(getUserName());
+ 
+         setVisibility(visible ? View.VISIBLE : View.GONE);
+     }
+@@ -103,34 +104,19 @@ public class EmergencyInfoGroup extends FrameLayout {
+     /**
+      * Get user icon.
+      *
+-     * @return user icon, or anonymous avatar if user do not set photo.
++     * @return user icon, or default user icon if user do not set photo.
+      */
+     private Drawable getCircularUserIcon() {
+-        final int userId = UserHandle.getCallingUserId();
+-
+         final UserManager userManager = (UserManager) getContext().getSystemService(
+                 Context.USER_SERVICE);
+-
+-        // get user icon.
+-        Bitmap bitmapUserIcon = userManager.getUserIcon(userId);
++        Bitmap bitmapUserIcon = userManager.getUserIcon(UserHandle.getCallingUserId());
+ 
+         if (bitmapUserIcon == null) {
+-            // use anonymous avatar.
+-            return getContext().getDrawable(R.drawable.logo_avatar_anonymous_120);
++            // get default user icon.
++            final Drawable defaultUserIcon = UserIcons.getDefaultUserIcon(
++                    getContext().getResources(), UserHandle.myUserId(), false);
++            bitmapUserIcon = UserIcons.convertToBitmap(defaultUserIcon);
+         }
+-
+-        // get default user icon.
+-        Drawable drawableDefaultUserIcon = UserIcons.getDefaultUserIcon(
+-                getContext().getResources(), userId, false);
+-        Bitmap bitmapDefaultUserIcon = UserIcons.convertToBitmap(drawableDefaultUserIcon);
+-
+-        // User icon is default icon that means user do not set photo, replacing default icon
+-        // with anonymous avatar on emergency info button.
+-        if (bitmapUserIcon.sameAs(bitmapDefaultUserIcon)) {
+-            return getContext().getDrawable(R.drawable.logo_avatar_anonymous_120);
+-        }
+-
+-        // set user icon circular.
+         RoundedBitmapDrawable drawableUserIcon = RoundedBitmapDrawableFactory.create(
+                 getContext().getResources(), bitmapUserIcon);
+         drawableUserIcon.setCircular(true);
+@@ -138,6 +124,15 @@ public class EmergencyInfoGroup extends FrameLayout {
+         return drawableUserIcon;
+     }
+ 
++    private CharSequence getUserName() {
++        final UserManager userManager = (UserManager) getContext().getSystemService(
++                Context.USER_SERVICE);
++        final String userName = userManager.getUserName();
++
++        return TextUtils.isEmpty(userName) ? getContext().getText(
++                R.string.emergency_information_owner_hint) : userName;
++    }
++
+     private void updateLayoutHeight() {
+         LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) getLayoutParams();
+         // Update height if mEmergencyInfoHint text line more than 1.
+@@ -149,11 +144,4 @@ public class EmergencyInfoGroup extends FrameLayout {
+                                 R.dimen.emergency_info_button_singleline_height);
+         setLayoutParams(params);
+     }
+-
+-    void updateEmergencyInfo(String emergencyInfoName) {
+-        if (TextUtils.isEmpty(emergencyInfoName)) {
+-            emergencyInfoName = getContext().getString(R.string.emergency_information_owner_hint);
+-        }
+-        mEmergencyInfoName.setText(emergencyInfoName);
+-    }
+ }
+\ No newline at end of file
+-- 
+2.17.1
+

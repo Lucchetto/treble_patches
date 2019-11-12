@@ -1,0 +1,96 @@
+From 94ea2dad5b936381d8ea0195ea7e63df956c0aed Mon Sep 17 00:00:00 2001
+From: Doris Ling <dling@google.com>
+Date: Wed, 1 Aug 2018 17:24:34 -0700
+Subject: [PATCH 22/71] DO NOT MERGE Disable changing lock when device is not
+ provisioned.
+
+When the device is not yet provisioned and settings is launched:
+- disable the entry point for changing device lock
+- set display search menu to false
+- disallow update to display the search menu
+
+Bug: 110034419
+Test: make RunSettingsRoboTests
+Change-Id: Ieb7eb0e8699229ec0824ccc19d7b958ac44965a2
+---
+ src/com/android/settings/ChooseLockGeneric.java      | 10 ++++++++++
+ src/com/android/settings/SettingsActivity.java       |  4 ++--
+ src/com/android/settings/SetupChooseLockGeneric.java |  5 +++++
+ 3 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/settings/ChooseLockGeneric.java b/src/com/android/settings/ChooseLockGeneric.java
+index 1a70f541b4..4cc7b0e046 100644
+--- a/src/com/android/settings/ChooseLockGeneric.java
++++ b/src/com/android/settings/ChooseLockGeneric.java
+@@ -51,6 +51,7 @@ import android.widget.TextView;
+ 
+ import com.android.internal.logging.MetricsProto.MetricsEvent;
+ import com.android.internal.widget.LockPatternUtils;
++import com.android.settings.Utils;
+ import com.android.settings.fingerprint.FingerprintEnrollBase;
+ import com.android.settings.fingerprint.FingerprintEnrollFindSensor;
+ import com.android.settingslib.RestrictedLockUtils;
+@@ -140,6 +141,11 @@ public class ChooseLockGeneric extends SettingsActivity {
+         @Override
+         public void onCreate(Bundle savedInstanceState) {
+             super.onCreate(savedInstanceState);
++            final Activity activity = getActivity();
++            if (!Utils.isDeviceProvisioned(activity) && !canRunBeforeDeviceProvisioned()) {
++                activity.finish();
++                return;
++            }
+ 
+             String chooseLockAction = getActivity().getIntent().getAction();
+             mFingerprintManager =
+@@ -217,6 +223,10 @@ public class ChooseLockGeneric extends SettingsActivity {
+             addHeaderView();
+         }
+ 
++        protected boolean canRunBeforeDeviceProvisioned() {
++            return false;
++        }
++
+         protected void addHeaderView() {
+             if (mForFingerprint) {
+                 setHeaderView(R.layout.choose_lock_generic_fingerprint_header);
+diff --git a/src/com/android/settings/SettingsActivity.java b/src/com/android/settings/SettingsActivity.java
+index db9c0906ef..48d2303c4f 100644
+--- a/src/com/android/settings/SettingsActivity.java
++++ b/src/com/android/settings/SettingsActivity.java
+@@ -626,7 +626,7 @@ public class SettingsActivity extends SettingsDrawerActivity
+                 // No UP affordance if we are displaying the main Dashboard
+                 mDisplayHomeAsUpEnabled = false;
+                 // Show Search affordance
+-                mDisplaySearch = true;
++                mDisplaySearch = Utils.isDeviceProvisioned(this);
+                 mInitialTitleResId = R.string.dashboard_title;
+ 
+                 // add argument to indicate which settings tab should be initially selected
+@@ -708,7 +708,7 @@ public class SettingsActivity extends SettingsDrawerActivity
+     }
+ 
+     public void setDisplaySearchMenu(boolean displaySearch) {
+-        if (displaySearch != mDisplaySearch) {
++        if (Utils.isDeviceProvisioned(this) && displaySearch != mDisplaySearch) {
+             mDisplaySearch = displaySearch;
+             invalidateOptionsMenu();
+         }
+diff --git a/src/com/android/settings/SetupChooseLockGeneric.java b/src/com/android/settings/SetupChooseLockGeneric.java
+index 71679f30a8..21fad53b8f 100644
+--- a/src/com/android/settings/SetupChooseLockGeneric.java
++++ b/src/com/android/settings/SetupChooseLockGeneric.java
+@@ -138,6 +138,11 @@ public class SetupChooseLockGeneric extends ChooseLockGeneric {
+             return layout.onCreateRecyclerView(inflater, parent, savedInstanceState);
+         }
+ 
++        @Override
++        protected boolean canRunBeforeDeviceProvisioned() {
++            return true;
++        }
++
+         /***
+          * Disables preferences that are less secure than required quality and shows only secure
+          * screen lock options here.
+-- 
+2.17.1
+

@@ -1,0 +1,48 @@
+From 51ea331c451576357d3923e05235f5765444e87d Mon Sep 17 00:00:00 2001
+From: Felipe Leme <felipeal@google.com>
+Date: Thu, 15 Feb 2018 12:25:29 -0800
+Subject: [PATCH 136/306] Fixed isVisibleToUserForAutofill() so it returns true
+ by default.
+
+This new API was introduced during the compat app changes and it must be
+implemented by views providing virtual views (like WebView). If they don't, we
+need to keep the default behavior of assuming the child is visible, otherwise
+we might trigger Save when the child value change and the service sets the
+FLAG_SAVE_ON_ALL_VIEWS_INVISIBLE
+
+Test: atest CtsAutoFillServiceTestCases:VirtualContainerActivityTest#testSaveNotShownWhenVirtualViewValueChanges
+
+Fixes: 73172668
+
+Change-Id: I80654aaffa7dd24a3b3b59e7016bd86b48fe4898
+(cherry picked from commit a50d92ea68371993c38b6805cfe475e8ea03a1f8)
+---
+ core/java/android/view/View.java | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/view/View.java b/core/java/android/view/View.java
+index 2af24675881..a6766cdf704 100644
+--- a/core/java/android/view/View.java
++++ b/core/java/android/view/View.java
+@@ -8807,6 +8807,9 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
+     /**
+      * Computes whether this virtual autofill view is visible to the user.
+      *
++     * <p><b>Note: </b>By default it returns {@code true}, but views providing a virtual hierarchy
++     * view must override it.
++     *
+      * @return Whether the view is visible on the screen.
+      */
+     public boolean isVisibleToUserForAutofill(int virtualId) {
+@@ -8819,7 +8822,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
+                 }
+             }
+         }
+-        return false;
++        return true;
+     }
+ 
+     /**
+-- 
+2.17.1
+

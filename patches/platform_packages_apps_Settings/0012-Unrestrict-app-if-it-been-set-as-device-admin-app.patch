@@ -1,0 +1,132 @@
+From f87897b84cf09da3d25ea0222fce876fdf62f302 Mon Sep 17 00:00:00 2001
+From: Lei Yu <jackqdyulei@google.com>
+Date: Thu, 28 Jun 2018 14:08:42 -0700
+Subject: [PATCH 12/71] Unrestrict app if it been set as device admin app
+
+Bug: 110337989
+Test: RunSettingsRoboTests
+Change-Id: I8229bee97d970f8b16351193cfd99ca05ff041bf
+Merged-In: I8229bee97d970f8b16351193cfd99ca05ff041bf
+---
+ src/com/android/settings/DeviceAdminAdd.java  | 13 +++++++
+ .../android/settings/DeviceAdminAddTest.java  | 37 +++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+
+diff --git a/src/com/android/settings/DeviceAdminAdd.java b/src/com/android/settings/DeviceAdminAdd.java
+index 0ad882df9a..72f4aa32ca 100644
+--- a/src/com/android/settings/DeviceAdminAdd.java
++++ b/src/com/android/settings/DeviceAdminAdd.java
+@@ -59,6 +59,7 @@ import android.widget.ImageView;
+ import android.widget.TextView;
+ 
+ import com.android.internal.logging.nano.MetricsProto;
++import com.android.settings.fuelgauge.BatteryUtils;
+ import com.android.settings.overlay.FeatureFactory;
+ import com.android.settings.users.UserDialogs;
+ import com.android.settingslib.RestrictedLockUtils;
+@@ -425,6 +426,9 @@ public class DeviceAdminAdd extends Activity {
+             mDPM.setActiveAdmin(mDeviceAdmin.getComponent(), mRefreshing);
+             EventLog.writeEvent(EventLogTags.EXP_DET_DEVICE_ADMIN_ACTIVATED_BY_USER,
+                 mDeviceAdmin.getActivityInfo().applicationInfo.uid);
++
++            unrestrictAppIfPossible(BatteryUtils.getInstance(this));
++
+             setResult(Activity.RESULT_OK);
+         } catch (RuntimeException e) {
+             // Something bad happened...  could be that it was
+@@ -446,6 +450,15 @@ public class DeviceAdminAdd extends Activity {
+         finish();
+     }
+ 
++    void unrestrictAppIfPossible(BatteryUtils batteryUtils) {
++        // Unrestrict admin app if it is already been restricted
++        final String packageName = mDeviceAdmin.getComponent().getPackageName();
++        final int uid = batteryUtils.getPackageUid(packageName);
++        if (batteryUtils.isForceAppStandbyEnabled(uid, packageName)) {
++            batteryUtils.setForceAppStandby(uid, packageName, AppOpsManager.MODE_ALLOWED);
++        }
++    }
++
+     void continueRemoveAction(CharSequence msg) {
+         if (!mWaitingForRemoveMsg) {
+             return;
+diff --git a/tests/robotests/src/com/android/settings/DeviceAdminAddTest.java b/tests/robotests/src/com/android/settings/DeviceAdminAddTest.java
+index 1a4ce89fbc..1602f15263 100644
+--- a/tests/robotests/src/com/android/settings/DeviceAdminAddTest.java
++++ b/tests/robotests/src/com/android/settings/DeviceAdminAddTest.java
+@@ -18,23 +18,37 @@ package com.android.settings;
+ 
+ import static org.mockito.Matchers.any;
+ import static org.mockito.Matchers.eq;
++import static org.mockito.Mockito.doReturn;
++import static org.mockito.Mockito.never;
+ import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.when;
+ 
++import android.app.AppOpsManager;
++import android.app.admin.DeviceAdminInfo;
+ import android.content.Context;
+ 
+ import com.android.internal.logging.nano.MetricsProto;
++import com.android.settings.fuelgauge.BatteryUtils;
+ import com.android.settings.testutils.FakeFeatureFactory;
+ import com.android.settings.testutils.SettingsRobolectricTestRunner;
+ 
+ import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
++import org.mockito.Answers;
++import org.mockito.Mock;
+ import org.mockito.MockitoAnnotations;
+ import org.robolectric.Robolectric;
+ 
+ @RunWith(SettingsRobolectricTestRunner.class)
+ public class DeviceAdminAddTest {
++    private static final int UID = 12345;
++    private static final String PACKAGE_NAME = "com.android.test.device.admin";
+ 
++    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
++    private DeviceAdminInfo mDeviceAdmin;
++    @Mock
++    private BatteryUtils mBatteryUtils;
+     private FakeFeatureFactory mFeatureFactory;
+     private DeviceAdminAdd mDeviceAdminAdd;
+ 
+@@ -44,6 +58,10 @@ public class DeviceAdminAddTest {
+ 
+         mFeatureFactory = FakeFeatureFactory.setupForTest();
+         mDeviceAdminAdd = Robolectric.buildActivity(DeviceAdminAdd.class).get();
++
++        doReturn(UID).when(mBatteryUtils).getPackageUid(PACKAGE_NAME);
++        when(mDeviceAdmin.getComponent().getPackageName()).thenReturn(PACKAGE_NAME);
++        mDeviceAdminAdd.mDeviceAdmin = mDeviceAdmin;
+     }
+ 
+     @Test
+@@ -56,4 +74,23 @@ public class DeviceAdminAddTest {
+         verify(mFeatureFactory.metricsFeatureProvider).action(any(Context.class),
+                 eq(MetricsProto.MetricsEvent.APP_SPECIAL_PERMISSION_ADMIN_DENY), eq("app"));
+     }
++
++    @Test
++    public void unrestrictAppIfPossible_appRestricted_unrestrictApp() {
++        doReturn(true).when(mBatteryUtils).isForceAppStandbyEnabled(UID, PACKAGE_NAME);
++
++        mDeviceAdminAdd.unrestrictAppIfPossible(mBatteryUtils);
++
++        verify(mBatteryUtils).setForceAppStandby(UID, PACKAGE_NAME, AppOpsManager.MODE_ALLOWED);
++    }
++
++    @Test
++    public void unrestrictAppIfPossible_appUnrestricted_doNothing() {
++        doReturn(false).when(mBatteryUtils).isForceAppStandbyEnabled(UID, PACKAGE_NAME);
++
++        mDeviceAdminAdd.unrestrictAppIfPossible(mBatteryUtils);
++
++        verify(mBatteryUtils, never()).setForceAppStandby(UID, PACKAGE_NAME,
++                AppOpsManager.MODE_ALLOWED);
++    }
+ }
+-- 
+2.17.1
+

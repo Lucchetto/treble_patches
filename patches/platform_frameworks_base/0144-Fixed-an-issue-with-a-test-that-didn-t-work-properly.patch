@@ -1,0 +1,54 @@
+From 58f0a91480c67488c331dd94d3ab0ec4b2417787 Mon Sep 17 00:00:00 2001
+From: Selim Cinek <cinek@google.com>
+Date: Thu, 22 Feb 2018 18:35:53 -0800
+Subject: [PATCH 144/306] Fixed an issue with a test that didn't work properly
+
+This was causing tool failures.
+
+Change-Id: Ia29b2b22dc1e0bf53dfd664280fd69dc110e020b
+Fixes: 73791701
+Test: runtest systemui
+(cherry picked from commit 9a236f780da879436079908592ee71b3081d620b)
+---
+ .../systemui/statusbar/policy/RemoteInputViewTest.java       | 5 +++--
+ .../systemui/statusbar/policy/SmartReplyViewTest.java        | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/RemoteInputViewTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/RemoteInputViewTest.java
+index 7d4d31e3486..7ab69b043ad 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/RemoteInputViewTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/RemoteInputViewTest.java
+@@ -47,7 +47,7 @@ public class RemoteInputViewTest extends SysuiTestCase {
+ 
+     private static final String TEST_RESULT_KEY = "test_result_key";
+     private static final String TEST_REPLY = "hello";
+-    private static final String TEST_ACTION = "com.android.ACTION";
++    private static final String TEST_ACTION = "com.android.REMOTE_INPUT_VIEW_ACTION";
+ 
+     @Mock private RemoteInputController mController;
+     @Mock private ShortcutManager mShortcutManager;
+@@ -93,6 +93,7 @@ public class RemoteInputViewTest extends SysuiTestCase {
+     @Test
+     public void testNoCrashWithoutVisibilityListener() {
+         mView.setOnVisibilityChangedListener(null);
+-        mView.onVisibilityChanged(mView, View.VISIBLE);
++        mView.setVisibility(View.INVISIBLE);
++        mView.setVisibility(View.VISIBLE);
+     }
+ }
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/SmartReplyViewTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/SmartReplyViewTest.java
+index 58abf19dd23..fc043c56845 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/SmartReplyViewTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/policy/SmartReplyViewTest.java
+@@ -46,7 +46,7 @@ import org.junit.runner.RunWith;
+ @SmallTest
+ public class SmartReplyViewTest extends SysuiTestCase {
+     private static final String TEST_RESULT_KEY = "test_result_key";
+-    private static final String TEST_ACTION = "com.android.ACTION";
++    private static final String TEST_ACTION = "com.android.SMART_REPLY_VIEW_ACTION";
+ 
+     private static final String[] TEST_CHOICES = new String[]{"Hello", "What's up?", "I'm here"};
+ 
+-- 
+2.17.1
+

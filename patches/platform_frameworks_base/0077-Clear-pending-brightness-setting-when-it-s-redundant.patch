@@ -1,0 +1,36 @@
+From 8aab42761b3ed7c42d268949d6a9999c4edd2571 Mon Sep 17 00:00:00 2001
+From: Michael Wright <michaelwr@google.com>
+Date: Thu, 25 Jan 2018 23:25:20 +0000
+Subject: [PATCH 077/306] Clear pending brightness setting when it's redundant.
+
+If we don't clear the pending brightness setting when it's equivalent to
+the existing brightness setting then we end up racing the next time
+auto-brightness changes. Most of the time the settings change
+notification will win and we'll ignore the stale pending brightness, but
+sometimes we immediately update the power state again and then we'll see
+the stale value which looks different from our current value and so
+assume it's a change coming from the user. Whoops.
+
+Bug: 72508527
+Test: manual
+Change-Id: Id743f3654be6d48a14fca5882c1b8e16fed147da
+(cherry picked from commit 44dc8b1da8ec60095524c391fd9b8f1c907e76ea)
+---
+ .../java/com/android/server/display/DisplayPowerController.java  | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/core/java/com/android/server/display/DisplayPowerController.java b/services/core/java/com/android/server/display/DisplayPowerController.java
+index 056c3e641c4..b82e7c68798 100644
+--- a/services/core/java/com/android/server/display/DisplayPowerController.java
++++ b/services/core/java/com/android/server/display/DisplayPowerController.java
+@@ -1449,6 +1449,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+             return false;
+         }
+         if (mCurrentScreenBrightnessSetting == mPendingScreenBrightnessSetting) {
++            mPendingScreenBrightnessSetting = -1;
+             return false;
+         }
+         mLastUserSetScreenBrightness = mPendingScreenBrightnessSetting;
+-- 
+2.17.1
+

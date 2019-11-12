@@ -1,0 +1,34 @@
+From 9f8d8299a1bea4ed515d608b3814722f3f64754a Mon Sep 17 00:00:00 2001
+From: Jason Monk <jmonk@google.com>
+Date: Thu, 21 Dec 2017 10:39:17 -0500
+Subject: [PATCH 040/306] Workaround apps that are doing very very bad things
+
+Disable AppComponentFactory for them.
+
+Test: manual
+Bug: 70776434
+Change-Id: Iccfc47af360b719578f0ab9771849a822118518d
+(cherry picked from commit 24d12a327d82df29238f72747783283147c57bac)
+---
+ core/java/android/app/Instrumentation.java | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/core/java/android/app/Instrumentation.java b/core/java/android/app/Instrumentation.java
+index 41324d0813b..b469de56d85 100644
+--- a/core/java/android/app/Instrumentation.java
++++ b/core/java/android/app/Instrumentation.java
+@@ -1209,6 +1209,11 @@ public class Instrumentation {
+     }
+ 
+     private AppComponentFactory getFactory(String pkg) {
++        if (mThread == null) {
++            Log.e(TAG, "Uninitialized ActivityThread, likely app-created Instrumentation,"
++                    + " disabling AppComponentFactory", new Throwable());
++            return AppComponentFactory.DEFAULT;
++        }
+         LoadedApk loadedApk = mThread.peekLoadedApk(pkg, true);
+         // This is in the case of starting up "android".
+         if (loadedApk == null) loadedApk = mThread.getSystemContext().mLoadedApk;
+-- 
+2.17.1
+

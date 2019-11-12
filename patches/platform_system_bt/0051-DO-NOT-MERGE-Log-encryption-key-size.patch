@@ -1,0 +1,114 @@
+From 41453cf2ab0237bba01d0f3fc0a4a13b2b7f7cd2 Mon Sep 17 00:00:00 2001
+From: Jack He <siyuanh@google.com>
+Date: Wed, 20 Mar 2019 17:51:09 -0700
+Subject: [PATCH 51/59] DO NOT MERGE Log encryption key size
+
+* Log result from HCI_READ_ENCR_KEY_SIZE command
+
+Bug: 124301137
+Test: test drive with statsd
+Change-Id: I776a3c357fcd75623fba241f150d1afb58aa23fb
+(cherry picked from commit 7e8dbcd40b97c731d797c8967a6d44db856bca15)
+---
+ btif/Android.bp       |  9 +++++++++
+ main/Android.bp       |  8 ++++++++
+ stack/Android.bp      |  1 +
+ stack/btu/btu_hcif.cc | 17 +++++++++++++++++
+ 4 files changed, 35 insertions(+)
+
+diff --git a/btif/Android.bp b/btif/Android.bp
+index f9177a7dd..9f43bc45b 100644
+--- a/btif/Android.bp
++++ b/btif/Android.bp
+@@ -126,6 +126,15 @@ cc_test {
+         "libprotobuf-cpp-lite",
+         "libcutils",
+         "libutils",
++        "libcrypto",
++        "android.hardware.keymaster@4.0",
++        "android.hardware.keymaster@3.0",
++        "libkeymaster4support",
++        "libkeystore_aidl",
++        "libkeystore_binder",
++        "libkeystore_parcelables",
++        "libbinder",
++        "libstatslog",
+     ],
+     static_libs: [
+         "libbt-bta",
+diff --git a/main/Android.bp b/main/Android.bp
+index c07b8493d..2213c52f7 100644
+--- a/main/Android.bp
++++ b/main/Android.bp
+@@ -51,6 +51,14 @@ cc_library_shared {
+         "libutils",
+         "libtinyxml2",
+         "libz",
++        "libcrypto",
++        "android.hardware.keymaster@4.0",
++        "android.hardware.keymaster@3.0",
++        "libkeymaster4support",
++        "libkeystore_aidl",
++        "libkeystore_binder",
++        "libkeystore_parcelables",
++        "libstatslog",
+     ],
+     static_libs: [
+         "libbt-sbc-decoder",
+diff --git a/stack/Android.bp b/stack/Android.bp
+index ceb2f139a..03e2c940b 100644
+--- a/stack/Android.bp
++++ b/stack/Android.bp
+@@ -178,6 +178,7 @@ cc_library_static {
+     shared_libs: [
+         "libcutils",
+         "liblog",
++        "libstatslog",
+     ],
+     required: [
+         "libldacBT_enc",
+diff --git a/stack/btu/btu_hcif.cc b/stack/btu/btu_hcif.cc
+index eb453c577..fbd769510 100644
+--- a/stack/btu/btu_hcif.cc
++++ b/stack/btu/btu_hcif.cc
+@@ -33,6 +33,7 @@
+ #include <base/logging.h>
+ #include <base/threading/thread.h>
+ #include <log/log.h>
++#include <statslog.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -724,6 +725,14 @@ constexpr uint8_t MIN_KEY_SIZE = 7;
+ 
+ static void read_encryption_key_size_complete_after_encryption_change(
+     uint8_t status, uint16_t handle, uint8_t key_size) {
++  int ret = android::util::stats_write(
++      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, "", handle,
++      HCI_READ_ENCR_KEY_SIZE, HCI_COMMAND_COMPLETE_EVT, status, 0, key_size);
++  if (ret < 0) {
++    LOG(WARNING) << __func__ << ": failed to log encryption key size "
++                 << std::to_string(key_size);
++  }
++
+   if (status != HCI_SUCCESS) {
+     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+@@ -1677,6 +1686,14 @@ static void btu_hcif_enhanced_flush_complete_evt(void) {
+ 
+ static void read_encryption_key_size_complete_after_key_refresh(
+     uint8_t status, uint16_t handle, uint8_t key_size) {
++  int ret = android::util::stats_write(
++      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, "", handle,
++      HCI_READ_ENCR_KEY_SIZE, HCI_COMMAND_COMPLETE_EVT, status, 0, key_size);
++  if (ret < 0) {
++    LOG(WARNING) << __func__ << ": failed to log encryption key size "
++                 << std::to_string(key_size);
++  }
++
+   if (status != HCI_SUCCESS) {
+     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+-- 
+2.17.1
+

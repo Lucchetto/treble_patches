@@ -1,0 +1,48 @@
+From e12bcc32e6a86e7b897ed1ccc786e93ba2c6ff15 Mon Sep 17 00:00:00 2001
+From: Bryce Lee <brycelee@google.com>
+Date: Thu, 25 Jan 2018 14:08:13 -0800
+Subject: [PATCH 083/306] Clear calling identity when get package uid.
+
+Previously, the identity was cleared in LaunchingAppsService before
+calling into ActivityManagerService. This would allow
+ActivityManagerService to call PackageManager#getPackageUid. Since
+the calling identity is now associated with the SafeActivityOptions,
+this was removed from LaunchingAppsService. As a result, a
+SecurityException is encountered, and app shortcuts from managed
+profiles no longer work.
+
+This changelist addresses the issue by clearing the calling identity
+in ActivityManagerService. This reduced scope still allows the
+SafeActivityOptions to be created with the proper uid associated.
+
+Change-Id: Ic32eae5d7b9e4053e4177938a8c2859385d9eeae
+Fixes: 72498756
+Test: atest CtsShortcutHostTestCases
+Test: atest CtsShortcutManagerTestCases
+(cherry picked from commit 38585a2c9ea05f5af4b8d153151f3fdf54cb0bde)
+---
+ .../java/com/android/server/am/ActivityManagerService.java     | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index fcbcce4181e..7c735dc3741 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -25540,11 +25540,14 @@ public class ActivityManagerService extends IActivityManager.Stub
+             // "= 0" is needed because otherwise catch(RemoteException) would make it look like
+             // packageUid may not be initialized.
+             int packageUid = 0;
++            final long ident = Binder.clearCallingIdentity();
+             try {
+                 packageUid = AppGlobals.getPackageManager().getPackageUid(
+                         packageName, PackageManager.MATCH_DEBUG_TRIAGED_MISSING, userId);
+             } catch (RemoteException e) {
+                 // Shouldn't happen.
++            } finally {
++                Binder.restoreCallingIdentity(ident);
+             }
+ 
+             synchronized (ActivityManagerService.this) {
+-- 
+2.17.1
+

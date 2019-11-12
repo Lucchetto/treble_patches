@@ -1,0 +1,50 @@
+From faa88f9f5b4963300f2829ddff1a44f8508063c2 Mon Sep 17 00:00:00 2001
+From: Amit Mahajan <amitmahajan@google.com>
+Date: Tue, 19 Jun 2018 12:40:33 -0700
+Subject: [PATCH 04/39] Use SIMRecords for setVoicemailNumber() over
+ RuimRecords.
+
+RuimRecords does not support voicemail number.
+
+Test: Basic telephony sanity
+Bug: 109838253
+Change-Id: I04c86853a6c1b27203981f8f3bd5ad457a849ee2
+---
+ src/java/com/android/internal/telephony/GsmCdmaPhone.java   | 6 ++++++
+ .../com/android/internal/telephony/GsmCdmaPhoneTest.java    | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/java/com/android/internal/telephony/GsmCdmaPhone.java b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
+index 2c167bde5..2a94fc5cf 100644
+--- a/src/java/com/android/internal/telephony/GsmCdmaPhone.java
++++ b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
+@@ -1682,7 +1682,13 @@ public class GsmCdmaPhone extends Phone {
+         Message resp;
+         mVmNumber = voiceMailNumber;
+         resp = obtainMessage(EVENT_SET_VM_NUMBER_DONE, 0, 0, onComplete);
++
+         IccRecords r = mIccRecords.get();
++
++        if (!isPhoneTypeGsm() && mSimRecords != null) {
++            r = mSimRecords;
++        }
++
+         if (r != null) {
+             r.setVoiceMailNumber(alphaTag, mVmNumber, resp);
+         }
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java b/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java
+index fa8bec3e4..60bc61f74 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java
+@@ -487,7 +487,7 @@ public class GsmCdmaPhoneTest extends TelephonyTest {
+         // voicemail number from sharedPreference
+         mPhoneUT.setVoiceMailNumber("alphaTag", voiceMailNumber, null);
+         ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+-        verify(mRuimRecords).setVoiceMailNumber(eq("alphaTag"), eq(voiceMailNumber),
++        verify(mSimRecords).setVoiceMailNumber(eq("alphaTag"), eq(voiceMailNumber),
+                 messageArgumentCaptor.capture());
+ 
+         Message msg = messageArgumentCaptor.getValue();
+-- 
+2.17.1
+

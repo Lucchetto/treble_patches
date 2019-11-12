@@ -1,0 +1,38 @@
+From a945243b5c259933145d11f1e177a16388b82859 Mon Sep 17 00:00:00 2001
+From: Jonathan Scott <scottjonathan@google.com>
+Date: Tue, 30 Apr 2019 15:52:52 +0100
+Subject: [PATCH 69/71] [RESTRICT AUTOMERGE] Make ScreenPinningSettings
+ behaviour consistent with LockTaskController.
+
+Bug: 127605586
+Test: Manual
+Change-Id: Id85632b5e6975fc5f92d6e8126a6603a07f097e1
+(cherry picked from commit 687b18067cb3bf28282376b311ece73b1c893254)
+---
+ .../settings/security/ScreenPinningSettings.java       | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/src/com/android/settings/security/ScreenPinningSettings.java b/src/com/android/settings/security/ScreenPinningSettings.java
+index 6e4856ee42..0af7b7273d 100644
+--- a/src/com/android/settings/security/ScreenPinningSettings.java
++++ b/src/com/android/settings/security/ScreenPinningSettings.java
+@@ -115,9 +115,13 @@ public class ScreenPinningSettings extends SettingsPreferenceFragment
+     }
+ 
+     private boolean isScreenLockUsed() {
+-        int def = getCurrentSecurityTitle() != R.string.screen_pinning_unlock_none ? 1 : 0;
+-        return Settings.Secure.getInt(getContentResolver(),
+-                Settings.Secure.LOCK_TO_APP_EXIT_LOCKED, def) != 0;
++        // This functionality should be kept consistent with
++        // com.android.server.wm.LockTaskController (see b/127605586)
++        int defaultValueIfSettingNull = mLockPatternUtils.isSecure(UserHandle.myUserId()) ? 1 : 0;
++        return Settings.Secure.getInt(
++                getContentResolver(),
++                Settings.Secure.LOCK_TO_APP_EXIT_LOCKED,
++                defaultValueIfSettingNull) != 0;
+     }
+ 
+     private boolean setScreenLockUsed(boolean isEnabled) {
+-- 
+2.17.1
+

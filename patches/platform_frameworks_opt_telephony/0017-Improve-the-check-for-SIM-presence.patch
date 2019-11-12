@@ -1,0 +1,113 @@
+From 67f3a783bd8267659ba96f887cf4644c93739e91 Mon Sep 17 00:00:00 2001
+From: Amit Mahajan <amitmahajan@google.com>
+Date: Tue, 21 Aug 2018 17:27:42 -0700
+Subject: [PATCH 17/39] Improve the check for SIM presence.
+
+Earlier it was done based on SubscriptionsChangedListener which
+timing wise is not a very appropriate trigger, particularly since
+it can clear some values cached from the current SIM. Now the
+check is based on querying SIM state.
+
+Test: manual
+Bug: 112333424
+Merged-in: I2b49baf98c5aa2924318b6dc2e353c79390a47e8
+Change-Id: I2b49baf98c5aa2924318b6dc2e353c79390a47e8
+---
+ .../telephony/ServiceStateTracker.java        | 43 +++++++++++--------
+ 1 file changed, 26 insertions(+), 17 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/ServiceStateTracker.java b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+index 8d1993a61..04241c871 100644
+--- a/src/java/com/android/internal/telephony/ServiceStateTracker.java
++++ b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+@@ -89,9 +89,11 @@ import com.android.internal.telephony.dataconnection.DcTracker;
+ import com.android.internal.telephony.dataconnection.TransportManager;
+ import com.android.internal.telephony.metrics.TelephonyMetrics;
+ import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppState;
++import com.android.internal.telephony.uicc.IccCardStatus.CardState;
+ import com.android.internal.telephony.uicc.IccRecords;
+ import com.android.internal.telephony.uicc.RuimRecords;
+ import com.android.internal.telephony.uicc.SIMRecords;
++import com.android.internal.telephony.uicc.UiccCard;
+ import com.android.internal.telephony.uicc.UiccCardApplication;
+ import com.android.internal.telephony.uicc.UiccController;
+ import com.android.internal.telephony.util.NotificationChannelController;
+@@ -219,7 +221,6 @@ public class ServiceStateTracker extends Handler {
+     protected static final int EVENT_ALL_DATA_DISCONNECTED             = 49;
+     protected static final int EVENT_PHONE_TYPE_SWITCHED               = 50;
+     protected static final int EVENT_RADIO_POWER_FROM_CARRIER          = 51;
+-    protected static final int EVENT_SIM_NOT_INSERTED                  = 52;
+     protected static final int EVENT_IMS_SERVICE_STATE_CHANGED         = 53;
+     protected static final int EVENT_RADIO_POWER_OFF_DONE              = 54;
+     protected static final int EVENT_PHYSICAL_CHANNEL_CONFIG           = 55;
+@@ -340,14 +341,6 @@ public class ServiceStateTracker extends Handler {
+                 }
+                 // update voicemail count and notify message waiting changed
+                 mPhone.updateVoiceMail();
+-
+-                // cancel notifications if we see SIM_NOT_INSERTED (This happens on bootup before
+-                // the SIM is first detected and then subsequently on SIM removals)
+-                if (mSubscriptionController.getSlotIndex(subId)
+-                        == SubscriptionManager.SIM_NOT_INSERTED) {
+-                    // this is handled on the main thread to mitigate racing with setNotification().
+-                    sendMessage(obtainMessage(EVENT_SIM_NOT_INSERTED));
+-                }
+             }
+         }
+     };
+@@ -1015,6 +1008,15 @@ public class ServiceStateTracker extends Handler {
+                 break;
+ 
+             case EVENT_ICC_CHANGED:
++                if (isSimAbsent()) {
++                    if (DBG) log("EVENT_ICC_CHANGED: SIM absent");
++                    // cancel notifications if SIM is removed/absent
++                    cancelAllNotifications();
++                    // clear cached values on SIM removal
++                    mMdn = null;
++                    mMin = null;
++                    mIsMinInfoReady = false;
++                }
+                 onUpdateIccAvailability();
+                 if (mUiccApplcation != null
+                         && mUiccApplcation.getState() != AppState.APPSTATE_READY) {
+@@ -1272,14 +1274,6 @@ public class ServiceStateTracker extends Handler {
+                 }
+                 break;
+ 
+-            case EVENT_SIM_NOT_INSERTED:
+-                if (DBG) log("EVENT_SIM_NOT_INSERTED");
+-                cancelAllNotifications();
+-                mMdn = null;
+-                mMin = null;
+-                mIsMinInfoReady = false;
+-                break;
+-
+             case EVENT_ALL_DATA_DISCONNECTED:
+                 int dds = SubscriptionManager.getDefaultDataSubscriptionId();
+                 ProxyController.getInstance().unregisterForAllDataDisconnected(dds, this);
+@@ -1475,6 +1469,21 @@ public class ServiceStateTracker extends Handler {
+         }
+     }
+ 
++    private boolean isSimAbsent() {
++        boolean simAbsent;
++        if (mUiccController == null) {
++            simAbsent = true;
++        } else {
++            UiccCard uiccCard = mUiccController.getUiccCard(mPhone.getPhoneId());
++            if (uiccCard == null) {
++                simAbsent = true;
++            } else {
++                simAbsent = (uiccCard.getCardState() == CardState.CARDSTATE_ABSENT);
++            }
++        }
++        return simAbsent;
++    }
++
+     private int[] getBandwidthsFromConfigs(List<PhysicalChannelConfig> list) {
+         return list.stream()
+                 .map(PhysicalChannelConfig::getCellBandwidthDownlink)
+-- 
+2.17.1
+

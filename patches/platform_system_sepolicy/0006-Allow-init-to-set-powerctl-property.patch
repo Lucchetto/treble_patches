@@ -1,0 +1,49 @@
+From 05477957eb15680eeb46ed7c931ea7a303089af7 Mon Sep 17 00:00:00 2001
+From: Branden Archer <brarcher@google.com>
+Date: Tue, 27 Nov 2018 15:47:12 -0800
+Subject: [PATCH 06/33] Allow init to set powerctl property
+
+NIAP certification requires that all cryptographic functions
+undergo a self-test during startup to demonstrate correct
+operation. init now performs this check during startup.
+
+The self-test is forked from init. For the child process
+to be able to request a reboot it needs permissions to
+set the sys.powerctl property.
+
+Bug: 119826244
+Test: Built for walleye. When the BoringSSL self test was forced
+      to fail the device rebooted into the bootloader, as
+      expected.
+Change-Id: I2108bf6c345a5804ebd1e2206f9b8fde21a58e64
+Merged-In: I4171b1dd0a5e393252ae5c002171ac51c9cbb3e6
+---
+ prebuilts/api/28.0/private/init.te | 3 +++
+ private/init.te                    | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/prebuilts/api/28.0/private/init.te b/prebuilts/api/28.0/private/init.te
+index e9959d3d2..8ba050fa6 100644
+--- a/prebuilts/api/28.0/private/init.te
++++ b/prebuilts/api/28.0/private/init.te
+@@ -20,3 +20,6 @@ domain_trans(init, { rootfs toolbox_exec }, modprobe)
+ userdebug_or_eng(`
+   domain_auto_trans(init, logcat_exec, logpersist)
+ ')
++
++# Allow the BoringSSL self test to request a reboot upon failure
++set_prop(init, powerctl_prop)
+diff --git a/private/init.te b/private/init.te
+index e9959d3d2..8ba050fa6 100644
+--- a/private/init.te
++++ b/private/init.te
+@@ -20,3 +20,6 @@ domain_trans(init, { rootfs toolbox_exec }, modprobe)
+ userdebug_or_eng(`
+   domain_auto_trans(init, logcat_exec, logpersist)
+ ')
++
++# Allow the BoringSSL self test to request a reboot upon failure
++set_prop(init, powerctl_prop)
+-- 
+2.17.1
+

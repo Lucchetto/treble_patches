@@ -1,0 +1,57 @@
+From 83f827e7d55d5a2bdf4bc01ad9e5cf960b1ccc20 Mon Sep 17 00:00:00 2001
+From: Marco Nelissen <marcone@google.com>
+Date: Tue, 19 Jun 2018 12:38:23 -0700
+Subject: [PATCH 209/306] Fix race condition in MediaHTTPConnection
+
+getSize() and getMIMEType() rely on seekTo() having completed.
+If seekTo() was called on a different thread, for example because
+NuCachedSource2 was doing reads on a background thread, getSize()
+could return -1 if it was called after connection was established,
+but before the response had been parsed.
+
+Bug: 110230427
+Test: manual
+Change-Id: I469b47e025f1c7a7ef3123d3347668f0541e6f2d
+(cherry picked from commit d4f64f27b0de1c5d21c93b4d73acd05ede28fde2)
+---
+ media/java/android/media/MediaHTTPConnection.java | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/media/java/android/media/MediaHTTPConnection.java b/media/java/android/media/MediaHTTPConnection.java
+index aae1f517eea..6bf52bdb60d 100644
+--- a/media/java/android/media/MediaHTTPConnection.java
++++ b/media/java/android/media/MediaHTTPConnection.java
+@@ -323,8 +323,10 @@ public class MediaHTTPConnection extends IMediaHTTPConnection.Stub {
+         StrictMode.setThreadPolicy(policy);
+ 
+         try {
+-            if (offset != mCurrentOffset) {
+-                seekTo(offset);
++            synchronized(this) {
++                if (offset != mCurrentOffset) {
++                    seekTo(offset);
++                }
+             }
+ 
+             int n = mInputStream.read(data, 0, size);
+@@ -366,7 +368,7 @@ public class MediaHTTPConnection extends IMediaHTTPConnection.Stub {
+     }
+ 
+     @Override
+-    public long getSize() {
++    public synchronized long getSize() {
+         if (mConnection == null) {
+             try {
+                 seekTo(0);
+@@ -379,7 +381,7 @@ public class MediaHTTPConnection extends IMediaHTTPConnection.Stub {
+     }
+ 
+     @Override
+-    public String getMIMEType() {
++    public synchronized String getMIMEType() {
+         if (mConnection == null) {
+             try {
+                 seekTo(0);
+-- 
+2.17.1
+

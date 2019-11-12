@@ -1,0 +1,33 @@
+From 1dc7d98473305e36ce754fad0860840007d3f404 Mon Sep 17 00:00:00 2001
+From: Stan Iliev <stani@google.com>
+Date: Fri, 23 Mar 2018 10:50:11 -0400
+Subject: [PATCH 170/306] Clear the frame buffer for F16 pixel format
+
+This is a workaround for Qualcomm bug and should be reverted
+after a proper fixed is found.
+
+Bug: 74976293
+Test: Ran Photo app
+Change-Id: I9e0a4634f02c3553635f058eb588b510a63273ba
+(cherry picked from commit aadc0320454d9094899c0e9cfdf33a14938707b8)
+---
+ libs/hwui/pipeline/skia/SkiaPipeline.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libs/hwui/pipeline/skia/SkiaPipeline.cpp b/libs/hwui/pipeline/skia/SkiaPipeline.cpp
+index 9db39d954e4..0cd1c151629 100644
+--- a/libs/hwui/pipeline/skia/SkiaPipeline.cpp
++++ b/libs/hwui/pipeline/skia/SkiaPipeline.cpp
+@@ -342,7 +342,8 @@ void SkiaPipeline::renderFrameImpl(const LayerUpdateQueue& layers, const SkRect&
+     SkAutoCanvasRestore saver(canvas, true);
+     canvas->androidFramework_setDeviceClipRestriction(clip.roundOut());
+ 
+-    if (!opaque) {
++    // STOPSHIP: Revert, temporary workaround to clear always F16 frame buffer for b/74976293
++    if (!opaque || wideColorGamut) {
+         canvas->clear(SK_ColorTRANSPARENT);
+     }
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,32 @@
+From 80a0ce08b8bebdb2a7a25ac664ebbdd67b542ee7 Mon Sep 17 00:00:00 2001
+From: Howard Ro <yro@google.com>
+Date: Thu, 25 Jan 2018 02:00:35 +0000
+Subject: [PATCH 074/306] Revert "Revert "Revert "Enable init.rc for statsd to
+ start statsd by default in boot time"""
+
+This reverts commit b00cce84d9ddba04a3ebd5ed45457c1e154be535.
+
+Reason for revert: b/72459151
+
+Change-Id: I71593b4b323d69edb548dcb1bb0e1f4eb7cddbc9
+(cherry picked from commit 62ac686168337c223f8a63b2ceba2e5c756929a1)
+---
+ cmds/statsd/Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmds/statsd/Android.mk b/cmds/statsd/Android.mk
+index a7daa3f2b63..01f4a84bbb9 100644
+--- a/cmds/statsd/Android.mk
++++ b/cmds/statsd/Android.mk
+@@ -136,7 +136,7 @@ LOCAL_SHARED_LIBRARIES := $(statsd_common_shared_libraries) \
+ 
+ LOCAL_MODULE_CLASS := EXECUTABLES
+ 
+-LOCAL_INIT_RC := statsd.rc
++#LOCAL_INIT_RC := statsd.rc
+ 
+ include $(BUILD_EXECUTABLE)
+ 
+-- 
+2.17.1
+

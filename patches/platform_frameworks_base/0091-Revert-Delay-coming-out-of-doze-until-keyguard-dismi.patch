@@ -1,0 +1,231 @@
+From e59f7a9843a5327f7d402924001be9e7071ee10d Mon Sep 17 00:00:00 2001
+From: Amith Yamasani <yamasani@google.com>
+Date: Tue, 30 Jan 2018 13:42:42 +0000
+Subject: [PATCH 091/306] Revert "Delay coming out of doze until keyguard
+ dismissed"
+
+This reverts commit 77ee6507962576e8ddc41ee0209158a799e79519.
+
+Reason for revert: Occasional deadlock b/72684251
+
+Change-Id: I1eb02bf1fefcce66830e1e0ab34a813262ba40d6
+(cherry picked from commit 7f50956f8af785568f492259e5f670592b3305be)
+---
+ .../android/server/DeviceIdleController.java  | 35 +------------------
+ .../server/am/ActivityManagerService.java     |  1 -
+ .../NotificationManagerService.java           | 16 ---------
+ .../tests/uiservicestests/AndroidManifest.xml |  1 -
+ 4 files changed, 1 insertion(+), 52 deletions(-)
+
+diff --git a/services/core/java/com/android/server/DeviceIdleController.java b/services/core/java/com/android/server/DeviceIdleController.java
+index fd3f708c6bc..a12c85aef85 100644
+--- a/services/core/java/com/android/server/DeviceIdleController.java
++++ b/services/core/java/com/android/server/DeviceIdleController.java
+@@ -141,8 +141,6 @@ public class DeviceIdleController extends SystemService
+     private boolean mHasNetworkLocation;
+     private Location mLastGenericLocation;
+     private Location mLastGpsLocation;
+-    // Current locked state of the screen
+-    private boolean mScreenLocked;
+ 
+     /** Device is currently active. */
+     private static final int STATE_ACTIVE = 0;
+@@ -158,7 +156,6 @@ public class DeviceIdleController extends SystemService
+     private static final int STATE_IDLE = 5;
+     /** Device is in the idle state, but temporarily out of idle to do regular maintenance. */
+     private static final int STATE_IDLE_MAINTENANCE = 6;
+-
+     private static String stateToString(int state) {
+         switch (state) {
+             case STATE_ACTIVE: return "ACTIVE";
+@@ -550,11 +547,6 @@ public class DeviceIdleController extends SystemService
+                 "sms_temp_app_whitelist_duration";
+         private static final String KEY_NOTIFICATION_WHITELIST_DURATION =
+                 "notification_whitelist_duration";
+-        /**
+-         * Whether to wait for the user to unlock the device before causing screen-on to
+-         * exit doze. Default = true
+-         */
+-        private static final String KEY_WAIT_FOR_UNLOCK = "wait_for_unlock";
+ 
+         /**
+          * This is the time, after becoming inactive, that we go in to the first
+@@ -773,8 +765,6 @@ public class DeviceIdleController extends SystemService
+          */
+         public long NOTIFICATION_WHITELIST_DURATION;
+ 
+-        public boolean WAIT_FOR_UNLOCK;
+-
+         private final ContentResolver mResolver;
+         private final boolean mSmallBatteryDevice;
+         private final KeyValueListParser mParser = new KeyValueListParser(',');
+@@ -865,7 +855,6 @@ public class DeviceIdleController extends SystemService
+                         KEY_SMS_TEMP_APP_WHITELIST_DURATION, 20 * 1000L);
+                 NOTIFICATION_WHITELIST_DURATION = mParser.getDurationMillis(
+                         KEY_NOTIFICATION_WHITELIST_DURATION, 30 * 1000L);
+-                WAIT_FOR_UNLOCK = mParser.getBoolean(KEY_WAIT_FOR_UNLOCK, false);
+             }
+         }
+ 
+@@ -973,9 +962,6 @@ public class DeviceIdleController extends SystemService
+             pw.print("    "); pw.print(KEY_NOTIFICATION_WHITELIST_DURATION); pw.print("=");
+             TimeUtils.formatDuration(NOTIFICATION_WHITELIST_DURATION, pw);
+             pw.println();
+-
+-            pw.print("    "); pw.print(KEY_WAIT_FOR_UNLOCK); pw.print("=");
+-            pw.println(WAIT_FOR_UNLOCK);
+         }
+     }
+ 
+@@ -1352,12 +1338,6 @@ public class DeviceIdleController extends SystemService
+         public int[] getPowerSaveTempWhitelistAppIds() {
+             return DeviceIdleController.this.getAppIdTempWhitelistInternal();
+         }
+-
+-        public void keyguardShowing(boolean showing) {
+-            synchronized (DeviceIdleController.this) {
+-                DeviceIdleController.this.keyguardShowingLocked(showing);
+-            }
+-        }
+     }
+ 
+     public DeviceIdleController(Context context) {
+@@ -1426,7 +1406,6 @@ public class DeviceIdleController extends SystemService
+ 
+             mNetworkConnected = true;
+             mScreenOn = true;
+-            mScreenLocked = false;
+             // Start out assuming we are charging.  If we aren't, we will at least get
+             // a battery update the next time the level drops.
+             mCharging = true;
+@@ -1997,7 +1976,7 @@ public class DeviceIdleController extends SystemService
+             }
+         } else if (screenOn) {
+             mScreenOn = true;
+-            if (!mForceIdle && (!mScreenLocked || !mConstants.WAIT_FOR_UNLOCK)) {
++            if (!mForceIdle) {
+                 becomeActiveLocked("screen", Process.myUid());
+             }
+         }
+@@ -2018,17 +1997,6 @@ public class DeviceIdleController extends SystemService
+         }
+     }
+ 
+-    void keyguardShowingLocked(boolean showing) {
+-        if (DEBUG) Slog.i(TAG, "keyguardShowing=" + showing);
+-        if (mScreenLocked != showing) {
+-            mScreenLocked = showing;
+-            if (mScreenOn && !mForceIdle && !mScreenLocked) {
+-                becomeActiveLocked("unlocked", Process.myUid());
+-            }
+-        }
+-    }
+-
+-
+     void scheduleReportActiveLocked(String activeReason, int activeUid) {
+         Message msg = mHandler.obtainMessage(MSG_REPORT_ACTIVE, activeUid, 0, activeReason);
+         mHandler.sendMessage(msg);
+@@ -3340,7 +3308,6 @@ public class DeviceIdleController extends SystemService
+             pw.print("  mForceIdle="); pw.println(mForceIdle);
+             pw.print("  mMotionSensor="); pw.println(mMotionSensor);
+             pw.print("  mScreenOn="); pw.println(mScreenOn);
+-            pw.print("  mScreenLocked="); pw.println(mScreenLocked);
+             pw.print("  mNetworkConnected="); pw.println(mNetworkConnected);
+             pw.print("  mCharging="); pw.println(mCharging);
+             pw.print("  mMotionActive="); pw.println(mMotionListener.active);
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index f6f7d4bf4fd..b7e5d37885b 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -12912,7 +12912,6 @@ public class ActivityManagerService extends IActivityManager.Stub
+             long ident = Binder.clearCallingIdentity();
+             try {
+                 mKeyguardController.setKeyguardShown(showing, secondaryDisplayShowing);
+-                mLocalDeviceIdleController.keyguardShowing(showing);
+             } finally {
+                 Binder.restoreCallingIdentity(ident);
+             }
+diff --git a/services/core/java/com/android/server/notification/NotificationManagerService.java b/services/core/java/com/android/server/notification/NotificationManagerService.java
+index 727e7ee2ac1..9865e356328 100644
+--- a/services/core/java/com/android/server/notification/NotificationManagerService.java
++++ b/services/core/java/com/android/server/notification/NotificationManagerService.java
+@@ -111,7 +111,6 @@ import android.os.Environment;
+ import android.os.Handler;
+ import android.os.HandlerThread;
+ import android.os.IBinder;
+-import android.os.IDeviceIdleController;
+ import android.os.IInterface;
+ import android.os.Looper;
+ import android.os.Message;
+@@ -287,7 +286,6 @@ public class NotificationManagerService extends SystemService {
+     private AlarmManager mAlarmManager;
+     private ICompanionDeviceManager mCompanionManager;
+     private AccessibilityManager mAccessibilityManager;
+-    private IDeviceIdleController mDeviceIdleController;
+ 
+     final IBinder mForegroundToken = new Binder();
+     private WorkerHandler mHandler;
+@@ -661,7 +659,6 @@ public class NotificationManagerService extends SystemService {
+ 
+         @Override
+         public void onNotificationClick(int callingUid, int callingPid, String key) {
+-            exitIdle();
+             synchronized (mNotificationLock) {
+                 NotificationRecord r = mNotificationsByKey.get(key);
+                 if (r == null) {
+@@ -686,7 +683,6 @@ public class NotificationManagerService extends SystemService {
+         @Override
+         public void onNotificationActionClick(int callingUid, int callingPid, String key,
+                 int actionIndex) {
+-            exitIdle();
+             synchronized (mNotificationLock) {
+                 NotificationRecord r = mNotificationsByKey.get(key);
+                 if (r == null) {
+@@ -816,7 +812,6 @@ public class NotificationManagerService extends SystemService {
+ 
+         @Override
+         public void onNotificationDirectReplied(String key) {
+-            exitIdle();
+             synchronized (mNotificationLock) {
+                 NotificationRecord r = mNotificationsByKey.get(key);
+                 if (r != null) {
+@@ -1285,8 +1280,6 @@ public class NotificationManagerService extends SystemService {
+         mAlarmManager = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+         mCompanionManager = companionManager;
+         mActivityManager = activityManager;
+-        mDeviceIdleController = IDeviceIdleController.Stub.asInterface(
+-                ServiceManager.getService(Context.DEVICE_IDLE_CONTROLLER));
+ 
+         mHandler = new WorkerHandler(looper);
+         mRankingThread.start();
+@@ -1540,15 +1533,6 @@ public class NotificationManagerService extends SystemService {
+         sendRegisteredOnlyBroadcast(NotificationManager.ACTION_EFFECTS_SUPPRESSOR_CHANGED);
+     }
+ 
+-    private void exitIdle() {
+-        try {
+-            if (mDeviceIdleController != null) {
+-                mDeviceIdleController.exitIdle("notification interaction");
+-            }
+-        } catch (RemoteException e) {
+-        }
+-    }
+-
+     private void updateNotificationChannelInt(String pkg, int uid, NotificationChannel channel,
+             boolean fromListener) {
+         if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+diff --git a/services/tests/uiservicestests/AndroidManifest.xml b/services/tests/uiservicestests/AndroidManifest.xml
+index aabf9eab3c1..34755729142 100644
+--- a/services/tests/uiservicestests/AndroidManifest.xml
++++ b/services/tests/uiservicestests/AndroidManifest.xml
+@@ -26,7 +26,6 @@
+     <uses-permission android:name="android.permission.READ_CONTACTS" />
+     <uses-permission android:name="android.permission.STATUS_BAR_SERVICE" />
+     <uses-permission android:name="android.permission.ACCESS_VOICE_INTERACTION_SERVICE" />
+-    <uses-permission android:name="android.permission.DEVICE_POWER" />
+ 
+     <application>
+         <uses-library android:name="android.test.runner" />
+-- 
+2.17.1
+

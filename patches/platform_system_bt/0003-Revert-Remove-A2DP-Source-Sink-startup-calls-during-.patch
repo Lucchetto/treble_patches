@@ -1,0 +1,48 @@
+From aa9e4a6e51ab80c90771273eba092f01fd382a28 Mon Sep 17 00:00:00 2001
+From: Andre Eisenbach <eisenbach@google.com>
+Date: Wed, 21 Feb 2018 02:38:52 +0000
+Subject: [PATCH 03/59] Revert "Remove A2DP Source/Sink startup calls during
+ A2DP initialization"
+
+This reverts commit 83255478b0457f291d6a78795444ff3b895d4a90.
+
+Reason for revert:
+Prevents audio routing due to stale active device record if
+Bluetooth is toggled without the process stopping completely
+(ex. LE-only mode).
+
+Bug: 72701090
+Change-Id: Ifa798e63df14855b5bf0bd45e1557315cd51034d
+Fixes: 73601288
+(cherry picked from commit 57bb0b493470c09ff2bdbf78a2e80070c827e35c)
+---
+ btif/src/btif_av.cc | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/btif/src/btif_av.cc b/btif/src/btif_av.cc
+index 813687aa6..d0c650e81 100644
+--- a/btif/src/btif_av.cc
++++ b/btif/src/btif_av.cc
+@@ -822,6 +822,9 @@ bt_status_t BtifAvSource::Init(
+   codec_priorities_ = codec_priorities;
+   bta_av_co_init(codec_priorities_);
+ 
++  if (!btif_a2dp_source_startup()) {
++    return BT_STATUS_FAIL;  // Already running
++  }
+   btif_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
+   enabled_ = true;
+   return BT_STATUS_SUCCESS;
+@@ -990,6 +993,9 @@ bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
+                              kDefaultMaxConnectedAudioDevices);
+   callbacks_ = callbacks;
+ 
++  if (!btif_a2dp_sink_startup()) {
++    return BT_STATUS_FAIL;  // Already running
++  }
+   btif_enable_service(BTA_A2DP_SINK_SERVICE_ID);
+   enabled_ = true;
+   return BT_STATUS_SUCCESS;
+-- 
+2.17.1
+

@@ -1,0 +1,49 @@
+From b84f2083e89e8c114267784ea87533863dcdc9f9 Mon Sep 17 00:00:00 2001
+From: Andrii Kulian <akulian@google.com>
+Date: Wed, 13 Dec 2017 14:46:43 -0800
+Subject: [PATCH 036/306] Disable object pool for lifecycler
+
+In the case when client lives in system_server, we shouldn't
+recycle the lifecycle transaction objects to the pool.
+Disabled this feature for now.
+
+Bug: 70616950
+Test: Manual
+Change-Id: Ib70096aa35accfeb93108f60e3cfe8440b9cd6e8
+(cherry picked from commit 3b8b3c34c216838cc5949b1710d415ed9dbbedcd)
+---
+ .../src/android/app/servertransaction/ObjectPoolTests.java     | 3 ++-
+ .../java/com/android/server/am/ClientLifecycleManager.java     | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/core/tests/coretests/src/android/app/servertransaction/ObjectPoolTests.java b/core/tests/coretests/src/android/app/servertransaction/ObjectPoolTests.java
+index aefc47e9551..c19a343957c 100644
+--- a/core/tests/coretests/src/android/app/servertransaction/ObjectPoolTests.java
++++ b/core/tests/coretests/src/android/app/servertransaction/ObjectPoolTests.java
+@@ -42,7 +42,8 @@ import org.junit.runner.RunWith;
+ 
+ @RunWith(AndroidJUnit4.class)
+ @SmallTest
+-@Presubmit
++// TODO: b/70616950
++//@Presubmit
+ public class ObjectPoolTests {
+ 
+     // 1. Check if two obtained objects from pool are not the same.
+diff --git a/services/core/java/com/android/server/am/ClientLifecycleManager.java b/services/core/java/com/android/server/am/ClientLifecycleManager.java
+index cc70f18dc74..014f7086efa 100644
+--- a/services/core/java/com/android/server/am/ClientLifecycleManager.java
++++ b/services/core/java/com/android/server/am/ClientLifecycleManager.java
+@@ -43,7 +43,8 @@ class ClientLifecycleManager {
+      */
+     void scheduleTransaction(ClientTransaction transaction) throws RemoteException {
+         transaction.schedule();
+-        transaction.recycle();
++        // TODO: b/70616950
++        //transaction.recycle();
+     }
+ 
+     /**
+-- 
+2.17.1
+

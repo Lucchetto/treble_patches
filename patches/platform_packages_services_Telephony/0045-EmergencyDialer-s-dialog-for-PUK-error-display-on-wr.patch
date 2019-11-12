@@ -1,0 +1,130 @@
+From dfa107a63828a5227e0fdebfe68aebdda46c2df5 Mon Sep 17 00:00:00 2001
+From: SongFerngWang <songferngwang@google.com>
+Date: Mon, 29 Oct 2018 20:31:58 +0800
+Subject: [PATCH 45/70] EmergencyDialer's dialog for PUK error display on wrong
+ layer.
+
+When UI at EmergencyDialer page and response message's state is
+FAILED, Ussd dialog's priority set TYPE_KEYGUARD_DIALOG.
+
+Bug: 118422386
+Test: manual - send mmi(**05*12345678*0000*0000#),and show error
+message on EmergencyDialer UI.
+
+Change-Id: I83724b039c002e84decd889ce56799193d984856
+---
+ src/com/android/phone/PhoneUtils.java | 84 +++++++++++++++------------
+ 1 file changed, 48 insertions(+), 36 deletions(-)
+
+diff --git a/src/com/android/phone/PhoneUtils.java b/src/com/android/phone/PhoneUtils.java
+index 712b8cbe9..31477e788 100644
+--- a/src/com/android/phone/PhoneUtils.java
++++ b/src/com/android/phone/PhoneUtils.java
+@@ -912,6 +912,12 @@ public class PhoneUtils {
+             // been assigned for the PUK unlock / SIM READY process.
+             app.setPukEntryProgressDialog(pd);
+ 
++        } else if ((app.getPUKEntryActivity() != null) && (state == MmiCode.State.FAILED)) {
++            createUssdDialog(app, context, text,
++                    WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
++            // In case of failure to unlock, we'll need to reset the
++            // PUK unlock activity, so that the user may try again.
++            app.setPukEntryActivity(null);
+         } else {
+             // In case of failure to unlock, we'll need to reset the
+             // PUK unlock activity, so that the user may try again.
+@@ -922,42 +928,8 @@ public class PhoneUtils {
+             // A USSD in a pending state means that it is still
+             // interacting with the user.
+             if (state != MmiCode.State.PENDING) {
+-                log("displayMMIComplete: MMI code has finished running.");
+-
+-                log("displayMMIComplete: Extended NW displayMMIInitiate (" + text + ")");
+-                if (text == null || text.length() == 0)
+-                    return;
+-
+-                // displaying system alert dialog on the screen instead of
+-                // using another activity to display the message.  This
+-                // places the message at the forefront of the UI.
+-
+-                if (sUssdDialog == null) {
+-                    sUssdDialog = new AlertDialog.Builder(context, THEME)
+-                            .setPositiveButton(R.string.ok, null)
+-                            .setCancelable(true)
+-                            .setOnDismissListener(new DialogInterface.OnDismissListener() {
+-                                @Override
+-                                public void onDismiss(DialogInterface dialog) {
+-                                    sUssdMsg.setLength(0);
+-                                }
+-                            })
+-                            .create();
+-
+-                    sUssdDialog.getWindow().setType(
+-                            WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+-                    sUssdDialog.getWindow().addFlags(
+-                            WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+-                }
+-                if (sUssdMsg.length() != 0) {
+-                    sUssdMsg
+-                            .insert(0, "\n")
+-                            .insert(0, app.getResources().getString(R.string.ussd_dialog_sep))
+-                            .insert(0, "\n");
+-                }
+-                sUssdMsg.insert(0, text);
+-                sUssdDialog.setMessage(sUssdMsg.toString());
+-                sUssdDialog.show();
++                createUssdDialog(app, context, text,
++                        WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+             } else {
+                 log("displayMMIComplete: USSD code has requested user input. Constructing input "
+                         + "dialog.");
+@@ -1071,6 +1043,46 @@ public class PhoneUtils {
+         }
+     }
+ 
++    private static void createUssdDialog(PhoneGlobals app, Context context, CharSequence text,
++            int windowType) {
++        log("displayMMIComplete: MMI code has finished running.");
++
++        log("displayMMIComplete: Extended NW displayMMIInitiate (" + text + ")");
++        if (text == null || text.length() == 0) {
++            return;
++        }
++
++        // displaying system alert dialog on the screen instead of
++        // using another activity to display the message.  This
++        // places the message at the forefront of the UI.
++
++        if (sUssdDialog == null) {
++            sUssdDialog = new AlertDialog.Builder(context, THEME)
++                    .setPositiveButton(R.string.ok, null)
++                    .setCancelable(true)
++                    .setOnDismissListener(new DialogInterface.OnDismissListener() {
++                        @Override
++                        public void onDismiss(DialogInterface dialog) {
++                            sUssdMsg.setLength(0);
++                        }
++                    })
++                    .create();
++
++            sUssdDialog.getWindow().setType(windowType);
++            sUssdDialog.getWindow().addFlags(
++                    WindowManager.LayoutParams.FLAG_DIM_BEHIND);
++        }
++        if (sUssdMsg.length() != 0) {
++            sUssdMsg
++                    .insert(0, "\n")
++                    .insert(0, app.getResources().getString(R.string.ussd_dialog_sep))
++                    .insert(0, "\n");
++        }
++        sUssdMsg.insert(0, text);
++        sUssdDialog.setMessage(sUssdMsg.toString());
++        sUssdDialog.show();
++    }
++
+     /**
+      * Cancels the current pending MMI operation, if applicable.
+      * @return true if we canceled an MMI operation, or false
+-- 
+2.17.1
+

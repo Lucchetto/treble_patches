@@ -1,0 +1,40 @@
+From 0e1393ae8cac712bb56b51061a18885dae074038 Mon Sep 17 00:00:00 2001
+From: Fan Zhang <zhfan@google.com>
+Date: Thu, 7 Jun 2018 16:45:23 +0000
+Subject: [PATCH 02/71] Delete obsolete activity alias for dev settings
+
+This activity alias is here since android 4.x for backward
+compatibility. We no longer need it, and keeping it will cause security
+issue.
+
+Change-Id: Ib7817fd7cf8c8e66ca50534a0387cdc5773f837b
+Merged-In: I3f985e7fe14bd290db73b8c46dd817591df02015
+Fixes: 92497653
+Test: manual
+---
+ AndroidManifest.xml | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 25216db214..796b4ddcfb 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -1932,15 +1932,6 @@
+                 android:value="com.android.settings.print.PrintJobSettingsFragment" />
+         </activity>
+ 
+-        <!-- Keep compatibility with old shortcuts. -->
+-        <activity-alias android:name="DevelopmentSettings"
+-                  android:exported="true"
+-                  android:label="@string/development_settings_title"
+-                  android:targetActivity="Settings$DevelopmentSettingsActivity">
+-            <meta-data android:name="com.android.settings.FRAGMENT_CLASS"
+-                android:value="com.android.settings.development.DevelopmentSettings" />
+-        </activity-alias>
+-
+         <activity android:name=".development.AppPicker"
+                   android:label="@string/select_application"
+                   android:theme="@android:style/Theme.DeviceDefault.Light.Dialog" />
+-- 
+2.17.1
+

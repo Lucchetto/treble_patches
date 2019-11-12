@@ -1,0 +1,33 @@
+From d9c6692f25a8dce9144a387c3ed249521788ae2c Mon Sep 17 00:00:00 2001
+From: Fan Zhang <zhfan@google.com>
+Date: Tue, 6 Nov 2018 15:21:07 -0800
+Subject: [PATCH 53/71] Fix crash when starting daydream setting with wrong
+ context
+
+The context must be a UI context. This is a new requirement in P.
+
+Change-Id: I3e2de5068f44010da7d57af030e9f029dd97a7f8
+Merged-In: I28874f296da617f4cedf6706b0663b76671f1780
+Fixes: 111375261
+Fixes: 113312592
+Test: robotests
+---
+ .../settings/dream/CurrentDreamPreferenceController.java        | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/settings/dream/CurrentDreamPreferenceController.java b/src/com/android/settings/dream/CurrentDreamPreferenceController.java
+index 86143dd658..e053760141 100644
+--- a/src/com/android/settings/dream/CurrentDreamPreferenceController.java
++++ b/src/com/android/settings/dream/CurrentDreamPreferenceController.java
+@@ -69,7 +69,7 @@ public class CurrentDreamPreferenceController extends AbstractPreferenceControll
+     private void launchScreenSaverSettings() {
+         Optional<DreamInfo> info = getActiveDreamInfo();
+         if (!info.isPresent()) return;
+-        mBackend.launchSettings(info.get());
++        mBackend.launchSettings(mContext, info.get());
+     }
+ 
+     private Optional<DreamInfo> getActiveDreamInfo() {
+-- 
+2.17.1
+

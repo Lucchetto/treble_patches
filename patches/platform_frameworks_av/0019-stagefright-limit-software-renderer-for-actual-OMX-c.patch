@@ -1,0 +1,31 @@
+From 3a31de26d3d82fddd26fcbe115c94013e7204094 Mon Sep 17 00:00:00 2001
+From: Wonsik Kim <wonsik@google.com>
+Date: Fri, 20 Jul 2018 14:52:30 -0700
+Subject: [PATCH 19/80] stagefright: limit software renderer for actual OMX
+ components
+
+Bug: 111605816
+Test: atest CtsMediaTestCases:VideoEncoderTest
+Change-Id: I1ad7267f823abec99b73093be04e5ec38ff3c162
+---
+ media/libstagefright/MediaCodec.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index 5361159a1..353e40702 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -1943,7 +1943,9 @@ void MediaCodec::onMessageReceived(const sp<AMessage> &msg) {
+                         mAnalyticsItem->setCString(kCodecCodec, mComponentName.c_str());
+                     }
+ 
+-                    if (mComponentName.startsWith("OMX.google.")) {
++                    const char *owner = mCodecInfo->getOwnerName();
++                    if (mComponentName.startsWith("OMX.google.")
++                            && (owner == nullptr || strncmp(owner, "default", 8) == 0)) {
+                         mFlags |= kFlagUsesSoftwareRenderer;
+                     } else {
+                         mFlags &= ~kFlagUsesSoftwareRenderer;
+-- 
+2.17.1
+

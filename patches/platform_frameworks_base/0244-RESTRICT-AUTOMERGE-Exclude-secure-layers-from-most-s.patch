@@ -1,0 +1,147 @@
+From 37c32377b21da92ff746bdc9ac84ec7f95733865 Mon Sep 17 00:00:00 2001
+From: Robert Carr <racarr@google.com>
+Date: Fri, 15 Feb 2019 15:48:11 -0800
+Subject: [PATCH 244/306] [RESTRICT AUTOMERGE]: Exclude secure layers from most
+ screenshots taken by the system server.
+
+In pre-P versions of Android, it was allowed to screenshot secure layers if the
+buffer queue producer which was the target of the screenshot was owned by
+the system (in this case SurfaceFlinger). This really was a synonym for:
+The screen rotation animation was allowed to capture secure layers, but the other
+code paths weren't. In O we mistakenly changed this check to always allow the system server
+to capture secure layers via the captureScreen path (the captureLayers path used for
+TaskSnapshots was unaffected). This can result in data leakage in cases where the
+system server takes screenshots on behalf of other parts of the system (e.g. for
+the assistant). To mitigate this we provide an explicit switch for the system server
+to specify whether it wishes to capture Secure layers. While this is dangerous, I think
+it is less dangerous than the previous implicit switch of capturing secure layers based on which
+type of BufferQueue was passed in. The flag defaults to not capturing secure layers
+and we set it to true in the one place we need it (for the screen rotation animation).
+Non privileged clients can still not capture secure layers at all directly.
+
+Test: TransactionTest.cpp#SetFlagsSecureEUidSystem
+Bug: 120610669
+Change-Id: I9d32c5ac2b005059be9f464859a415167d9ddbd4
+(cherry picked from commit dc49e0088a05108a0616704ca5565136f89c0a1f)
+---
+ core/java/android/view/SurfaceControl.java    | 26 +++++++++++++++++--
+ core/jni/android_view_SurfaceControl.cpp      |  6 ++---
+ .../server/wm/ScreenRotationAnimation.java    | 20 +++++++++++---
+ 3 files changed, 43 insertions(+), 9 deletions(-)
+
+diff --git a/core/java/android/view/SurfaceControl.java b/core/java/android/view/SurfaceControl.java
+index ed8b0053e5b..eec34cdc12c 100644
+--- a/core/java/android/view/SurfaceControl.java
++++ b/core/java/android/view/SurfaceControl.java
+@@ -74,7 +74,8 @@ public class SurfaceControl implements Parcelable {
+             boolean allLayers, boolean useIdentityTransform, int rotation);
+     private static native GraphicBuffer nativeScreenshotToBuffer(IBinder displayToken,
+             Rect sourceCrop, int width, int height, int minLayer, int maxLayer,
+-            boolean allLayers, boolean useIdentityTransform, int rotation);
++            boolean allLayers, boolean useIdentityTransform, int rotation,
++            boolean captureSecureLayers);
+     private static native void nativeScreenshot(IBinder displayToken, Surface consumer,
+             Rect sourceCrop, int width, int height, int minLayer, int maxLayer,
+             boolean allLayers, boolean useIdentityTransform);
+@@ -1249,7 +1250,28 @@ public class SurfaceControl implements Parcelable {
+         IBinder displayToken = SurfaceControl.getBuiltInDisplay(
+                 SurfaceControl.BUILT_IN_DISPLAY_ID_MAIN);
+         return nativeScreenshotToBuffer(displayToken, sourceCrop, width, height,
+-                minLayer, maxLayer, false, useIdentityTransform, rotation);
++                minLayer, maxLayer, false, useIdentityTransform, rotation,
++                false /* captureSecureLayers */);
++    }
++
++    /**
++     * Like screenshotToBuffer, but if the caller is AID_SYSTEM, allows
++     * for the capture of secure layers. This is used for the screen rotation
++     * animation where the system server takes screenshots but does
++     * not persist them or allow them to leave the server. However in other
++     * cases in the system server, we mostly want to omit secure layers
++     * like when we take a screenshot on behalf of the assistant.
++     *
++     * @hide
++     */
++    public static GraphicBuffer screenshotToBufferWithSecureLayersUnsafe(Rect sourceCrop,
++            int width, int height, int minLayer, int maxLayer, boolean useIdentityTransform,
++            int rotation) {
++        IBinder displayToken = SurfaceControl.getBuiltInDisplay(
++                SurfaceControl.BUILT_IN_DISPLAY_ID_MAIN);
++        return nativeScreenshotToBuffer(displayToken, sourceCrop, width, height,
++                minLayer, maxLayer, false, useIdentityTransform, rotation,
++                true /* captureSecureLayers */);
+     }
+ 
+     /**
+diff --git a/core/jni/android_view_SurfaceControl.cpp b/core/jni/android_view_SurfaceControl.cpp
+index 5b4b5f2a226..1529a6bcf24 100644
+--- a/core/jni/android_view_SurfaceControl.cpp
++++ b/core/jni/android_view_SurfaceControl.cpp
+@@ -160,7 +160,7 @@ static Rect rectFromObj(JNIEnv* env, jobject rectObj) {
+ static jobject nativeScreenshotToBuffer(JNIEnv* env, jclass clazz,
+         jobject displayTokenObj, jobject sourceCropObj, jint width, jint height,
+         jint minLayer, jint maxLayer, bool allLayers, bool useIdentityTransform,
+-        int rotation) {
++        int rotation, bool captureSecureLayers) {
+     sp<IBinder> displayToken = ibinderForJavaObject(env, displayTokenObj);
+     if (displayToken == NULL) {
+         return NULL;
+@@ -173,7 +173,7 @@ static jobject nativeScreenshotToBuffer(JNIEnv* env, jclass clazz,
+     sp<GraphicBuffer> buffer;
+     status_t res = ScreenshotClient::capture(displayToken,
+             sourceCrop, width, height, minLayer, maxLayer, useIdentityTransform,
+-            rotation, &buffer);
++            rotation, captureSecureLayers, &buffer);
+     if (res != NO_ERROR) {
+         return NULL;
+     }
+@@ -1026,7 +1026,7 @@ static const JNINativeMethod sSurfaceControlMethods[] = {
+     {"nativeGetHandle", "(J)Landroid/os/IBinder;",
+             (void*)nativeGetHandle },
+     {"nativeScreenshotToBuffer",
+-     "(Landroid/os/IBinder;Landroid/graphics/Rect;IIIIZZI)Landroid/graphics/GraphicBuffer;",
++     "(Landroid/os/IBinder;Landroid/graphics/Rect;IIIIZZIZ)Landroid/graphics/GraphicBuffer;",
+      (void*)nativeScreenshotToBuffer },
+     {"nativeCaptureLayers", "(Landroid/os/IBinder;Landroid/graphics/Rect;F)Landroid/graphics/GraphicBuffer;",
+             (void*)nativeCaptureLayers },
+diff --git a/services/core/java/com/android/server/wm/ScreenRotationAnimation.java b/services/core/java/com/android/server/wm/ScreenRotationAnimation.java
+index fa8a5c66aee..e33070371e3 100644
+--- a/services/core/java/com/android/server/wm/ScreenRotationAnimation.java
++++ b/services/core/java/com/android/server/wm/ScreenRotationAnimation.java
+@@ -27,6 +27,7 @@ import static com.android.server.wm.ScreenRotationAnimationProto.ANIMATION_RUNNI
+ import static com.android.server.wm.ScreenRotationAnimationProto.STARTED;
+ 
+ import android.content.Context;
++import android.graphics.GraphicBuffer;
+ import android.graphics.Matrix;
+ import android.graphics.Rect;
+ import android.os.IBinder;
+@@ -278,10 +279,21 @@ class ScreenRotationAnimation {
+             if (displayHandle != null) {
+                 Surface sur = new Surface();
+                 sur.copyFrom(mSurfaceControl);
+-                SurfaceControl.screenshot(displayHandle, sur);
+-                t.setLayer(mSurfaceControl, SCREEN_FREEZE_LAYER_SCREENSHOT);
+-                t.setAlpha(mSurfaceControl, 0);
+-                t.show(mSurfaceControl);
++                GraphicBuffer gb = SurfaceControl.screenshotToBufferWithSecureLayersUnsafe(
++                        new Rect(), 0 /* width */, 0 /* height */, 0 /* minLayer */,
++                        0 /* maxLayer */, false /* useIdentityTransform */, 0 /* rotation */);
++                if (gb != null) {
++                    try {
++                        sur.attachAndQueueBuffer(gb);
++                    } catch (RuntimeException e) {
++                        Slog.w(TAG, "Failed to attach screenshot - " + e.getMessage());
++                    }
++                    t.setLayer(mSurfaceControl, SCREEN_FREEZE_LAYER_SCREENSHOT);
++                    t.setAlpha(mSurfaceControl, 0);
++                    t.show(mSurfaceControl);
++                } else {
++                    Slog.w(TAG, "Unable to take screenshot of display " + displayId);
++                }
+                 sur.destroy();
+             } else {
+                 Slog.w(TAG, "Built-in display " + displayId + " is null.");
+-- 
+2.17.1
+

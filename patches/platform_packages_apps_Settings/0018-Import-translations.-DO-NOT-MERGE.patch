@@ -1,0 +1,154 @@
+From 11ebb14241926997cad7ea4c9b8c5734bc0e9864 Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Tue, 10 Jul 2018 22:28:21 -0700
+Subject: [PATCH 18/71] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: Id9deb2f66c09d1b17c35d8226673768d40d7eef7
+---
+ res/values-ar/strings.xml |  2 +-
+ res/values-ca/strings.xml |  4 ++--
+ res/values-da/strings.xml | 12 ++++++------
+ res/values-fa/strings.xml |  2 +-
+ res/values-nl/strings.xml |  6 +++---
+ res/values-ta/arrays.xml  |  4 ++--
+ 6 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/res/values-ar/strings.xml b/res/values-ar/strings.xml
+index 1166075bc6..9a9b70c229 100644
+--- a/res/values-ar/strings.xml
++++ b/res/values-ar/strings.xml
+@@ -1292,7 +1292,7 @@
+     <string name="status_operator" msgid="2274875196954742087">"الشبكة"</string>
+     <string name="status_wifi_mac_address" msgid="2202206684020765378">"‏عنوان Mac لشبكة Wi-Fi"</string>
+     <string name="status_bt_address" msgid="4195174192087439720">"عنوان البلوتوث"</string>
+-    <string name="status_serial_number" msgid="2257111183374628137">"الرقم المسلسل"</string>
++    <string name="status_serial_number" msgid="2257111183374628137">"الرقم المتسلسل"</string>
+     <string name="status_up_time" msgid="7294859476816760399">"وقت التشغيل"</string>
+     <string name="status_awake_time" msgid="2393949909051183652">"وقت الوضع النشط"</string>
+     <string name="internal_memory" msgid="9129595691484260784">"وحدة التخزين الداخلية"</string>
+diff --git a/res/values-ca/strings.xml b/res/values-ca/strings.xml
+index 9358edec38..f314c3b475 100644
+--- a/res/values-ca/strings.xml
++++ b/res/values-ca/strings.xml
+@@ -1714,8 +1714,8 @@
+     <string name="show_running_services" msgid="5736278767975544570">"Serveis en execució"</string>
+     <string name="show_background_processes" msgid="2009840211972293429">"Processos a la memòria cau"</string>
+     <string name="default_emergency_app" msgid="1951760659640369980">"Aplicació en casos d\'emergència"</string>
+-    <string name="reset_app_preferences" msgid="1321050641018356925">"Restableix preferències d\'aplicacions"</string>
+-    <string name="reset_app_preferences_title" msgid="6093179367325336662">"Restablir preferències d\'aplicacions?"</string>
++    <string name="reset_app_preferences" msgid="1321050641018356925">"Restableix les preferències d\'aplicacions"</string>
++    <string name="reset_app_preferences_title" msgid="6093179367325336662">"Restablir les preferències d\'aplicacions?"</string>
+     <string name="reset_app_preferences_desc" msgid="4822447731869201512">"Es restabliran les preferències de:\n\n "<li>"Aplicacions desactivades"</li>\n" "<li>"Notificacions d\'aplicacions desactivades"</li>\n" "<li>"Aplicacions predeterminades"</li>\n" "<li>"Restriccions de dades en segon pla d\'aplicacions"</li>\n" "<li>"Restriccions de permisos"</li>\n\n" No es perdran les dades de les aplicacions."</string>
+     <string name="reset_app_preferences_button" msgid="2559089511841281242">"Restableix aplicacions"</string>
+     <string name="manage_space_text" msgid="8852711522447794676">"Gestiona l\'espai"</string>
+diff --git a/res/values-da/strings.xml b/res/values-da/strings.xml
+index 12bb74041e..e66a6f231a 100644
+--- a/res/values-da/strings.xml
++++ b/res/values-da/strings.xml
+@@ -78,8 +78,8 @@
+     <string name="sdcard_unmount" product="default" msgid="3364184561355611897">"Demonter SD-kort"</string>
+     <string name="sdcard_format" product="nosdcard" msgid="6285310523155166716">"Slet USB-lager"</string>
+     <string name="sdcard_format" product="default" msgid="6713185532039187532">"Formatér SD-kort"</string>
+-    <string name="preview_pager_content_description" msgid="8926235999291761243">"Eksempelvisning"</string>
+-    <string name="preview_page_indicator_content_description" msgid="4821343428913401264">"Eksempelvisning af skærm <xliff:g id="CURRENT_PAGE">%1$d</xliff:g> af <xliff:g id="NUM_PAGES">%2$d</xliff:g>"</string>
++    <string name="preview_pager_content_description" msgid="8926235999291761243">"Forhåndsvisning"</string>
++    <string name="preview_page_indicator_content_description" msgid="4821343428913401264">"Forhåndsvisning af skærm <xliff:g id="CURRENT_PAGE">%1$d</xliff:g> af <xliff:g id="NUM_PAGES">%2$d</xliff:g>"</string>
+     <string name="font_size_summary" msgid="1690992332887488183">"Gør teksten på skærmen mindre eller større."</string>
+     <string name="font_size_make_smaller_desc" msgid="7919995133365371569">"Formindsk"</string>
+     <string name="font_size_make_larger_desc" msgid="4316986572233686061">"Forstør"</string>
+@@ -1078,7 +1078,7 @@
+     <string name="brightness" msgid="8480105032417444275">"Lysstyrke"</string>
+     <string name="brightness_title" msgid="5746272622112982836">"Lysstyrke"</string>
+     <string name="brightness_summary" msgid="838917350127550703">"Juster skærmens lysstyrke"</string>
+-    <string name="auto_brightness_title" msgid="6341042882350279391">"Tilpasset lysstyrke"</string>
++    <string name="auto_brightness_title" msgid="6341042882350279391">"Automatisk lysstyrke"</string>
+     <string name="auto_brightness_summary" msgid="1799041158760605375">"Optimer lysstyrken til det omgivende lys"</string>
+     <string name="auto_brightness_summary_off" msgid="2802336459335410626">"Fra"</string>
+     <string name="auto_brightness_summary_very_low" msgid="6483976609035853764">"Den foretrukne lysstyrke er meget lav"</string>
+@@ -1096,7 +1096,7 @@
+     <string name="auto_brightness_off_summary" msgid="7629228736838155268">"Undlad at justere i forhold til det omgivende lys"</string>
+     <string name="auto_brightness_very_high_summary" msgid="4551003097086220709">"Øget batteriforbrug"</string>
+     <string name="auto_brightness_disclaimer" msgid="871436423746343406">"Optimer lysstyrken til det omgivende lys. Når denne funktion er slået til, kan du stadig justere lysstyrken midlertidigt."</string>
+-    <string name="auto_brightness_description" msgid="7310335517128283729">"Skærmens lysstyrke tilpasses automatisk på baggrund af dine omgivelser og dine aktiviteter. Du kan flytte skyderen manuelt for at hjælpe Tilpasset lysstyrke med at lære dine præferencer."</string>
++    <string name="auto_brightness_description" msgid="7310335517128283729">"Skærmens lysstyrke tilpasses automatisk på baggrund af dine omgivelser og dine aktiviteter. Du kan flytte skyderen manuelt for at hjælpe Automatisk lysstyrke med at lære dine præferencer."</string>
+     <string name="night_display_title" msgid="2626451512200357686">"Nattelys"</string>
+     <string name="night_display_text" msgid="1837277457033025056">"Med Nattelys er farvetonen på skærmen gul. Det gør din skærm mere behagelig at se på i svag belysning og kan gøre det nemmere at falde i søvn."</string>
+     <string name="night_display_auto_mode_title" msgid="6574111412154833409">"Planlæg"</string>
+@@ -2022,7 +2022,7 @@
+     <string name="accessibility_menu_item_settings" msgid="3344942964710773365">"Indstillinger"</string>
+     <string name="accessibility_feature_state_on" msgid="2864292320042673806">"Til"</string>
+     <string name="accessibility_feature_state_off" msgid="4172584906487070211">"Fra"</string>
+-    <string name="captioning_preview_title" msgid="1234015253497016890">"Eksempelvisning"</string>
++    <string name="captioning_preview_title" msgid="1234015253497016890">"Forhåndsvisning"</string>
+     <string name="captioning_standard_options_title" msgid="3284211791180335844">"Standardindstillinger"</string>
+     <string name="captioning_locale" msgid="4559155661018823503">"Sprog"</string>
+     <string name="captioning_text_size" msgid="6737002449104466028">"Tekststørrelse"</string>
+@@ -3681,7 +3681,7 @@
+     <string name="screen_zoom_short_summary" msgid="7291960817349834688">"Gør elementerne på skærmen større eller mindre"</string>
+     <string name="screen_zoom_keywords" msgid="9176477565403352552">"visningstæthed, zoom på skærmen, skala, skalering"</string>
+     <string name="screen_zoom_summary" msgid="6445488991799015407">"Gør elementerne på skærmen mindre eller større. Visse apps på din skærm ændrer muligvis placering."</string>
+-    <string name="screen_zoom_preview_title" msgid="4680671508172336572">"Eksempelvisning"</string>
++    <string name="screen_zoom_preview_title" msgid="4680671508172336572">"Forhåndsvisning"</string>
+     <string name="screen_zoom_make_smaller_desc" msgid="4622359904253364742">"Formindsk"</string>
+     <string name="screen_zoom_make_larger_desc" msgid="2236171043607896594">"Forstør"</string>
+     <string name="screen_zoom_conversation_icon_alex" msgid="8443032489384985820">"A"</string>
+diff --git a/res/values-fa/strings.xml b/res/values-fa/strings.xml
+index 1cc413d105..f68fefc462 100644
+--- a/res/values-fa/strings.xml
++++ b/res/values-fa/strings.xml
+@@ -2066,7 +2066,7 @@
+     <string name="disable_service_message" msgid="2247101878627941561">"با ضربه زدن به تأیید، <xliff:g id="SERVICE">%1$s</xliff:g> متوقف خواهد شد."</string>
+     <string name="accessibility_no_services_installed" msgid="7200948194639038807">"سرویسی نصب نشده است"</string>
+     <string name="accessibility_no_service_selected" msgid="2840969718780083998">"سرویسی انتخاب نشده است"</string>
+-    <string name="accessibility_service_default_description" msgid="1072730037861494125">"توضیحی ارائه نشده است."</string>
++    <string name="accessibility_service_default_description" msgid="1072730037861494125">"شرحی ارائه نشده است."</string>
+     <string name="settings_button" msgid="3006713718908152930">"تنظیمات"</string>
+     <string name="print_settings" msgid="4742428530112487843">"چاپ کردن"</string>
+     <string name="print_settings_summary_no_service" msgid="6354322414246865875">"خاموش"</string>
+diff --git a/res/values-nl/strings.xml b/res/values-nl/strings.xml
+index 4b2b8bf569..0202d63cca 100644
+--- a/res/values-nl/strings.xml
++++ b/res/values-nl/strings.xml
+@@ -2029,11 +2029,11 @@
+     <string name="captioning_preset" msgid="8939737196538429044">"Ondertitelstijl"</string>
+     <string name="captioning_custom_options_title" msgid="5067500939930322405">"Aangepaste opties"</string>
+     <string name="captioning_background_color" msgid="9053011212948992570">"Achtergrondkleur"</string>
+-    <string name="captioning_background_opacity" msgid="6029993616419971202">"Transparantie van achtergrond"</string>
++    <string name="captioning_background_opacity" msgid="6029993616419971202">"Ondoorzichtigheid van achtergrond"</string>
+     <string name="captioning_window_color" msgid="6902052743419717394">"Kleur ondertitelingsvenster"</string>
+-    <string name="captioning_window_opacity" msgid="5041556024849862376">"Transparantie ondertitelingsvenster"</string>
++    <string name="captioning_window_opacity" msgid="5041556024849862376">"Ondoorzichtigheid ondertitelingsvenster"</string>
+     <string name="captioning_foreground_color" msgid="85623486537640059">"Tekstkleur"</string>
+-    <string name="captioning_foreground_opacity" msgid="4370967856995419788">"Transparantie van tekst"</string>
++    <string name="captioning_foreground_opacity" msgid="4370967856995419788">"Ondoorzichtigheid van tekst"</string>
+     <string name="captioning_edge_color" msgid="3670094753735263238">"Randkleur"</string>
+     <string name="captioning_edge_type" msgid="5997247394951682154">"Randtype"</string>
+     <string name="captioning_typeface" msgid="1826169240566563259">"Lettertypefamilie"</string>
+diff --git a/res/values-ta/arrays.xml b/res/values-ta/arrays.xml
+index 415902cf56..d9f8b001a2 100644
+--- a/res/values-ta/arrays.xml
++++ b/res/values-ta/arrays.xml
+@@ -67,7 +67,7 @@
+   </string-array>
+   <string-array name="wifi_status">
+     <item msgid="1922181315419294640"></item>
+-    <item msgid="8934131797783724664">"ஸ்கேன் செய்கிறது…"</item>
++    <item msgid="8934131797783724664">"தேடுகிறது..."</item>
+     <item msgid="8513729475867537913">"இணைக்கிறது..."</item>
+     <item msgid="515055375277271756">"அங்கீகரிக்கிறது..."</item>
+     <item msgid="1943354004029184381">"IP முகவரியைப் பெறுகிறது…"</item>
+@@ -81,7 +81,7 @@
+   </string-array>
+   <string-array name="wifi_status_with_ssid">
+     <item msgid="7714855332363650812"></item>
+-    <item msgid="8878186979715711006">"ஸ்கேன் செய்கிறது…"</item>
++    <item msgid="8878186979715711006">"தேடுகிறது..."</item>
+     <item msgid="355508996603873860">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> இல் இணைக்கிறது…"</item>
+     <item msgid="554971459996405634">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> உடன் அங்கீகரிக்கிறது…"</item>
+     <item msgid="7928343808033020343">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> இலிருந்து IP முகவரியைப் பெறுகிறது…"</item>
+-- 
+2.17.1
+

@@ -1,0 +1,23 @@
+From 190daf9cd30eaba55a7d1726b0d515aed89c0ea2 Mon Sep 17 00:00:00 2001
+From: android-build-team Robot <android-build-team-robot@google.com>
+Date: Fri, 12 Apr 2019 11:57:01 +0000
+Subject: [PATCH 60/81] Version bump to PQ3B.190408.008
+
+Change-Id: I9c9fe94b5f98e176289c256ca43897dcc9f3b3c4
+---
+ core/build_id.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/build_id.mk b/core/build_id.mk
+index 4396d1217..21ba0ae0a 100644
+--- a/core/build_id.mk
++++ b/core/build_id.mk
+@@ -18,4 +18,4 @@
+ # (like "CRB01").  It must be a single word, and is
+ # capitalized by convention.
+ 
+-export BUILD_ID=PQ3B.190408.007
++export BUILD_ID=PQ3B.190408.008
+-- 
+2.17.1
+

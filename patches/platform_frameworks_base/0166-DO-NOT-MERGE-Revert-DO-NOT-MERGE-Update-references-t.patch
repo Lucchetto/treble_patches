@@ -1,0 +1,790 @@
+From 3b975459250e45b92d49b52410b26ee872bc4554 Mon Sep 17 00:00:00 2001
+From: Artem Iglikov <artikz@google.com>
+Date: Thu, 22 Mar 2018 12:18:07 +0000
+Subject: [PATCH 166/306] DO NOT MERGE Revert "DO NOT MERGE Update references
+ to backup/restore agent timeouts"
+
+This reverts commit f77cae61250c727630616b5672df2781e84a7e80.
+
+Reason for revert: crashes SUW
+
+Bug: 76128378
+Change-Id: Ia77af64892aa5a03109cc4ef4c2c04b256000ba9
+(cherry picked from commit b873780a3d7128f5ba141605559099d2b2f93fbb)
+---
+ .../server/backup/BackupManagerService.java   | 18 +++++++--------
+ .../backup/BackupManagerServiceInterface.java |  3 ---
+ .../backup/KeyValueAdbBackupEngine.java       | 11 ++++------
+ .../backup/fullbackup/FullBackupEngine.java   | 12 +++++-----
+ .../fullbackup/FullBackupObbConnection.java   |  8 ++-----
+ .../PerformFullTransportBackupTask.java       | 22 +++++--------------
+ .../server/backup/internal/BackupHandler.java |  7 ++----
+ .../backup/internal/PerformBackupTask.java    |  8 ++-----
+ .../restore/AdbRestoreFinishedLatch.java      |  8 ++-----
+ .../backup/restore/FullRestoreEngine.java     | 13 +++++------
+ .../backup/restore/PerformAdbRestoreTask.java | 17 +++++---------
+ .../restore/PerformUnifiedRestoreTask.java    | 16 +++++---------
+ .../server/backup/PerformBackupTaskTest.java  |  8 +------
+ .../restore/ActiveRestoreSessionTest.java     | 14 +-----------
+ .../BackupManagerServiceTestUtils.java        |  5 +----
+ 15 files changed, 53 insertions(+), 117 deletions(-)
+
+diff --git a/services/backup/java/com/android/server/backup/BackupManagerService.java b/services/backup/java/com/android/server/backup/BackupManagerService.java
+index 4cac7072112..d6f6c6cf1fc 100644
+--- a/services/backup/java/com/android/server/backup/BackupManagerService.java
++++ b/services/backup/java/com/android/server/backup/BackupManagerService.java
+@@ -215,6 +215,13 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+     // Timeout interval for deciding that a bind or clear-data has taken too long
+     private static final long TIMEOUT_INTERVAL = 10 * 1000;
+ 
++    // Timeout intervals for agent backup & restore operations
++    public static final long TIMEOUT_BACKUP_INTERVAL = 30 * 1000;
++    public static final long TIMEOUT_FULL_BACKUP_INTERVAL = 5 * 60 * 1000;
++    public static final long TIMEOUT_SHARED_BACKUP_INTERVAL = 30 * 60 * 1000;
++    public static final long TIMEOUT_RESTORE_INTERVAL = 60 * 1000;
++    public static final long TIMEOUT_RESTORE_FINISHED_INTERVAL = 30 * 1000;
++
+     // User confirmation timeout for a full backup/restore operation.  It's this long in
+     // order to give them time to enter the backup password.
+     private static final long TIMEOUT_FULL_CONFIRMATION = 60 * 1000;
+@@ -225,7 +232,6 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+     private static final int BUSY_BACKOFF_FUZZ = 1000 * 60 * 60 * 2;  // two hours
+ 
+     private BackupManagerConstants mConstants;
+-    private BackupAgentTimeoutParameters mAgentTimeoutParameters;
+     private Context mContext;
+     private PackageManager mPackageManager;
+     private IPackageManager mPackageManagerBinder;
+@@ -309,10 +315,6 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+         return mConstants;
+     }
+ 
+-    public BackupAgentTimeoutParameters getAgentTimeoutParameters() {
+-        return mAgentTimeoutParameters;
+-    }
+-
+     public Context getContext() {
+         return mContext;
+     }
+@@ -854,10 +856,6 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+         // require frequent starting and stopping.
+         mConstants.start();
+ 
+-        mAgentTimeoutParameters = new
+-                BackupAgentTimeoutParameters(mBackupHandler, mContext.getContentResolver());
+-        mAgentTimeoutParameters.start();
+-
+         // Set up the various sorts of package tracking we do
+         mFullBackupScheduleFile = new File(mBaseStateDir, "fb-schedule");
+         initPackageTracking();
+@@ -3409,7 +3407,7 @@ public class BackupManagerService implements BackupManagerServiceInterface {
+             }
+             mActiveRestoreSession = new ActiveRestoreSession(this, packageName, transport);
+             mBackupHandler.sendEmptyMessageDelayed(MSG_RESTORE_SESSION_TIMEOUT,
+-                    mAgentTimeoutParameters.getRestoreAgentTimeoutMillis());
++                    TIMEOUT_RESTORE_INTERVAL);
+         }
+         return mActiveRestoreSession;
+     }
+diff --git a/services/backup/java/com/android/server/backup/BackupManagerServiceInterface.java b/services/backup/java/com/android/server/backup/BackupManagerServiceInterface.java
+index aabe7f61184..7b021c64eaf 100644
+--- a/services/backup/java/com/android/server/backup/BackupManagerServiceInterface.java
++++ b/services/backup/java/com/android/server/backup/BackupManagerServiceInterface.java
+@@ -191,7 +191,4 @@ public interface BackupManagerServiceInterface {
+   void dump(FileDescriptor fd, PrintWriter pw, String[] args);
+ 
+   IBackupManager getBackupManagerBinder();
+-
+-  // Gets access to the backup/restore agent timeout parameters.
+-  BackupAgentTimeoutParameters getAgentTimeoutParameters();
+ }
+diff --git a/services/backup/java/com/android/server/backup/KeyValueAdbBackupEngine.java b/services/backup/java/com/android/server/backup/KeyValueAdbBackupEngine.java
+index f08c65597a4..47558775d19 100644
+--- a/services/backup/java/com/android/server/backup/KeyValueAdbBackupEngine.java
++++ b/services/backup/java/com/android/server/backup/KeyValueAdbBackupEngine.java
+@@ -4,8 +4,8 @@ import static android.os.ParcelFileDescriptor.MODE_CREATE;
+ import static android.os.ParcelFileDescriptor.MODE_READ_ONLY;
+ import static android.os.ParcelFileDescriptor.MODE_READ_WRITE;
+ import static android.os.ParcelFileDescriptor.MODE_TRUNCATE;
+-
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP_WAIT;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_BACKUP_INTERVAL;
+ 
+ import android.app.ApplicationThreadConstants;
+ import android.app.IBackupAgent;
+@@ -59,7 +59,6 @@ public class KeyValueAdbBackupEngine {
+     private ParcelFileDescriptor mSavedState;
+     private ParcelFileDescriptor mBackupData;
+     private ParcelFileDescriptor mNewState;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     public KeyValueAdbBackupEngine(OutputStream output, PackageInfo packageInfo,
+             BackupManagerServiceInterface backupManagerService, PackageManager packageManager,
+@@ -82,7 +81,6 @@ public class KeyValueAdbBackupEngine {
+                 pkg + BACKUP_KEY_VALUE_NEW_STATE_FILENAME_SUFFIX);
+ 
+         mManifestFile = new File(mDataDir, BackupManagerService.BACKUP_MANIFEST_FILENAME);
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+     }
+ 
+     public void backupOnePackage() throws IOException {
+@@ -150,9 +148,8 @@ public class KeyValueAdbBackupEngine {
+     // Return true on backup success, false otherwise
+     private boolean invokeAgentForAdbBackup(String packageName, IBackupAgent agent) {
+         int token = mBackupManagerService.generateRandomIntegerToken();
+-        long kvBackupAgentTimeoutMillis = mAgentTimeoutParameters.getKvBackupAgentTimeoutMillis();
+         try {
+-            mBackupManagerService.prepareOperationTimeout(token, kvBackupAgentTimeoutMillis, null,
++            mBackupManagerService.prepareOperationTimeout(token, TIMEOUT_BACKUP_INTERVAL, null,
+                     OP_TYPE_BACKUP_WAIT);
+ 
+             // Start backup and wait for BackupManagerService to get callback for success or timeout
+@@ -234,14 +231,14 @@ public class KeyValueAdbBackupEngine {
+     }
+ 
+     private void writeBackupData() throws IOException {
++
+         int token = mBackupManagerService.generateRandomIntegerToken();
+-        long kvBackupAgentTimeoutMillis = mAgentTimeoutParameters.getKvBackupAgentTimeoutMillis();
+ 
+         ParcelFileDescriptor[] pipes = null;
+         try {
+             pipes = ParcelFileDescriptor.createPipe();
+ 
+-            mBackupManagerService.prepareOperationTimeout(token, kvBackupAgentTimeoutMillis, null,
++            mBackupManagerService.prepareOperationTimeout(token, TIMEOUT_BACKUP_INTERVAL, null,
+                     OP_TYPE_BACKUP_WAIT);
+ 
+             // We will have to create a runnable that will read the manifest and backup data we
+diff --git a/services/backup/java/com/android/server/backup/fullbackup/FullBackupEngine.java b/services/backup/java/com/android/server/backup/fullbackup/FullBackupEngine.java
+index 597da21c720..0582abac91d 100644
+--- a/services/backup/java/com/android/server/backup/fullbackup/FullBackupEngine.java
++++ b/services/backup/java/com/android/server/backup/fullbackup/FullBackupEngine.java
+@@ -25,6 +25,9 @@ import static com.android.server.backup.BackupManagerService.MORE_DEBUG;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP_WAIT;
+ import static com.android.server.backup.BackupManagerService.SHARED_BACKUP_AGENT_PACKAGE;
+ import static com.android.server.backup.BackupManagerService.TAG;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_FULL_BACKUP_INTERVAL;
++import static com.android.server.backup.BackupManagerService
++        .TIMEOUT_SHARED_BACKUP_INTERVAL;
+ 
+ import android.app.ApplicationThreadConstants;
+ import android.app.IBackupAgent;
+@@ -42,9 +45,8 @@ import android.util.Slog;
+ import android.util.StringBuilderPrinter;
+ 
+ import com.android.server.AppWidgetBackupBridge;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+-import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.BackupRestoreTask;
++import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.utils.FullBackupUtils;
+ 
+ import java.io.BufferedOutputStream;
+@@ -73,7 +75,6 @@ public class FullBackupEngine {
+     private final long mQuota;
+     private final int mOpToken;
+     private final int mTransportFlags;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     class FullBackupRunner implements Runnable {
+ 
+@@ -136,8 +137,8 @@ public class FullBackupEngine {
+                 final boolean isSharedStorage =
+                         mPackage.packageName.equals(SHARED_BACKUP_AGENT_PACKAGE);
+                 final long timeout = isSharedStorage ?
+-                        mAgentTimeoutParameters.getSharedBackupAgentTimeoutMillis() :
+-                        mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
++                        TIMEOUT_SHARED_BACKUP_INTERVAL :
++                        TIMEOUT_FULL_BACKUP_INTERVAL;
+ 
+                 if (DEBUG) {
+                     Slog.d(TAG, "Calling doFullBackup() on " + mPackage.packageName);
+@@ -179,7 +180,6 @@ public class FullBackupEngine {
+         mQuota = quota;
+         mOpToken = opToken;
+         mTransportFlags = transportFlags;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+     }
+ 
+     public int preflightCheck() throws RemoteException {
+diff --git a/services/backup/java/com/android/server/backup/fullbackup/FullBackupObbConnection.java b/services/backup/java/com/android/server/backup/fullbackup/FullBackupObbConnection.java
+index d441cf6a78e..40b6967a729 100644
+--- a/services/backup/java/com/android/server/backup/fullbackup/FullBackupObbConnection.java
++++ b/services/backup/java/com/android/server/backup/fullbackup/FullBackupObbConnection.java
+@@ -19,6 +19,7 @@ package com.android.server.backup.fullbackup;
+ import static com.android.server.backup.BackupManagerService.MORE_DEBUG;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP_WAIT;
+ import static com.android.server.backup.BackupManagerService.TAG;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_FULL_BACKUP_INTERVAL;
+ 
+ import android.app.backup.IBackupManager;
+ import android.content.ComponentName;
+@@ -32,7 +33,6 @@ import android.os.UserHandle;
+ import android.util.Slog;
+ 
+ import com.android.internal.backup.IObbBackupService;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.utils.FullBackupUtils;
+ 
+@@ -46,12 +46,10 @@ public class FullBackupObbConnection implements ServiceConnection {
+ 
+     private BackupManagerService backupManagerService;
+     volatile IObbBackupService mService;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     public FullBackupObbConnection(BackupManagerService backupManagerService) {
+         this.backupManagerService = backupManagerService;
+         mService = null;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+     }
+ 
+     public void establish() {
+@@ -77,10 +75,8 @@ public class FullBackupObbConnection implements ServiceConnection {
+         try {
+             pipes = ParcelFileDescriptor.createPipe();
+             int token = backupManagerService.generateRandomIntegerToken();
+-            long fullBackupAgentTimeoutMillis =
+-                    mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+             backupManagerService.prepareOperationTimeout(
+-                    token, fullBackupAgentTimeoutMillis, null, OP_TYPE_BACKUP_WAIT);
++                    token, TIMEOUT_FULL_BACKUP_INTERVAL, null, OP_TYPE_BACKUP_WAIT);
+             mService.backupObbs(pkg.packageName, pipes[1], token,
+                     backupManagerService.getBackupManagerBinder());
+             FullBackupUtils.routeSocketDataToOutput(pipes[0], out);
+diff --git a/services/backup/java/com/android/server/backup/fullbackup/PerformFullTransportBackupTask.java b/services/backup/java/com/android/server/backup/fullbackup/PerformFullTransportBackupTask.java
+index 1ea3eb5fc2e..2c2dd8528cb 100644
+--- a/services/backup/java/com/android/server/backup/fullbackup/PerformFullTransportBackupTask.java
++++ b/services/backup/java/com/android/server/backup/fullbackup/PerformFullTransportBackupTask.java
+@@ -22,6 +22,7 @@ import static com.android.server.backup.BackupManagerService.MORE_DEBUG;
+ import static com.android.server.backup.BackupManagerService.OP_PENDING;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP_WAIT;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_FULL_BACKUP_INTERVAL;
+ 
+ import android.annotation.Nullable;
+ import android.app.IBackupAgent;
+@@ -43,7 +44,6 @@ import android.util.Slog;
+ 
+ import com.android.internal.backup.IBackupTransport;
+ import com.android.server.EventLogTags;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupRestoreTask;
+ import com.android.server.backup.FullBackupJob;
+ import com.android.server.backup.BackupManagerService;
+@@ -146,7 +146,6 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+     private volatile boolean mIsDoingBackup;
+     private volatile boolean mCancelAll;
+     private final int mCurrentOpToken;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     public PerformFullTransportBackupTask(BackupManagerService backupManagerService,
+             TransportClient transportClient,
+@@ -168,7 +167,6 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+         mUserInitiated = userInitiated;
+         mCurrentOpToken = backupManagerService.generateRandomIntegerToken();
+         mBackupRunnerOpToken = backupManagerService.generateRandomIntegerToken();
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+ 
+         if (backupManagerService.isBackupOperationInProgress()) {
+             if (DEBUG) {
+@@ -700,11 +698,9 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+         @Override
+         public int preflightFullBackup(PackageInfo pkg, IBackupAgent agent) {
+             int result;
+-            long fullBackupAgentTimeoutMillis =
+-                    mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+             try {
+                 backupManagerService.prepareOperationTimeout(
+-                        mCurrentOpToken, fullBackupAgentTimeoutMillis, this, OP_TYPE_BACKUP_WAIT);
++                        mCurrentOpToken, TIMEOUT_FULL_BACKUP_INTERVAL, this, OP_TYPE_BACKUP_WAIT);
+                 backupManagerService.addBackupTrace("preflighting");
+                 if (MORE_DEBUG) {
+                     Slog.d(TAG, "Preflighting full payload of " + pkg.packageName);
+@@ -717,7 +713,7 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+                 // timeout had been produced.  In case of a real backstop timeout, mResult
+                 // will still contain the value it was constructed with, AGENT_ERROR, which
+                 // intentionaly falls into the "just report failure" code.
+-                mLatch.await(fullBackupAgentTimeoutMillis, TimeUnit.MILLISECONDS);
++                mLatch.await(TIMEOUT_FULL_BACKUP_INTERVAL, TimeUnit.MILLISECONDS);
+ 
+                 long totalSize = mResult.get();
+                 // If preflight timed out, mResult will contain error code as int.
+@@ -773,10 +769,8 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+ 
+         @Override
+         public long getExpectedSizeOrErrorCode() {
+-            long fullBackupAgentTimeoutMillis =
+-                    mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+             try {
+-                mLatch.await(fullBackupAgentTimeoutMillis, TimeUnit.MILLISECONDS);
++                mLatch.await(TIMEOUT_FULL_BACKUP_INTERVAL, TimeUnit.MILLISECONDS);
+                 return mResult.get();
+             } catch (InterruptedException e) {
+                 return BackupTransport.NO_MORE_DATA;
+@@ -869,10 +863,8 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+         // If preflight succeeded, returns positive number - preflight size,
+         // otherwise return negative error code.
+         long getPreflightResultBlocking() {
+-            long fullBackupAgentTimeoutMillis =
+-                    mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+             try {
+-                mPreflightLatch.await(fullBackupAgentTimeoutMillis, TimeUnit.MILLISECONDS);
++                mPreflightLatch.await(TIMEOUT_FULL_BACKUP_INTERVAL, TimeUnit.MILLISECONDS);
+                 if (mIsCancelled) {
+                     return BackupManager.ERROR_BACKUP_CANCELLED;
+                 }
+@@ -887,10 +879,8 @@ public class PerformFullTransportBackupTask extends FullBackupTask implements Ba
+         }
+ 
+         int getBackupResultBlocking() {
+-            long fullBackupAgentTimeoutMillis =
+-                    mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+             try {
+-                mBackupLatch.await(fullBackupAgentTimeoutMillis, TimeUnit.MILLISECONDS);
++                mBackupLatch.await(TIMEOUT_FULL_BACKUP_INTERVAL, TimeUnit.MILLISECONDS);
+                 if (mIsCancelled) {
+                     return BackupManager.ERROR_BACKUP_CANCELLED;
+                 }
+diff --git a/services/backup/java/com/android/server/backup/internal/BackupHandler.java b/services/backup/java/com/android/server/backup/internal/BackupHandler.java
+index 58868627ee2..136fada43b1 100644
+--- a/services/backup/java/com/android/server/backup/internal/BackupHandler.java
++++ b/services/backup/java/com/android/server/backup/internal/BackupHandler.java
+@@ -19,6 +19,7 @@ package com.android.server.backup.internal;
+ import static com.android.server.backup.BackupManagerService.DEBUG;
+ import static com.android.server.backup.BackupManagerService.MORE_DEBUG;
+ import static com.android.server.backup.BackupManagerService.TAG;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_RESTORE_INTERVAL;
+ 
+ import android.app.backup.RestoreSet;
+ import android.content.Intent;
+@@ -33,7 +34,6 @@ import android.util.Slog;
+ 
+ import com.android.internal.backup.IBackupTransport;
+ import com.android.server.EventLogTags;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.BackupRestoreTask;
+ import com.android.server.backup.DataChangedJournal;
+@@ -81,12 +81,10 @@ public class BackupHandler extends Handler {
+     public static final int MSG_OP_COMPLETE = 21;
+ 
+     private final BackupManagerService backupManagerService;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     public BackupHandler(BackupManagerService backupManagerService, Looper looper) {
+         super(looper);
+         this.backupManagerService = backupManagerService;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+     }
+ 
+     public void handleMessage(Message msg) {
+@@ -324,8 +322,7 @@ public class BackupHandler extends Handler {
+ 
+                     // Done: reset the session timeout clock
+                     removeMessages(MSG_RESTORE_SESSION_TIMEOUT);
+-                    sendEmptyMessageDelayed(MSG_RESTORE_SESSION_TIMEOUT,
+-                            mAgentTimeoutParameters.getRestoreAgentTimeoutMillis());
++                    sendEmptyMessageDelayed(MSG_RESTORE_SESSION_TIMEOUT, TIMEOUT_RESTORE_INTERVAL);
+ 
+                     params.listener.onFinished(callerLogString);
+                 }
+diff --git a/services/backup/java/com/android/server/backup/internal/PerformBackupTask.java b/services/backup/java/com/android/server/backup/internal/PerformBackupTask.java
+index 0313066656d..11394e66a0f 100644
+--- a/services/backup/java/com/android/server/backup/internal/PerformBackupTask.java
++++ b/services/backup/java/com/android/server/backup/internal/PerformBackupTask.java
+@@ -24,6 +24,7 @@ import static com.android.server.backup.BackupManagerService.OP_PENDING;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_BACKUP_WAIT;
+ import static com.android.server.backup.BackupManagerService.PACKAGE_MANAGER_SENTINEL;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_BACKUP_INTERVAL;
+ import static com.android.server.backup.internal.BackupHandler.MSG_BACKUP_OPERATION_TIMEOUT;
+ import static com.android.server.backup.internal.BackupHandler.MSG_BACKUP_RESTORE_STEP;
+ 
+@@ -56,7 +57,6 @@ import com.android.internal.annotations.GuardedBy;
+ import com.android.internal.backup.IBackupTransport;
+ import com.android.server.AppWidgetBackupBridge;
+ import com.android.server.EventLogTags;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupRestoreTask;
+ import com.android.server.backup.DataChangedJournal;
+ import com.android.server.backup.KeyValueBackupJob;
+@@ -142,7 +142,6 @@ public class PerformBackupTask implements BackupRestoreTask {
+     private boolean mFinished;
+     private final boolean mUserInitiated;
+     private final boolean mNonIncremental;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     private volatile boolean mCancelAll;
+ 
+@@ -163,7 +162,6 @@ public class PerformBackupTask implements BackupRestoreTask {
+         mPendingFullBackups = pendingFullBackups;
+         mUserInitiated = userInitiated;
+         mNonIncremental = nonIncremental;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+ 
+         mStateDir = new File(backupManagerService.getBaseStateDir(), dirName);
+         mCurrentOpToken = backupManagerService.generateRandomIntegerToken();
+@@ -713,10 +711,8 @@ public class PerformBackupTask implements BackupRestoreTask {
+ 
+             // Initiate the target's backup pass
+             backupManagerService.addBackupTrace("setting timeout");
+-            long kvBackupAgentTimeoutMillis =
+-                    mAgentTimeoutParameters.getKvBackupAgentTimeoutMillis();
+             backupManagerService.prepareOperationTimeout(
+-                    mEphemeralOpToken, kvBackupAgentTimeoutMillis, this, OP_TYPE_BACKUP_WAIT);
++                    mEphemeralOpToken, TIMEOUT_BACKUP_INTERVAL, this, OP_TYPE_BACKUP_WAIT);
+             backupManagerService.addBackupTrace("calling agent doBackup()");
+ 
+             agent.doBackup(
+diff --git a/services/backup/java/com/android/server/backup/restore/AdbRestoreFinishedLatch.java b/services/backup/java/com/android/server/backup/restore/AdbRestoreFinishedLatch.java
+index 6175629d745..e4f3a9d5cd0 100644
+--- a/services/backup/java/com/android/server/backup/restore/AdbRestoreFinishedLatch.java
++++ b/services/backup/java/com/android/server/backup/restore/AdbRestoreFinishedLatch.java
+@@ -18,10 +18,10 @@ package com.android.server.backup.restore;
+ 
+ import static com.android.server.backup.BackupManagerService.DEBUG;
+ import static com.android.server.backup.BackupManagerService.MORE_DEBUG;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_FULL_BACKUP_INTERVAL;
+ 
+ import android.util.Slog;
+ 
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.BackupRestoreTask;
+ 
+@@ -37,22 +37,18 @@ public class AdbRestoreFinishedLatch implements BackupRestoreTask {
+     private BackupManagerService backupManagerService;
+     final CountDownLatch mLatch;
+     private final int mCurrentOpToken;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     public AdbRestoreFinishedLatch(BackupManagerService backupManagerService,
+             int currentOpToken) {
+         this.backupManagerService = backupManagerService;
+         mLatch = new CountDownLatch(1);
+         mCurrentOpToken = currentOpToken;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+     }
+ 
+     void await() {
+         boolean latched = false;
+-        long fullBackupAgentTimeoutMillis =
+-                mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+         try {
+-            latched = mLatch.await(fullBackupAgentTimeoutMillis, TimeUnit.MILLISECONDS);
++            latched = mLatch.await(TIMEOUT_FULL_BACKUP_INTERVAL, TimeUnit.MILLISECONDS);
+         } catch (InterruptedException e) {
+             Slog.w(TAG, "Interrupted!");
+         }
+diff --git a/services/backup/java/com/android/server/backup/restore/FullRestoreEngine.java b/services/backup/java/com/android/server/backup/restore/FullRestoreEngine.java
+index f168afed55e..c1a1c1dc10e 100644
+--- a/services/backup/java/com/android/server/backup/restore/FullRestoreEngine.java
++++ b/services/backup/java/com/android/server/backup/restore/FullRestoreEngine.java
+@@ -23,6 +23,9 @@ import static com.android.server.backup.BackupManagerService.MORE_DEBUG;
+ import static com.android.server.backup.BackupManagerService.OP_TYPE_RESTORE_WAIT;
+ import static com.android.server.backup.BackupManagerService.SHARED_BACKUP_AGENT_PACKAGE;
+ import static com.android.server.backup.BackupManagerService.TAG;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_RESTORE_INTERVAL;
++import static com.android.server.backup.BackupManagerService
++        .TIMEOUT_SHARED_BACKUP_INTERVAL;
+ import static com.android.server.backup.internal.BackupHandler.MSG_RESTORE_OPERATION_TIMEOUT;
+ 
+ import android.app.ApplicationThreadConstants;
+@@ -40,11 +43,10 @@ import android.os.RemoteException;
+ import android.util.Slog;
+ 
+ import com.android.server.LocalServices;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+-import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.BackupRestoreTask;
+ import com.android.server.backup.FileMetadata;
+ import com.android.server.backup.KeyValueAdbRestoreEngine;
++import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.fullbackup.FullBackupObbConnection;
+ import com.android.server.backup.utils.BytesReadListener;
+ import com.android.server.backup.utils.FullBackupRestoreObserverUtils;
+@@ -119,8 +121,6 @@ public class FullRestoreEngine extends RestoreEngine {
+ 
+     final int mEphemeralOpToken;
+ 
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+-
+     public FullRestoreEngine(BackupManagerService backupManagerService,
+             BackupRestoreTask monitorTask, IFullBackupRestoreObserver observer,
+             IBackupManagerMonitor monitor, PackageInfo onlyPackage, boolean allowApks,
+@@ -135,7 +135,6 @@ public class FullRestoreEngine extends RestoreEngine {
+         mAllowObbs = allowObbs;
+         mBuffer = new byte[32 * 1024];
+         mBytes = 0;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+     }
+ 
+     public IBackupAgent getAgent() {
+@@ -382,8 +381,8 @@ public class FullRestoreEngine extends RestoreEngine {
+                         long toCopy = info.size;
+                         final boolean isSharedStorage = pkg.equals(SHARED_BACKUP_AGENT_PACKAGE);
+                         final long timeout = isSharedStorage ?
+-                                mAgentTimeoutParameters.getSharedBackupAgentTimeoutMillis() :
+-                                mAgentTimeoutParameters.getRestoreAgentTimeoutMillis();
++                                TIMEOUT_SHARED_BACKUP_INTERVAL :
++                                TIMEOUT_RESTORE_INTERVAL;
+                         try {
+                             mBackupManagerService.prepareOperationTimeout(token,
+                                     timeout,
+diff --git a/services/backup/java/com/android/server/backup/restore/PerformAdbRestoreTask.java b/services/backup/java/com/android/server/backup/restore/PerformAdbRestoreTask.java
+index 221637cae19..dacde0b9af6 100644
+--- a/services/backup/java/com/android/server/backup/restore/PerformAdbRestoreTask.java
++++ b/services/backup/java/com/android/server/backup/restore/PerformAdbRestoreTask.java
+@@ -16,6 +16,8 @@
+ 
+ package com.android.server.backup.restore;
+ 
++import static com.android.server.backup.BackupPasswordManager.PBKDF_CURRENT;
++import static com.android.server.backup.BackupPasswordManager.PBKDF_FALLBACK;
+ import static com.android.server.backup.BackupManagerService.BACKUP_FILE_HEADER_MAGIC;
+ import static com.android.server.backup.BackupManagerService.BACKUP_FILE_VERSION;
+ import static com.android.server.backup.BackupManagerService.BACKUP_MANIFEST_FILENAME;
+@@ -26,8 +28,8 @@ import static com.android.server.backup.BackupManagerService.OP_TYPE_RESTORE_WAI
+ import static com.android.server.backup.BackupManagerService.SETTINGS_PACKAGE;
+ import static com.android.server.backup.BackupManagerService.SHARED_BACKUP_AGENT_PACKAGE;
+ import static com.android.server.backup.BackupManagerService.TAG;
+-import static com.android.server.backup.BackupPasswordManager.PBKDF_CURRENT;
+-import static com.android.server.backup.BackupPasswordManager.PBKDF_FALLBACK;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_FULL_BACKUP_INTERVAL;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_RESTORE_INTERVAL;
+ import static com.android.server.backup.internal.BackupHandler.MSG_RESTORE_OPERATION_TIMEOUT;
+ 
+ import android.app.ApplicationThreadConstants;
+@@ -47,7 +49,6 @@ import android.util.Slog;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+ import com.android.server.LocalServices;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.FileMetadata;
+ import com.android.server.backup.KeyValueAdbRestoreEngine;
+@@ -100,7 +101,6 @@ public class PerformAdbRestoreTask implements Runnable {
+     private byte[] mWidgetData = null;
+ 
+     private long mBytes;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     // Runner that can be placed on a separate thread to do in-process invocation
+     // of the "restore finished" API asynchronously.  Used by adb restore.
+@@ -155,7 +155,6 @@ public class PerformAdbRestoreTask implements Runnable {
+         mAgentPackage = null;
+         mTargetApp = null;
+         mObbConnection = new FullBackupObbConnection(backupManagerService);
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+ 
+         // Which packages we've already wiped data on.  We prepopulate this
+         // with a whitelist of packages known to be unclearable.
+@@ -644,11 +643,9 @@ public class PerformAdbRestoreTask implements Runnable {
+                     if (okay) {
+                         boolean agentSuccess = true;
+                         long toCopy = info.size;
+-                        long restoreAgentTimeoutMillis =
+-                                mAgentTimeoutParameters.getRestoreAgentTimeoutMillis();
+                         try {
+                             mBackupManagerService.prepareOperationTimeout(
+-                                    token, restoreAgentTimeoutMillis, null, OP_TYPE_RESTORE_WAIT);
++                                    token, TIMEOUT_RESTORE_INTERVAL, null, OP_TYPE_RESTORE_WAIT);
+ 
+                             if (FullBackup.OBB_TREE_TOKEN.equals(info.domain)) {
+                                 if (DEBUG) {
+@@ -823,12 +820,10 @@ public class PerformAdbRestoreTask implements Runnable {
+                 // In the adb restore case, we do restore-finished here
+                 if (doRestoreFinished) {
+                     final int token = mBackupManagerService.generateRandomIntegerToken();
+-                    long fullBackupAgentTimeoutMillis =
+-                            mAgentTimeoutParameters.getFullBackupAgentTimeoutMillis();
+                     final AdbRestoreFinishedLatch latch = new AdbRestoreFinishedLatch(
+                             mBackupManagerService, token);
+                     mBackupManagerService.prepareOperationTimeout(
+-                            token, fullBackupAgentTimeoutMillis, latch, OP_TYPE_RESTORE_WAIT);
++                            token, TIMEOUT_FULL_BACKUP_INTERVAL, latch, OP_TYPE_RESTORE_WAIT);
+                     if (mTargetApp.processName.equals("system")) {
+                         if (MORE_DEBUG) {
+                             Slog.d(TAG, "system agent - restoreFinished on thread");
+diff --git a/services/backup/java/com/android/server/backup/restore/PerformUnifiedRestoreTask.java b/services/backup/java/com/android/server/backup/restore/PerformUnifiedRestoreTask.java
+index 069e3b6c824..4b467e5a039 100644
+--- a/services/backup/java/com/android/server/backup/restore/PerformUnifiedRestoreTask.java
++++ b/services/backup/java/com/android/server/backup/restore/PerformUnifiedRestoreTask.java
+@@ -23,6 +23,9 @@ import static com.android.server.backup.BackupManagerService.OP_TYPE_RESTORE_WAI
+ import static com.android.server.backup.BackupManagerService.PACKAGE_MANAGER_SENTINEL;
+ import static com.android.server.backup.BackupManagerService.SETTINGS_PACKAGE;
+ import static com.android.server.backup.BackupManagerService.TAG;
++import static com.android.server.backup.BackupManagerService
++        .TIMEOUT_RESTORE_FINISHED_INTERVAL;
++import static com.android.server.backup.BackupManagerService.TIMEOUT_RESTORE_INTERVAL;
+ import static com.android.server.backup.internal.BackupHandler.MSG_BACKUP_RESTORE_STEP;
+ import static com.android.server.backup.internal.BackupHandler.MSG_RESTORE_OPERATION_TIMEOUT;
+ import static com.android.server.backup.internal.BackupHandler.MSG_RESTORE_SESSION_TIMEOUT;
+@@ -56,7 +59,6 @@ import com.android.internal.backup.IBackupTransport;
+ import com.android.server.AppWidgetBackupBridge;
+ import com.android.server.EventLogTags;
+ import com.android.server.LocalServices;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupRestoreTask;
+ import com.android.server.backup.BackupUtils;
+ import com.android.server.backup.PackageManagerBackupAgent;
+@@ -158,7 +160,6 @@ public class PerformUnifiedRestoreTask implements BackupRestoreTask {
+     ParcelFileDescriptor mNewState;
+ 
+     private final int mEphemeralOpToken;
+-    private final BackupAgentTimeoutParameters mAgentTimeoutParameters;
+ 
+     // This task can assume that the wakelock is properly held for it and doesn't have to worry
+     // about releasing it.
+@@ -189,7 +190,6 @@ public class PerformUnifiedRestoreTask implements BackupRestoreTask {
+         mFinished = false;
+         mDidLaunch = false;
+         mListener = listener;
+-        mAgentTimeoutParameters = backupManagerService.getAgentTimeoutParameters();
+ 
+         if (targetPackage != null) {
+             // Single package restore
+@@ -760,9 +760,8 @@ public class PerformUnifiedRestoreTask implements BackupRestoreTask {
+             // Kick off the restore, checking for hung agents.  The timeout or
+             // the operationComplete() callback will schedule the next step,
+             // so we do not do that here.
+-            long restoreAgentTimeoutMillis = mAgentTimeoutParameters.getRestoreAgentTimeoutMillis();
+             backupManagerService.prepareOperationTimeout(
+-                    mEphemeralOpToken, restoreAgentTimeoutMillis, this, OP_TYPE_RESTORE_WAIT);
++                    mEphemeralOpToken, TIMEOUT_RESTORE_INTERVAL, this, OP_TYPE_RESTORE_WAIT);
+             mAgent.doRestore(mBackupData, appVersionCode, mNewState,
+                     mEphemeralOpToken, backupManagerService.getBackupManagerBinder());
+         } catch (Exception e) {
+@@ -814,11 +813,9 @@ public class PerformUnifiedRestoreTask implements BackupRestoreTask {
+             Slog.d(TAG, "restoreFinished packageName=" + mCurrentPackage.packageName);
+         }
+         try {
+-            long restoreAgentFinishedTimeoutMillis =
+-                    mAgentTimeoutParameters.getRestoreAgentFinishedTimeoutMillis();
+             backupManagerService
+                     .prepareOperationTimeout(mEphemeralOpToken,
+-                            restoreAgentFinishedTimeoutMillis, this,
++                            TIMEOUT_RESTORE_FINISHED_INTERVAL, this,
+                             OP_TYPE_RESTORE_WAIT);
+             mAgent.doRestoreFinished(mEphemeralOpToken,
+                     backupManagerService.getBackupManagerBinder());
+@@ -1112,10 +1109,9 @@ public class PerformUnifiedRestoreTask implements BackupRestoreTask {
+         } else {
+             // We were invoked via an active restore session, not by the Package
+             // Manager, so start up the session timeout again.
+-            long restoreAgentTimeoutMillis = mAgentTimeoutParameters.getRestoreAgentTimeoutMillis();
+             backupManagerService.getBackupHandler().sendEmptyMessageDelayed(
+                     MSG_RESTORE_SESSION_TIMEOUT,
+-                    restoreAgentTimeoutMillis);
++                    TIMEOUT_RESTORE_INTERVAL);
+         }
+ 
+         // Kick off any work that may be needed regarding app widget restores
+diff --git a/services/robotests/src/com/android/server/backup/PerformBackupTaskTest.java b/services/robotests/src/com/android/server/backup/PerformBackupTaskTest.java
+index d0398ad539a..f603a09baa3 100644
+--- a/services/robotests/src/com/android/server/backup/PerformBackupTaskTest.java
++++ b/services/robotests/src/com/android/server/backup/PerformBackupTaskTest.java
+@@ -148,22 +148,16 @@ public class PerformBackupTaskTest {
+         Looper backupLooper = startBackupThreadAndGetLooper();
+         mShadowBackupLooper = shadowOf(backupLooper);
+         mBackupHandler = new BackupHandler(mBackupManagerService, backupLooper);
+-        Handler mainHandler = new Handler(Looper.getMainLooper());
+ 
+         mBackupManager = spy(FakeIBackupManager.class);
+ 
+-        BackupAgentTimeoutParameters agentTimeoutParameters =
+-                new BackupAgentTimeoutParameters(mainHandler, application.getContentResolver());
+-        agentTimeoutParameters.start();
+-
+         setUpBackupManagerServiceBasics(
+                 mBackupManagerService,
+                 application,
+                 mTransportManager,
+                 packageManager,
+                 mBackupHandler,
+-                mWakeLock,
+-                agentTimeoutParameters);
++                mWakeLock);
+         when(mBackupManagerService.getBaseStateDir()).thenReturn(mBaseStateDir);
+         when(mBackupManagerService.getDataDir()).thenReturn(dataDir);
+         when(mBackupManagerService.getBackupManagerBinder()).thenReturn(mBackupManager);
+diff --git a/services/robotests/src/com/android/server/backup/restore/ActiveRestoreSessionTest.java b/services/robotests/src/com/android/server/backup/restore/ActiveRestoreSessionTest.java
+index 869c50b55fe..03792b1d40b 100644
+--- a/services/robotests/src/com/android/server/backup/restore/ActiveRestoreSessionTest.java
++++ b/services/robotests/src/com/android/server/backup/restore/ActiveRestoreSessionTest.java
+@@ -41,14 +41,12 @@ import android.app.backup.IRestoreSession;
+ import android.app.backup.RestoreSet;
+ import android.content.pm.ApplicationInfo;
+ import android.content.pm.PackageInfo;
+-import android.os.Handler;
+ import android.os.Looper;
+ import android.os.PowerManager;
+ import android.os.RemoteException;
+ import android.platform.test.annotations.Presubmit;
+ 
+ import com.android.server.EventLogTags;
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.TransportManager;
+ import com.android.server.backup.internal.BackupHandler;
+@@ -117,15 +115,6 @@ public class ActiveRestoreSessionTest {
+ 
+         Looper backupLooper = startBackupThreadAndGetLooper();
+         mShadowBackupLooper = shadowOf(backupLooper);
+-
+-        Handler mainHandler = new Handler(Looper.getMainLooper());
+-        BackupAgentTimeoutParameters agentTimeoutParameters =
+-                new BackupAgentTimeoutParameters(mainHandler, application.getContentResolver());
+-        agentTimeoutParameters.start();
+-
+-        // We need to mock BMS timeout parameters before initializing the BackupHandler since
+-        // the constructor of BackupHandler relies on the timeout parameters.
+-        when(mBackupManagerService.getAgentTimeoutParameters()).thenReturn(agentTimeoutParameters);
+         BackupHandler backupHandler = new BackupHandler(mBackupManagerService, backupLooper);
+ 
+         mWakeLock = createBackupWakeLock(application);
+@@ -136,8 +125,7 @@ public class ActiveRestoreSessionTest {
+                 mTransportManager,
+                 application.getPackageManager(),
+                 backupHandler,
+-                mWakeLock,
+-                agentTimeoutParameters);
++                mWakeLock);
+         when(mBackupManagerService.getPendingRestores()).thenReturn(new ArrayDeque<>());
+     }
+ 
+diff --git a/services/robotests/src/com/android/server/backup/testing/BackupManagerServiceTestUtils.java b/services/robotests/src/com/android/server/backup/testing/BackupManagerServiceTestUtils.java
+index 5a886e33622..c210fdea6e8 100644
+--- a/services/robotests/src/com/android/server/backup/testing/BackupManagerServiceTestUtils.java
++++ b/services/robotests/src/com/android/server/backup/testing/BackupManagerServiceTestUtils.java
+@@ -28,7 +28,6 @@ import android.os.Looper;
+ import android.os.PowerManager;
+ import android.util.SparseArray;
+ 
+-import com.android.server.backup.BackupAgentTimeoutParameters;
+ import com.android.server.backup.BackupManagerService;
+ import com.android.server.backup.TransportManager;
+ import com.android.server.backup.internal.BackupHandler;
+@@ -44,8 +43,7 @@ public class BackupManagerServiceTestUtils {
+             TransportManager transportManager,
+             PackageManager packageManager,
+             BackupHandler backupHandler,
+-            PowerManager.WakeLock wakeLock,
+-            BackupAgentTimeoutParameters agentTimeoutParameters) {
++            PowerManager.WakeLock wakeLock) {
+         when(backupManagerService.getContext()).thenReturn(context);
+         when(backupManagerService.getTransportManager()).thenReturn(transportManager);
+         when(backupManagerService.getPackageManager()).thenReturn(packageManager);
+@@ -55,7 +53,6 @@ public class BackupManagerServiceTestUtils {
+         when(backupManagerService.getCurrentOperations()).thenReturn(new SparseArray<>());
+         when(backupManagerService.getActivityManager()).thenReturn(mock(IActivityManager.class));
+         when(backupManagerService.getWakelock()).thenReturn(wakeLock);
+-        when(backupManagerService.getAgentTimeoutParameters()).thenReturn(agentTimeoutParameters);
+     }
+ 
+     public static PowerManager.WakeLock createBackupWakeLock(Application application) {
+-- 
+2.17.1
+

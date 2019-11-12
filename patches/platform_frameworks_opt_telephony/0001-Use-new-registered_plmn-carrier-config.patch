@@ -1,0 +1,55 @@
+From 8d07a0df8b7834a7a6ac13ac694bf659149ab830 Mon Sep 17 00:00:00 2001
+From: Amit Mahajan <amitmahajan@google.com>
+Date: Tue, 5 Jun 2018 16:24:38 -0700
+Subject: [PATCH 01/39] Use new registered_plmn carrier config.
+
+This new config is a temporary way to override registered PLMN  name
+for CDMA in home network.
+
+Test: manual
+Bug: 80145031
+Change-Id: I9869437df7230b48abd9a7f690bc50bee311093a
+---
+ .../telephony/ServiceStateTracker.java        | 24 +++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/src/java/com/android/internal/telephony/ServiceStateTracker.java b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+index 6402d9cb6..03080b350 100644
+--- a/src/java/com/android/internal/telephony/ServiceStateTracker.java
++++ b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+@@ -2164,8 +2164,32 @@ public class ServiceStateTracker extends Handler {
+         mNewSS.setCdmaEriIconIndex(EriInfo.ROAMING_INDICATOR_OFF);
+     }
+ 
++    private void updateOperatorNameFromCarrierConfig() {
++        // Brand override gets a priority over carrier config. If brand override is not available,
++        // override the operator name in home network. Also do this only for CDMA. This is temporary
++        // and should be fixed in a proper way in a later release.
++        if (!mPhone.isPhoneTypeGsm() && !mSS.getRoaming()) {
++            boolean hasBrandOverride = mUiccController.getUiccCard(getPhoneId()) != null
++                    && mUiccController.getUiccCard(getPhoneId()).getOperatorBrandOverride() != null;
++            if (!hasBrandOverride) {
++                PersistableBundle config = getCarrierConfig();
++                if (config.getBoolean(
++                        CarrierConfigManager.KEY_CDMA_HOME_REGISTERED_PLMN_NAME_OVERRIDE_BOOL)) {
++                    String operator = config.getString(
++                            CarrierConfigManager.KEY_CDMA_HOME_REGISTERED_PLMN_NAME_STRING);
++                    log("updateOperatorNameFromCarrierConfig: changing from "
++                            + mSS.getOperatorAlpha() + " to " + operator);
++                    // override long and short operator name, keeping numeric the same
++                    mSS.setOperatorName(operator, operator, mSS.getOperatorNumeric());
++                }
++            }
++        }
++    }
++
+     protected void updateSpnDisplay() {
+         updateOperatorNameFromEri();
++        // carrier config gets a priority over ERI
++        updateOperatorNameFromCarrierConfig();
+ 
+         String wfcVoiceSpnFormat = null;
+         String wfcDataSpnFormat = null;
+-- 
+2.17.1
+

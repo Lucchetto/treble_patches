@@ -1,0 +1,59 @@
+From 2dafb1bf01f8ccb9fd43f0cd575cf67d8b9c8d63 Mon Sep 17 00:00:00 2001
+From: Mike Digman <digman@google.com>
+Date: Mon, 11 Jun 2018 11:41:33 -0700
+Subject: [PATCH 202/306] Make rotate nav+qs icon consistent, understandable
+
+Now using the same iconography (but different angle) for nav
+and qs. Note nav viewport, size and pivot (for motion) change
+is intentional to match other navbar icon sizing.
+
+Test: manual
+Change-Id: I1abb33130cc724b6e63e008cf7301ebce383c8d1
+Fixes: 110052596
+(cherry picked from commit 2657757c432a95100ad6a2aed5a36c7dcd296aae)
+---
+ packages/SystemUI/res/drawable/ic_qs_auto_rotate.xml |  2 +-
+ .../res/drawable/ic_sysbar_rotate_button.xml         | 12 ++++++------
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/packages/SystemUI/res/drawable/ic_qs_auto_rotate.xml b/packages/SystemUI/res/drawable/ic_qs_auto_rotate.xml
+index 9c24c2ce9f8..47e1059fab4 100644
+--- a/packages/SystemUI/res/drawable/ic_qs_auto_rotate.xml
++++ b/packages/SystemUI/res/drawable/ic_qs_auto_rotate.xml
+@@ -22,5 +22,5 @@
+     android:viewportHeight="24.0">
+     <path
+         android:fillColor="#FFFFFFFF"
+-        android:pathData="M12.72,23H11C5.49,23 1,18.51 1,13h2c0,3.78 2.63,6.95 6.15,7.79L8.13,19L9.87,18L12.72,23zM13,1h-1.72l2.85,5L15.87,5l-1.02,-1.79C18.37,4.05 21,7.22 21,11h2C23,5.49 18.51,1 13,1zM10.23,6L18,13.76L13.77,18L6,10.24L10.23,6C10.23,6 10.23,6 10.23,6M10.23,4C9.72,4 9.21,4.2 8.82,4.59L4.59,8.82c-0.78,0.78 -0.78,2.04 0,2.82l7.77,7.77c0.39,0.39 0.9,0.59 1.41,0.59c0.51,0 1.02,-0.2 1.41,-0.59l4.24,-4.24c0.78,-0.78 0.78,-2.04 0,-2.82l-7.77,-7.77C11.26,4.2 10.75,4 10.23,4L10.23,4z"/>
++        android:pathData="M7.4,10.94H2.45V5.99l2,0.01v1.53l4.61,-4.61c0.64,-0.64 1.67,-0.66 2.29,-0.04l8.18,8.18h-2.83l-6.48,-6.48L5.86,8.95H7.4V10.94zM16.6,13.06l0.01,2h1.53l-4.36,4.36l-6.48,-6.48H4.46l8.19,8.19c0.62,0.62 1.65,0.6 2.29,-0.04l4.61,-4.61l0.01,0.01v1.53h1.99v-4.95H16.6z"/>
+ </vector>
+diff --git a/packages/SystemUI/res/drawable/ic_sysbar_rotate_button.xml b/packages/SystemUI/res/drawable/ic_sysbar_rotate_button.xml
+index 2cd78830327..3304c19b1ed 100644
+--- a/packages/SystemUI/res/drawable/ic_sysbar_rotate_button.xml
++++ b/packages/SystemUI/res/drawable/ic_sysbar_rotate_button.xml
+@@ -17,16 +17,16 @@
+ <animated-vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt">
+     <aapt:attr name="android:drawable">
+         <vector android:name="root"
+-                android:width="21dp"
+-                android:height="21dp"
+-                android:viewportWidth="24.0"
+-                android:viewportHeight="24.0">
++                android:width="28dp"
++                android:height="28dp"
++                android:viewportWidth="28.0"
++                android:viewportHeight="28.0">
+             <!-- Use scaleX to flip icon so arrows always point in the direction of motion -->
+-            <group android:name="icon" android:pivotX="12" android:pivotY="12"
++            <group android:name="icon" android:pivotX="14" android:pivotY="14"
+                    android:scaleX="?attr/rotateButtonScaleX">
+                 <!-- Tint color to be set directly -->
+                 <path android:fillColor="#FFFFFFFF"
+-                      android:pathData="M19,12c0,1.72 -0.63,3.3 -1.66,4.52l-1.44,-1.44C16.58,14.23 17,13.17 17,12c0,-2.76 -2.24,-5 -5,-5c-0.06,0 -0.11,0.01 -0.17,0.01l1.08,1.08L11.5,9.5L8,6l3.5,-3.5l1.41,1.42l-1.09,1.09C11.88,5.01 11.94,5 12,5C15.87,5 19,8.13 19,12zM12.5,14.51l-1.41,1.41l1.06,1.06C12.1,16.99 12.05,17 12,17c-2.76,0 -5,-2.24 -5,-5c0,-1.17 0.42,-2.23 1.09,-3.08L6.66,7.48C5.62,8.7 5,10.28 5,12c0,3.87 3.13,7 7,7c0.06,0 0.13,-0.01 0.19,-0.01v0l-1.1,1.1l1.41,1.41L16,18L12.5,14.51z"/>
++                      android:pathData="M12.02,10.83L9.25,8.06l2.77,-2.77l1.12,1.12l-0.85,0.86h5.16c0.72,0 1.31,0.56 1.31,1.26v9.16l-1.58,-1.58V8.85h-4.89l0.86,0.86L12.02,10.83zM15.98,17.17l-1.12,1.12l0.85,0.86h-4.88v-7.26L9.25,10.3v9.17c0,0.7 0.59,1.26 1.31,1.26h5.16v0.01l-0.85,0.85l1.12,1.12l2.77,-2.77L15.98,17.17z"/>
+             </group>
+         </vector>
+     </aapt:attr>
+-- 
+2.17.1
+

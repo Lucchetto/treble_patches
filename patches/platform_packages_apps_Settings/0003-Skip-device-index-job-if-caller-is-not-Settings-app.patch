@@ -1,0 +1,229 @@
+From 9ecf3e0c1110e6900f63a600e483f8925e366b4c Mon Sep 17 00:00:00 2001
+From: Fan Zhang <zhfan@google.com>
+Date: Wed, 30 May 2018 09:50:52 -0700
+Subject: [PATCH 03/71] Skip device index job if caller is not Settings app.
+
+Change-Id: I96184f111e83477b46ddf321ec74917bab330048
+Fixes: 80437512
+Fixes: 109713077
+Test: robotests
+(cherry picked from commit 74ba1a51d74a4fb7fc2ccd62fd38087974c20020)
+---
+ .../search/DeviceIndexFeatureProvider.java    | 30 +++++++++--
+ .../DeviceIndexFeatureProviderTest.java       | 50 +++++++++++++------
+ 2 files changed, 60 insertions(+), 20 deletions(-)
+
+diff --git a/src/com/android/settings/search/DeviceIndexFeatureProvider.java b/src/com/android/settings/search/DeviceIndexFeatureProvider.java
+index c4d3abfcaa..e6b3e937b8 100644
+--- a/src/com/android/settings/search/DeviceIndexFeatureProvider.java
++++ b/src/com/android/settings/search/DeviceIndexFeatureProvider.java
+@@ -21,7 +21,10 @@ import android.app.job.JobInfo;
+ import android.app.job.JobScheduler;
+ import android.content.ComponentName;
+ import android.content.Context;
++import android.content.pm.PackageManager;
++import android.content.pm.ServiceInfo;
+ import android.net.Uri;
++import android.os.Binder;
+ import android.os.Build;
+ import android.provider.Settings;
+ import android.text.TextUtils;
+@@ -36,7 +39,6 @@ import java.util.Locale;
+ 
+ public interface DeviceIndexFeatureProvider {
+ 
+-
+     String TAG = "DeviceIndex";
+ 
+     String INDEX_VERSION = "settings:index_version";
+@@ -57,7 +59,7 @@ public interface DeviceIndexFeatureProvider {
+ 
+     default void updateIndex(Context context, boolean force) {
+         if (!isIndexingEnabled()) {
+-            Log.w(TAG, "Skipping: device index is not enabled");
++            Log.i(TAG, "Skipping: device index is not enabled");
+             return;
+         }
+ 
+@@ -66,7 +68,29 @@ public interface DeviceIndexFeatureProvider {
+             return;
+         }
+ 
++        final ComponentName jobComponent = new ComponentName(context.getPackageName(),
++                DeviceIndexUpdateJobService.class.getName());
++
++        try {
++            final int callerUid = Binder.getCallingUid();
++            final ServiceInfo si = context.getPackageManager().getServiceInfo(jobComponent,
++                    PackageManager.MATCH_DIRECT_BOOT_AWARE
++                            | PackageManager.MATCH_DIRECT_BOOT_UNAWARE);
++            if (si == null) {
++                Log.w(TAG, "Skipping: No such service " + jobComponent);
++                return;
++            }
++            if (si.applicationInfo.uid != callerUid) {
++                Log.w(TAG, "Skipping: Uid cannot schedule DeviceIndexUpdate: " + callerUid);
++                return;
++            }
++        } catch (PackageManager.NameNotFoundException e) {
++            Log.w(TAG, "Skipping: error finding DeviceIndexUpdateJobService from packageManager");
++            return;
++        }
++
+         if (!force && skipIndex(context)) {
++            Log.i(TAG, "Skipping: already indexed.");
+             // No need to update.
+             return;
+         }
+@@ -74,8 +98,6 @@ public interface DeviceIndexFeatureProvider {
+         // Prevent scheduling multiple jobs
+         setIndexState(context);
+ 
+-        final ComponentName jobComponent = new ComponentName(context.getPackageName(),
+-                DeviceIndexUpdateJobService.class.getName());
+         final int jobId = context.getResources().getInteger(R.integer.device_index_update);
+         // Schedule a job so that we know it'll be able to complete, but try to run as
+         // soon as possible.
+diff --git a/tests/robotests/src/com/android/settings/search/DeviceIndexFeatureProviderTest.java b/tests/robotests/src/com/android/settings/search/DeviceIndexFeatureProviderTest.java
+index ebba3f310c..b49ef1d068 100644
+--- a/tests/robotests/src/com/android/settings/search/DeviceIndexFeatureProviderTest.java
++++ b/tests/robotests/src/com/android/settings/search/DeviceIndexFeatureProviderTest.java
+@@ -15,7 +15,6 @@
+ package com.android.settings.search;
+ 
+ import static org.mockito.ArgumentMatchers.any;
+-import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.never;
+ import static org.mockito.Mockito.spy;
+ import static org.mockito.Mockito.verify;
+@@ -23,27 +22,42 @@ import static org.mockito.Mockito.when;
+ 
+ import android.app.Activity;
+ import android.app.job.JobScheduler;
++import android.os.Binder;
+ import android.provider.Settings;
+ 
+ import com.android.settings.testutils.FakeFeatureFactory;
+ import com.android.settings.testutils.SettingsRobolectricTestRunner;
+ 
++import org.junit.After;
+ import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
++import org.mockito.Mock;
++import org.mockito.MockitoAnnotations;
+ import org.robolectric.Robolectric;
++import org.robolectric.shadows.ShadowBinder;
+ 
+ @RunWith(SettingsRobolectricTestRunner.class)
+ public class DeviceIndexFeatureProviderTest {
+ 
++    @Mock
++    private JobScheduler mJobScheduler;
+     private DeviceIndexFeatureProvider mProvider;
+     private Activity mActivity;
+ 
+     @Before
+     public void setUp() {
++        MockitoAnnotations.initMocks(this);
++        ShadowBinder.reset();
+         FakeFeatureFactory.setupForTest();
+         mActivity = spy(Robolectric.buildActivity(Activity.class).create().visible().get());
+         mProvider = spy(new DeviceIndexFeatureProviderImpl());
++        when(mActivity.getSystemService(JobScheduler.class)).thenReturn(mJobScheduler);
++    }
++
++    @After
++    public void tearDown() {
++        ShadowBinder.reset();
+     }
+ 
+     @Test
+@@ -51,7 +65,7 @@ public class DeviceIndexFeatureProviderTest {
+         when(mProvider.isIndexingEnabled()).thenReturn(false);
+ 
+         mProvider.updateIndex(mActivity, false);
+-        verify(mProvider, never()).index(any(), any(), any(), any(), any());
++        verify(mJobScheduler, never()).schedule(any());
+     }
+ 
+     @Test
+@@ -62,19 +76,17 @@ public class DeviceIndexFeatureProviderTest {
+ 
+         mProvider.updateIndex(mActivity, false);
+ 
+-        verify(mProvider, never()).index(any(), any(), any(), any(), any());
++        verify(mJobScheduler, never()).schedule(any());
+     }
+ 
+     @Test
+     public void updateIndex_enabled_provisioned_shouldIndex() {
+         Settings.Global.putInt(mActivity.getContentResolver(),
+                 Settings.Global.DEVICE_PROVISIONED, 1);
+-        JobScheduler jobScheduler = mock(JobScheduler.class);
+         when(mProvider.isIndexingEnabled()).thenReturn(true);
+-        when(mActivity.getSystemService(JobScheduler.class)).thenReturn(jobScheduler);
+ 
+         mProvider.updateIndex(mActivity, false);
+-        verify(jobScheduler).schedule(any());
++        verify(mJobScheduler).schedule(any());
+     }
+ 
+     @Test
+@@ -87,12 +99,22 @@ public class DeviceIndexFeatureProviderTest {
+         Settings.Global.putString(mActivity.getContentResolver(),
+                 DeviceIndexFeatureProvider.LANGUAGE.toString(),
+                 DeviceIndexFeatureProvider.INDEX_LANGUAGE);
+-        JobScheduler jobScheduler = mock(JobScheduler.class);
+         when(mProvider.isIndexingEnabled()).thenReturn(true);
+-        when(mActivity.getSystemService(JobScheduler.class)).thenReturn(jobScheduler);
+ 
+         mProvider.updateIndex(mActivity, false);
+-        verify(jobScheduler).schedule(any());
++        verify(mJobScheduler).schedule(any());
++    }
++
++    @Test
++    public void updateIndex_enabled_provisioned_differentUid_shouldNotIndex() {
++        Settings.Global.putInt(mActivity.getContentResolver(),
++                Settings.Global.DEVICE_PROVISIONED, 1);
++        when(mProvider.isIndexingEnabled()).thenReturn(true);
++
++        ShadowBinder.setCallingUid(Binder.getCallingUid() + 2000);
++
++        mProvider.updateIndex(mActivity, false);
++        verify(mJobScheduler, never()).schedule(any());
+     }
+ 
+     @Test
+@@ -102,12 +124,11 @@ public class DeviceIndexFeatureProviderTest {
+         DeviceIndexFeatureProvider.setIndexState(mActivity);
+         Settings.Global.putString(mActivity.getContentResolver(),
+                 DeviceIndexFeatureProvider.INDEX_LANGUAGE, "new language");
+-        JobScheduler jobScheduler = mock(JobScheduler.class);
++
+         when(mProvider.isIndexingEnabled()).thenReturn(true);
+-        when(mActivity.getSystemService(JobScheduler.class)).thenReturn(jobScheduler);
+ 
+         mProvider.updateIndex(mActivity, false);
+-        verify(jobScheduler).schedule(any());
++        verify(mJobScheduler).schedule(any());
+     }
+ 
+     @Test
+@@ -120,11 +141,8 @@ public class DeviceIndexFeatureProviderTest {
+         // Same build and same language
+         DeviceIndexFeatureProvider.setIndexState(mActivity);
+ 
+-        final JobScheduler jobScheduler = mock(JobScheduler.class);
+-        when(mActivity.getSystemService(JobScheduler.class)).thenReturn(jobScheduler);
+-
+         mProvider.updateIndex(mActivity, false);
+ 
+-        verify(jobScheduler, never()).schedule(any());
++        verify(mJobScheduler, never()).schedule(any());
+     }
+ }
+-- 
+2.17.1
+

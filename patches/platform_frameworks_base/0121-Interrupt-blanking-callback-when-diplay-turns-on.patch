@@ -1,0 +1,110 @@
+From 644e64acb0b9c3f819d1f64137c2860ecea93aa8 Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Mon, 5 Feb 2018 16:14:45 -0800
+Subject: [PATCH 121/306] Interrupt blanking callback when diplay turns on
+
+Not interrupting the callback makes transitions
+take longer and may also cause race conditions.
+
+Change-Id: Ieb585aad091c7c50ce7a67bd585246522f950012
+Fixes: 72240321
+Fixes: 71913808
+Test: press power button when device starts to sleep
+Test: wake up with double tap, fp
+Test: launch camera from lock screen
+Test: launch camera from AOD
+(cherry picked from commit 53cf12aad5ce6557a08e459d106eff60edd1b72d)
+---
+ .../statusbar/phone/ScrimController.java      | 30 +++++++++++++++++--
+ .../systemui/statusbar/phone/StatusBar.java   |  1 +
+ 2 files changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+index 2b16e740d0b..14387631f64 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+@@ -166,7 +166,10 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+     private boolean mScreenBlankingCallbackCalled;
+     private Callback mCallback;
+     private boolean mWallpaperSupportsAmbientMode;
++
++    // Scrim blanking callbacks
+     private Choreographer.FrameCallback mPendingFrameCallback;
++    private Runnable mBlankingTransitionRunnable;
+ 
+     private final WakeLock mWakeLock;
+     private boolean mWakeLockHeld;
+@@ -249,10 +252,15 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+         mCurrentInFrontAlpha = state.getFrontAlpha();
+         mCurrentBehindAlpha = state.getBehindAlpha();
+ 
++        // Cancel blanking transitions that were pending before we requested a new state
+         if (mPendingFrameCallback != null) {
+             Choreographer.getInstance().removeFrameCallback(mPendingFrameCallback);
+             mPendingFrameCallback = null;
+         }
++        if (getHandler().hasCallbacks(mBlankingTransitionRunnable)) {
++            getHandler().removeCallbacks(mBlankingTransitionRunnable);
++            mBlankingTransitionRunnable = null;
++        }
+ 
+         // Showing/hiding the keyguard means that scrim colors have to be switched, not necessary
+         // to do the same when you're just showing the brightness mirror.
+@@ -767,7 +775,8 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+                 mScreenBlankingCallbackCalled = true;
+             }
+ 
+-            Runnable blankingCallback = () -> {
++            mBlankingTransitionRunnable = () -> {
++                mBlankingTransitionRunnable = null;
+                 mPendingFrameCallback = null;
+                 mBlankScreen = false;
+                 // Try again.
+@@ -776,7 +785,10 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+ 
+             // Setting power states can happen after we push out the frame. Make sure we
+             // stay fully opaque until the power state request reaches the lower levels.
+-            getHandler().postDelayed(blankingCallback, 100);
++            if (DEBUG) {
++                Log.d(TAG, "Waiting for the screen to turn on...");
++            }
++            getHandler().postDelayed(mBlankingTransitionRunnable, 500);
+         };
+         doOnTheNextFrame(mPendingFrameCallback);
+     }
+@@ -888,6 +900,20 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+         }
+     }
+ 
++    /**
++     * Interrupts blanking transitions once the display notifies that it's already on.
++     */
++    public void onScreenTurnedOn() {
++        final Handler handler = getHandler();
++        if (handler.hasCallbacks(mBlankingTransitionRunnable)) {
++            if (DEBUG) {
++                Log.d(TAG, "Shorter blanking because screen turned on. All good.");
++            }
++            handler.removeCallbacks(mBlankingTransitionRunnable);
++            mBlankingTransitionRunnable.run();
++        }
++    }
++
+     public interface Callback {
+         default void onStart() {
+         }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 3777a6c9409..9d0159a8925 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -4394,6 +4394,7 @@ public class StatusBar extends SystemUI implements DemoMode,
+ 
+         @Override
+         public void onScreenTurnedOn() {
++            mScrimController.onScreenTurnedOn();
+         }
+ 
+         @Override
+-- 
+2.17.1
+

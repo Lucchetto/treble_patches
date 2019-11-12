@@ -1,0 +1,124 @@
+From b72be9bd092fedbb291b7fd36f898368047c9d8a Mon Sep 17 00:00:00 2001
+From: Jack Yu <jackyu@google.com>
+Date: Tue, 21 Aug 2018 17:07:49 -0700
+Subject: [PATCH 13/39] DO NOT MERGE Added a new carrier config for data
+ connection failed radio restart
+
+Added a new carrier config that can trigger modem restart when
+receiving specific setup data fail cause code.
+
+Test: Telephony sanity tests
+Bug: 111774203
+Change-Id: I9a0f25f39b489563e90c1d64963fcea07c854682
+---
+ .../dataconnection/DataConnection.java        |  4 +--
+ .../dataconnection/DcController.java          |  2 +-
+ .../telephony/dataconnection/DcFailCause.java | 32 +++++++++++--------
+ .../telephony/dataconnection/DcTracker.java   |  4 +--
+ 4 files changed, 23 insertions(+), 19 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DataConnection.java b/src/java/com/android/internal/telephony/dataconnection/DataConnection.java
+index 0696aa931..dafab121c 100644
+--- a/src/java/com/android/internal/telephony/dataconnection/DataConnection.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DataConnection.java
+@@ -1639,8 +1639,8 @@ public class DataConnection extends StateMachine {
+                             String str = "DcActivatingState: ERROR_DATA_SERVICE_SPECIFIC_ERROR "
+                                     + " delay=" + delay
+                                     + " result=" + result
+-                                    + " result.isRestartRadioFail=" +
+-                                    result.mFailCause.isRestartRadioFail(mPhone.getContext(),
++                                    + " result.isRadioRestartFailure="
++                                    + result.mFailCause.isRadioRestartFailure(mPhone.getContext(),
+                                             mPhone.getSubId())
+                                     + " isPermanentFailure=" +
+                                     mDct.isPermanentFailure(result.mFailCause);
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcController.java b/src/java/com/android/internal/telephony/dataconnection/DcController.java
+index 8d05be7d1..2092501d1 100644
+--- a/src/java/com/android/internal/telephony/dataconnection/DcController.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcController.java
+@@ -329,7 +329,7 @@ public class DcController extends StateMachine {
+                             mDct.isCleanupRequired.set(false);
+                         } else {
+                             DcFailCause failCause = DcFailCause.fromInt(newState.getStatus());
+-                            if (failCause.isRestartRadioFail(mPhone.getContext(),
++                            if (failCause.isRadioRestartFailure(mPhone.getContext(),
+                                         mPhone.getSubId())) {
+                                 if (DBG) {
+                                     log("onDataStateChanged: X restart radio, failCause="
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcFailCause.java b/src/java/com/android/internal/telephony/dataconnection/DcFailCause.java
+index b3762e533..2b5adbe50 100644
+--- a/src/java/com/android/internal/telephony/dataconnection/DcFailCause.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcFailCause.java
+@@ -16,10 +16,10 @@
+ package com.android.internal.telephony.dataconnection;
+ 
+ import android.content.Context;
+-import android.content.res.Resources;
+ import android.os.PersistableBundle;
+ import android.telephony.CarrierConfigManager;
+ 
++import java.util.Arrays;
+ import java.util.HashMap;
+ import java.util.HashSet;
+ 
+@@ -146,25 +146,29 @@ public enum DcFailCause {
+     }
+ 
+     /**
+-     * Returns whether or not the radio has failed and also needs to be restarted.
+-     * By default, we do not restart radio on REGULAR_DEACTIVATION.
++     * Returns whether or not the fail cause is a failure that requires a modem restart
+      *
+      * @param context device context
+-     * @param subId subscription id
+-     * @return true if the radio has failed and the carrier requres restart, otherwise false
++     * @param subId subscription index
++     * @return true if the fail cause code needs platform to trigger a modem restart.
+      */
+-    public boolean isRestartRadioFail(Context context, int subId) {
+-        if (this == REGULAR_DEACTIVATION) {
+-            CarrierConfigManager configManager = (CarrierConfigManager)
+-                    context.getSystemService(Context.CARRIER_CONFIG_SERVICE);
+-            if (configManager != null) {
+-                PersistableBundle b = configManager.getConfigForSubId(subId);
+-                if (b != null) {
+-                    return b.getBoolean(CarrierConfigManager.
+-                            KEY_RESTART_RADIO_ON_PDP_FAIL_REGULAR_DEACTIVATION_BOOL);
++    public boolean isRadioRestartFailure(Context context, int subId) {
++        CarrierConfigManager configManager = (CarrierConfigManager)
++                context.getSystemService(Context.CARRIER_CONFIG_SERVICE);
++        if (configManager != null) {
++            PersistableBundle b = configManager.getConfigForSubId(subId);
++            if (b != null) {
++                int[] causeCodes = b.getIntArray(CarrierConfigManager
++                        .KEY_RADIO_RESTART_FAILURE_CAUSES_INT_ARRAY);
++                if (causeCodes != null) {
++                    return Arrays.stream(causeCodes).anyMatch(i -> i == getErrorCode());
+                 }
++
++                return b.getBoolean(CarrierConfigManager
++                        .KEY_RESTART_RADIO_ON_PDP_FAIL_REGULAR_DEACTIVATION_BOOL);
+             }
+         }
++
+         return false;
+     }
+ 
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+index 1f4ada6c4..fc9dd8609 100644
+--- a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+@@ -3051,8 +3051,8 @@ public class DcTracker extends Handler {
+             intent.putExtra(TelephonyIntents.EXTRA_APN_TYPE_KEY, apnContext.getApnType());
+             mPhone.getCarrierSignalAgent().notifyCarrierSignalReceivers(intent);
+ 
+-            if (cause.isRestartRadioFail(mPhone.getContext(), mPhone.getSubId()) ||
+-                    apnContext.restartOnError(cause.getErrorCode())) {
++            if (cause.isRadioRestartFailure(mPhone.getContext(), mPhone.getSubId())
++                    || apnContext.restartOnError(cause.getErrorCode())) {
+                 if (DBG) log("Modem restarted.");
+                 sendRestartRadio();
+             }
+-- 
+2.17.1
+

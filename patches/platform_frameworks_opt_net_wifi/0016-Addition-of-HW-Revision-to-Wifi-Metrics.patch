@@ -1,0 +1,48 @@
+From 7cd3e51bbe6513217933b436e9ece2600ba0805f Mon Sep 17 00:00:00 2001
+From: Siddharth Ray <siddharthr@google.com>
+Date: Fri, 10 Aug 2018 17:37:23 -0700
+Subject: [PATCH 16/32] Addition of HW Revision to Wifi Metrics
+
+Test:
+adb shell dumpsys wifi | grep "Hardware Version"
+Hardware Version: EVT2.0
+
+BUG:112541087
+Change-Id: I05146d74f9e3f0fefbce5b71f2da8cbd251c4d86
+Merged-In: I05146d74f9e3f0fefbce5b71f2da8cbd251c4d86
+---
+ service/java/com/android/server/wifi/WifiMetrics.java | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/service/java/com/android/server/wifi/WifiMetrics.java b/service/java/com/android/server/wifi/WifiMetrics.java
+index 0b746196f..15f65c980 100644
+--- a/service/java/com/android/server/wifi/WifiMetrics.java
++++ b/service/java/com/android/server/wifi/WifiMetrics.java
+@@ -28,6 +28,8 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.os.Message;
++import android.os.SystemProperties;
++
+ import android.util.Base64;
+ import android.util.Log;
+ import android.util.Pair;
+@@ -2162,6 +2164,7 @@ public class WifiMetrics {
+ 
+                 pw.println("mWifiLogProto.isMacRandomizationOn=" + mIsMacRandomizationOn);
+                 pw.println("mWifiLogProto.scoreExperimentId=" + mWifiLogProto.scoreExperimentId);
++                pw.println("Hardware Version: " + SystemProperties.get("ro.boot.revision", ""));
+             }
+         }
+     }
+@@ -2528,6 +2531,7 @@ public class WifiMetrics {
+             mWifiLogProto.wifiPowerStats = mWifiPowerMetrics.buildProto();
+             mWifiLogProto.wifiWakeStats = mWifiWakeMetrics.buildProto();
+             mWifiLogProto.isMacRandomizationOn = mIsMacRandomizationOn;
++            mWifiLogProto.hardwareRevision = SystemProperties.get("ro.boot.revision", "");
+         }
+     }
+ 
+-- 
+2.17.1
+

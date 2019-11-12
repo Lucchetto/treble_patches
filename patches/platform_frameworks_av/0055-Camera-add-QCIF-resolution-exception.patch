@@ -1,0 +1,62 @@
+From 7307cc0f6734dbad9644cf4adac3091e42bd9972 Mon Sep 17 00:00:00 2001
+From: Yin-Chia Yeh <yinchiayeh@google.com>
+Date: Wed, 23 Jan 2019 15:27:24 -0800
+Subject: [PATCH 55/80] Camera: add QCIF resolution exception
+
+Test: checkbuild
+Bug: 120158047
+Bug: 122461651
+Change-Id: Ic7ed2e3a93278fbc95e7c6edd7eb6c35a38e1f4d
+---
+ camera/ndk/include/camera/NdkCameraDevice.h       | 8 ++++++++
+ camera/ndk/include/camera/NdkCameraMetadataTags.h | 8 +++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/camera/ndk/include/camera/NdkCameraDevice.h b/camera/ndk/include/camera/NdkCameraDevice.h
+index b715b12e1..92dad1c05 100644
+--- a/camera/ndk/include/camera/NdkCameraDevice.h
++++ b/camera/ndk/include/camera/NdkCameraDevice.h
+@@ -643,6 +643,14 @@ camera_status_t ACaptureSessionOutputContainer_remove(
+  * target combinations with sizes outside of these guarantees, but this can only be tested for
+  * by attempting to create a session with such targets.</p>
+  *
++ * <p>Exception on 176x144 (QCIF) resolution:
++ * Camera devices usually have a fixed capability for downscaling from larger resolution to
++ * smaller, and the QCIF resolution sometimes cannot be fully supported due to this
++ * limitation on devices with high-resolution image sensors. Therefore, trying to configure a
++ * QCIF resolution stream together with any other stream larger than 1920x1080 resolution
++ * (either width or height) might not be supported, and capture session creation will fail if it
++ * is not.</p>
++ *
+  * @param device the camera device of interest.
+  * @param outputs the {@link ACaptureSessionOutputContainer} describes all output streams.
+  * @param callbacks the {@link ACameraCaptureSession_stateCallbacks capture session state callbacks}.
+diff --git a/camera/ndk/include/camera/NdkCameraMetadataTags.h b/camera/ndk/include/camera/NdkCameraMetadataTags.h
+index c1f5ddcb4..bee1a4621 100644
+--- a/camera/ndk/include/camera/NdkCameraMetadataTags.h
++++ b/camera/ndk/include/camera/NdkCameraMetadataTags.h
+@@ -3157,6 +3157,12 @@ typedef enum acamera_metadata_tag {
+      * IMPLEMENTATION_DEFINED | same as YUV_420_888                  | Any            |</p>
+      * <p>Refer to ACAMERA_REQUEST_AVAILABLE_CAPABILITIES for additional
+      * mandatory stream configurations on a per-capability basis.</p>
++     * <p>Exception on 176x144 (QCIF) resolution: camera devices usually have a fixed capability for
++     * downscaling from larger resolution to smaller, and the QCIF resolution sometimes is not
++     * fully supported due to this limitation on devices with high-resolution image sensors.
++     * Therefore, trying to configure a QCIF resolution stream together with any other
++     * stream larger than 1920x1080 resolution (either width or height) might not be supported,
++     * and capture session creation will fail if it is not.</p>
+      *
+      * @see ACAMERA_INFO_SUPPORTED_HARDWARE_LEVEL
+      * @see ACAMERA_REQUEST_AVAILABLE_CAPABILITIES
+@@ -5154,7 +5160,7 @@ typedef enum acamera_metadata_tag {
+      * <li><code>LEVEL_3</code> devices additionally support YUV reprocessing and RAW image capture, along
+      *   with additional output stream configurations.</li>
+      * <li><code>EXTERNAL</code> devices are similar to <code>LIMITED</code> devices with exceptions like some sensor or
+-     *   lens information not reorted or less stable framerates.</li>
++     *   lens information not reported or less stable framerates.</li>
+      * </ul>
+      * <p>See the individual level enums for full descriptions of the supported capabilities.  The
+      * ACAMERA_REQUEST_AVAILABLE_CAPABILITIES entry describes the device's capabilities at a
+-- 
+2.17.1
+

@@ -1,0 +1,442 @@
+From 7520ce096f00a4bdefb03a46b5a146527b8c4054 Mon Sep 17 00:00:00 2001
+From: Narayan Kamath <narayan@google.com>
+Date: Tue, 20 Feb 2018 17:06:21 +0000
+Subject: [PATCH 139/306] Revert "Log the apk optimization state in the
+ MetricsLogger"
+
+This reverts commit 0a8bea818c330d02161322901534992253a2f9ee.
+
+
+E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: ActivityManager
+E AndroidRuntime: java.lang.NullPointerException: Attempt to read from field 'java.lang.String com.android.server.am.ProcessRecord.requiredAbi' on a null object reference
+E AndroidRuntime:        at com.android.server.am.ActivityMetricsLogger.logAppTransition(ActivityMetricsLogger.java:504)
+E AndroidRuntime:        at com.android.server.am.ActivityMetricsLogger.access$100(ActivityMetricsLogger.java:62)
+
+Bug: 73626352
+Change-Id: Idd50e0d2cf34e5393b4ae76ef8bc48b0067532eb
+(cherry picked from commit 203a9ab7665787c94f7d0711a1ad172588070aa6)
+---
+ cmds/statsd/src/atoms.proto                   |   5 -
+ .../content/pm/dex/ArtManagerInternal.java    |  34 -----
+ .../pm/dex/PackageOptimizationInfo.java       |  47 ------
+ proto/src/metrics_constants.proto             |  10 --
+ .../server/am/ActivityMetricsLogger.java      | 137 +++++++-----------
+ .../server/pm/dex/ArtManagerService.java      |  37 +----
+ 6 files changed, 50 insertions(+), 220 deletions(-)
+ delete mode 100644 core/java/android/content/pm/dex/ArtManagerInternal.java
+ delete mode 100644 core/java/android/content/pm/dex/PackageOptimizationInfo.java
+
+diff --git a/cmds/statsd/src/atoms.proto b/cmds/statsd/src/atoms.proto
+index 5d6953c58f8..85e209be641 100644
+--- a/cmds/statsd/src/atoms.proto
++++ b/cmds/statsd/src/atoms.proto
+@@ -939,11 +939,6 @@ message AppStartChanged {
+     // Empty if not set.
+     optional string launch_token = 13;
+ 
+-    // The compiler filter used when when the package was optimized.
+-    optional string package_optimization_compilation_filter = 14;
+-
+-    // The reason why the package was optimized.
+-    optional string package_optimization_compilation_reason = 15;
+ }
+ 
+ message AppStartCancelChanged {
+diff --git a/core/java/android/content/pm/dex/ArtManagerInternal.java b/core/java/android/content/pm/dex/ArtManagerInternal.java
+deleted file mode 100644
+index 62ab9e02f85..00000000000
+--- a/core/java/android/content/pm/dex/ArtManagerInternal.java
++++ /dev/null
+@@ -1,34 +0,0 @@
+-/**
+- * Copyright 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package android.content.pm.dex;
+-
+-import android.content.pm.ApplicationInfo;
+-
+-/**
+- * Art manager local system service interface.
+- *
+- * @hide Only for use within the system server.
+- */
+-public abstract class ArtManagerInternal {
+-
+-    /**
+-     * Return optimization information about the application {@code info} when
+-     * in executes using the specified {@code abi}.
+-     */
+-    public abstract PackageOptimizationInfo getPackageOptimizationInfo(
+-            ApplicationInfo info, String abi);
+-}
+diff --git a/core/java/android/content/pm/dex/PackageOptimizationInfo.java b/core/java/android/content/pm/dex/PackageOptimizationInfo.java
+deleted file mode 100644
+index b65045794d3..00000000000
+--- a/core/java/android/content/pm/dex/PackageOptimizationInfo.java
++++ /dev/null
+@@ -1,47 +0,0 @@
+-/**
+- * Copyright 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package android.content.pm.dex;
+-
+-/**
+- * Encapsulates information about the optimizations performed on a package.
+- *
+- * @hide
+- */
+-public class PackageOptimizationInfo {
+-    private final String mCompilationFilter;
+-    private final String mCompilationReason;
+-
+-    public PackageOptimizationInfo(String compilerFilter, String compilationReason) {
+-        this.mCompilationReason = compilationReason;
+-        this.mCompilationFilter = compilerFilter;
+-    }
+-
+-    public String getCompilationReason() {
+-        return mCompilationReason;
+-    }
+-
+-    public String getCompilationFilter() {
+-        return mCompilationFilter;
+-    }
+-
+-    /**
+-     * Create a default optimization info object for the case when we have no information.
+-     */
+-    public static PackageOptimizationInfo createWithNoInfo() {
+-        return new PackageOptimizationInfo("no-info", "no-info");
+-    }
+-}
+diff --git a/proto/src/metrics_constants.proto b/proto/src/metrics_constants.proto
+index a5ff2c74049..e118c499971 100644
+--- a/proto/src/metrics_constants.proto
++++ b/proto/src/metrics_constants.proto
+@@ -5278,16 +5278,6 @@ message MetricsEvent {
+     // OS: P
+     FIELD_QS_MODE = 1311;
+ 
+-    // FIELD: The compiler filter used when when optimizing the package.
+-    //        Logged together with app transition events.
+-    // OS: P
+-    PACKAGE_OPTIMIZATION_COMPILATION_FILTER = 1312;
+-
+-    // FIELD: The reason for optimizing the package.
+-    //        Logged together with app transition events.
+-    // OS: P
+-    PACKAGE_OPTIMIZATION_COMPILATION_REASON = 1313;
+-
+     // ---- End P Constants, all P constants go above this line ----
+     // Add new aosp constants above this line.
+     // END OF AOSP CONSTANTS
+diff --git a/services/core/java/com/android/server/am/ActivityMetricsLogger.java b/services/core/java/com/android/server/am/ActivityMetricsLogger.java
+index 36c1722867d..e2ceb31ceef 100644
+--- a/services/core/java/com/android/server/am/ActivityMetricsLogger.java
++++ b/services/core/java/com/android/server/am/ActivityMetricsLogger.java
+@@ -24,8 +24,6 @@ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.APP_TR
+ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.APP_TRANSITION_WINDOWS_DRAWN_DELAY_MS;
+ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.FIELD_CLASS_NAME;
+ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.FIELD_INSTANT_APP_LAUNCH_TOKEN;
+-import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PACKAGE_OPTIMIZATION_COMPILATION_REASON;
+-import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PACKAGE_OPTIMIZATION_COMPILATION_FILTER;
+ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.TYPE_TRANSITION_COLD_LAUNCH;
+ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.TYPE_TRANSITION_HOT_LAUNCH;
+ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.TYPE_TRANSITION_REPORTED_DRAWN_NO_BUNDLE;
+@@ -38,8 +36,6 @@ import static com.android.server.am.MemoryStatUtil.MemoryStat;
+ import static com.android.server.am.MemoryStatUtil.readMemoryStatFromMemcg;
+ 
+ import android.content.Context;
+-import android.content.pm.dex.ArtManagerInternal;
+-import android.content.pm.dex.PackageOptimizationInfo;
+ import android.metrics.LogMaker;
+ import android.os.Handler;
+ import android.os.Looper;
+@@ -52,7 +48,6 @@ import android.util.StatsLog;
+ 
+ import com.android.internal.logging.MetricsLogger;
+ import com.android.internal.os.SomeArgs;
+-import com.android.server.LocalServices;
+ 
+ import java.util.ArrayList;
+ 
+@@ -74,7 +69,7 @@ class ActivityMetricsLogger {
+     private static final long INVALID_START_TIME = -1;
+ 
+     private static final int MSG_CHECK_VISIBILITY = 0;
+-    private static final int MSG_LOG_APP_TRANSITION = 1;
++    private static final int MSG_LOG_APP_START_MEMORY_STATE_CAPTURE = 1;
+ 
+     // Preallocated strings we are sending to tron, so we don't have to allocate a new one every
+     // time we log.
+@@ -97,9 +92,6 @@ class ActivityMetricsLogger {
+     private final SparseArray<StackTransitionInfo> mStackTransitionInfo = new SparseArray<>();
+     private final SparseArray<StackTransitionInfo> mLastStackTransitionInfo = new SparseArray<>();
+     private final H mHandler;
+-
+-    private ArtManagerInternal mArtManagerInternal;
+-
+     private final class H extends Handler {
+ 
+         public H(Looper looper) {
+@@ -113,12 +105,12 @@ class ActivityMetricsLogger {
+                     final SomeArgs args = (SomeArgs) msg.obj;
+                     checkVisibility((TaskRecord) args.arg1, (ActivityRecord) args.arg2);
+                     break;
+-                case MSG_LOG_APP_TRANSITION:
+-                    logAppTransition(msg.arg1, msg.arg2, (StackTransitionInfo) msg.obj);
++                case MSG_LOG_APP_START_MEMORY_STATE_CAPTURE:
++                    logAppStartMemoryStateCapture((StackTransitionInfo) msg.obj);
+                     break;
+             }
+         }
+-    }
++    };
+ 
+     private final class StackTransitionInfo {
+         private ActivityRecord launchedActivity;
+@@ -459,75 +451,54 @@ class ActivityMetricsLogger {
+             if (type == -1) {
+                 return;
+             }
+-            mHandler.obtainMessage(MSG_LOG_APP_TRANSITION, mCurrentTransitionDeviceUptime,
+-                    mCurrentTransitionDelayMs, info).sendToTarget();
++            final LogMaker builder = new LogMaker(APP_TRANSITION);
++            builder.setPackageName(info.launchedActivity.packageName);
++            builder.setType(type);
++            builder.addTaggedData(FIELD_CLASS_NAME, info.launchedActivity.info.name);
++            final boolean isInstantApp = info.launchedActivity.info.applicationInfo.isInstantApp();
++            if (info.launchedActivity.launchedFromPackage != null) {
++                builder.addTaggedData(APP_TRANSITION_CALLING_PACKAGE_NAME,
++                        info.launchedActivity.launchedFromPackage);
++            }
++            String launchToken = info.launchedActivity.info.launchToken;
++            if (launchToken != null) {
++                builder.addTaggedData(FIELD_INSTANT_APP_LAUNCH_TOKEN, launchToken);
++                info.launchedActivity.info.launchToken = null;
++            }
++            builder.addTaggedData(APP_TRANSITION_IS_EPHEMERAL, isInstantApp ? 1 : 0);
++            builder.addTaggedData(APP_TRANSITION_DEVICE_UPTIME_SECONDS,
++                    mCurrentTransitionDeviceUptime);
++            builder.addTaggedData(APP_TRANSITION_DELAY_MS, mCurrentTransitionDelayMs);
++            builder.setSubtype(info.reason);
++            if (info.startingWindowDelayMs != -1) {
++                builder.addTaggedData(APP_TRANSITION_STARTING_WINDOW_DELAY_MS,
++                        info.startingWindowDelayMs);
++            }
++            if (info.bindApplicationDelayMs != -1) {
++                builder.addTaggedData(APP_TRANSITION_BIND_APPLICATION_DELAY_MS,
++                        info.bindApplicationDelayMs);
++            }
++            builder.addTaggedData(APP_TRANSITION_WINDOWS_DRAWN_DELAY_MS, info.windowsDrawnDelayMs);
++            mMetricsLogger.write(builder);
++            StatsLog.write(
++                    StatsLog.APP_START_CHANGED,
++                    info.launchedActivity.appInfo.uid,
++                    info.launchedActivity.packageName,
++                    convertAppStartTransitionType(type),
++                    info.launchedActivity.info.name,
++                    info.launchedActivity.launchedFromPackage,
++                    isInstantApp,
++                    mCurrentTransitionDeviceUptime * 1000,
++                    info.reason,
++                    mCurrentTransitionDelayMs,
++                    info.startingWindowDelayMs,
++                    info.bindApplicationDelayMs,
++                    info.windowsDrawnDelayMs,
++                    launchToken);
++            mHandler.obtainMessage(MSG_LOG_APP_START_MEMORY_STATE_CAPTURE, info).sendToTarget();
+         }
+     }
+ 
+-    // This gets called on the handler without holding the activity manager lock.
+-    private void logAppTransition(int currentTransitionDeviceUptime, int currentTransitionDelayMs,
+-            StackTransitionInfo info) {
+-        final int type = getTransitionType(info);
+-        final LogMaker builder = new LogMaker(APP_TRANSITION);
+-        builder.setPackageName(info.launchedActivity.packageName);
+-        builder.setType(type);
+-        builder.addTaggedData(FIELD_CLASS_NAME, info.launchedActivity.info.name);
+-        final boolean isInstantApp = info.launchedActivity.info.applicationInfo.isInstantApp();
+-        if (info.launchedActivity.launchedFromPackage != null) {
+-            builder.addTaggedData(APP_TRANSITION_CALLING_PACKAGE_NAME,
+-                    info.launchedActivity.launchedFromPackage);
+-        }
+-        String launchToken = info.launchedActivity.info.launchToken;
+-        if (launchToken != null) {
+-            builder.addTaggedData(FIELD_INSTANT_APP_LAUNCH_TOKEN, launchToken);
+-            info.launchedActivity.info.launchToken = null;
+-        }
+-        builder.addTaggedData(APP_TRANSITION_IS_EPHEMERAL, isInstantApp ? 1 : 0);
+-        builder.addTaggedData(APP_TRANSITION_DEVICE_UPTIME_SECONDS,
+-                currentTransitionDeviceUptime);
+-        builder.addTaggedData(APP_TRANSITION_DELAY_MS, currentTransitionDelayMs);
+-        builder.setSubtype(info.reason);
+-        if (info.startingWindowDelayMs != -1) {
+-            builder.addTaggedData(APP_TRANSITION_STARTING_WINDOW_DELAY_MS,
+-                    info.startingWindowDelayMs);
+-        }
+-        if (info.bindApplicationDelayMs != -1) {
+-            builder.addTaggedData(APP_TRANSITION_BIND_APPLICATION_DELAY_MS,
+-                    info.bindApplicationDelayMs);
+-        }
+-        builder.addTaggedData(APP_TRANSITION_WINDOWS_DRAWN_DELAY_MS, info.windowsDrawnDelayMs);
+-        final ArtManagerInternal artManagerInternal = getArtManagerInternal();
+-        final PackageOptimizationInfo packageOptimizationInfo = artManagerInternal == null
+-                ? PackageOptimizationInfo.createWithNoInfo()
+-                : artManagerInternal.getPackageOptimizationInfo(
+-                        info.launchedActivity.info.applicationInfo,
+-                        info.launchedActivity.app.requiredAbi);
+-        builder.addTaggedData(PACKAGE_OPTIMIZATION_COMPILATION_REASON,
+-                packageOptimizationInfo.getCompilationReason());
+-        builder.addTaggedData(PACKAGE_OPTIMIZATION_COMPILATION_FILTER,
+-                packageOptimizationInfo.getCompilationFilter());
+-        mMetricsLogger.write(builder);
+-        StatsLog.write(
+-                StatsLog.APP_START_CHANGED,
+-                info.launchedActivity.appInfo.uid,
+-                info.launchedActivity.packageName,
+-                convertAppStartTransitionType(type),
+-                info.launchedActivity.info.name,
+-                info.launchedActivity.launchedFromPackage,
+-                isInstantApp,
+-                currentTransitionDeviceUptime * 1000,
+-                info.reason,
+-                currentTransitionDelayMs,
+-                info.startingWindowDelayMs,
+-                info.bindApplicationDelayMs,
+-                info.windowsDrawnDelayMs,
+-                launchToken,
+-                packageOptimizationInfo.getCompilationReason(),
+-                packageOptimizationInfo.getCompilationFilter());
+-
+-        logAppStartMemoryStateCapture(info);
+-    }
+-
+     private int convertAppStartTransitionType(int tronType) {
+         if (tronType == TYPE_TRANSITION_COLD_LAUNCH) {
+             return StatsLog.APP_START_CHANGED__TYPE__COLD;
+@@ -615,14 +586,4 @@ class ActivityMetricsLogger {
+                         launchedActivity.appInfo.uid)
+                 : null;
+     }
+-
+-    private ArtManagerInternal getArtManagerInternal() {
+-        if (mArtManagerInternal == null) {
+-            // Note that this may be null.
+-            // ArtManagerInternal is registered during PackageManagerService
+-            // initialization which happens after ActivityManagerService.
+-            mArtManagerInternal = LocalServices.getService(ArtManagerInternal.class);
+-        }
+-        return mArtManagerInternal;
+-    }
+ }
+diff --git a/services/core/java/com/android/server/pm/dex/ArtManagerService.java b/services/core/java/com/android/server/pm/dex/ArtManagerService.java
+index 2ece2b28015..e29027288e9 100644
+--- a/services/core/java/com/android/server/pm/dex/ArtManagerService.java
++++ b/services/core/java/com/android/server/pm/dex/ArtManagerService.java
+@@ -19,20 +19,18 @@ package com.android.server.pm.dex;
+ import android.Manifest;
+ import android.annotation.UserIdInt;
+ import android.content.pm.ApplicationInfo;
+-import android.content.pm.IPackageManager;
+ import android.content.pm.PackageInfo;
+ import android.content.pm.PackageManager;
+ import android.content.pm.PackageParser;
+ import android.content.pm.dex.ArtManager;
+ import android.content.pm.dex.ArtManager.ProfileType;
+-import android.content.pm.dex.ArtManagerInternal;
+ import android.content.pm.dex.DexMetadataHelper;
+-import android.content.pm.dex.PackageOptimizationInfo;
+ import android.os.Binder;
+ import android.os.Build;
+ import android.os.Handler;
+ import android.os.ParcelFileDescriptor;
+ import android.os.RemoteException;
++import android.content.pm.IPackageManager;
+ import android.content.pm.dex.ISnapshotRuntimeProfileCallback;
+ import android.os.SystemProperties;
+ import android.os.UserHandle;
+@@ -44,13 +42,8 @@ import com.android.internal.annotations.GuardedBy;
+ import com.android.internal.os.BackgroundThread;
+ import com.android.internal.util.ArrayUtils;
+ import com.android.internal.util.Preconditions;
+-import com.android.server.LocalServices;
+ import com.android.server.pm.Installer;
+ import com.android.server.pm.Installer.InstallerException;
+-
+-import dalvik.system.DexFile;
+-
+-import dalvik.system.VMRuntime;
+ import java.io.File;
+ import java.io.FileNotFoundException;
+ import libcore.io.IoUtils;
+@@ -93,8 +86,6 @@ public class ArtManagerService extends android.content.pm.dex.IArtManager.Stub {
+         mInstaller = installer;
+         mInstallLock = installLock;
+         mHandler = new Handler(BackgroundThread.getHandler().getLooper());
+-
+-        LocalServices.addService(ArtManagerInternal.class, new ArtManagerInternalImpl());
+     }
+ 
+     @Override
+@@ -406,30 +397,4 @@ public class ArtManagerService extends android.content.pm.dex.IArtManager.Stub {
+         }
+         return result;
+     }
+-
+-    private class ArtManagerInternalImpl extends ArtManagerInternal {
+-        @Override
+-        public PackageOptimizationInfo getPackageOptimizationInfo(
+-                ApplicationInfo info, String abi) {
+-            String compilationReason;
+-            String compilationFilter;
+-            try {
+-                String isa = VMRuntime.getInstructionSet(abi);
+-                String[] stats = DexFile.getDexFileOptimizationStatus(info.getBaseCodePath(), isa);
+-                compilationFilter = stats[0];
+-                compilationReason = stats[1];
+-            } catch (FileNotFoundException e) {
+-                Slog.e(TAG, "Could not get optimizations status for " + info.getBaseCodePath(), e);
+-                compilationFilter = "error";
+-                compilationReason = "error";
+-            } catch (IllegalArgumentException e) {
+-                Slog.wtf(TAG, "Requested optimization status for " + info.getBaseCodePath()
+-                        + " due to an invalid abi " + abi, e);
+-                compilationFilter = "error";
+-                compilationReason = "error";
+-            }
+-
+-            return new PackageOptimizationInfo(compilationFilter, compilationReason);
+-        }
+-    }
+ }
+-- 
+2.17.1
+

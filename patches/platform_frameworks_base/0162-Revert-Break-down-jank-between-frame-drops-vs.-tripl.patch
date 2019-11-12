@@ -1,0 +1,226 @@
+From 9ada6b699a70ec28a3753002ab2177bf66af7eda Mon Sep 17 00:00:00 2001
+From: Aaron Whyte <awhyte@google.com>
+Date: Mon, 19 Mar 2018 17:46:54 +0000
+Subject: [PATCH 162/306] Revert "Break down jank between frame drops vs.
+ triple buffered"
+
+This reverts commit 09979fbee7201b46158c2c033194529e4284ea13.
+
+Reason for revert: Based on stacktraces and change history, I think this is causing a cluster of P crashes.
+https://b.corp.google.com/issues?q=(%22android%22%20%22:uirenderer::JankTracker::finishFrame%22)
+Bug: 75566601
+Bug: 75811585
+Bug: 75407175
+Bug: 75736222
+Bug: 75391447
+Bug: 75659839
+
+Change-Id: I59a8c2d8906d347210c77fb3628f5801bc299bfb
+(cherry picked from commit a6d8fbf4ea634f5f605b2b7db3ca98975f8625b5)
+---
+ .../proto/android/service/graphicsstats.proto |  5 +-
+ libs/hwui/JankTracker.cpp                     | 32 +++---------
+ libs/hwui/JankTracker.h                       |  1 -
+ libs/hwui/ProfileData.cpp                     |  3 +-
+ libs/hwui/ProfileData.h                       |  1 -
+ libs/hwui/service/GraphicsStatsService.cpp    |  3 --
+ libs/hwui/tests/common/scenes/JankyScene.cpp  | 51 -------------------
+ 7 files changed, 9 insertions(+), 87 deletions(-)
+ delete mode 100644 libs/hwui/tests/common/scenes/JankyScene.cpp
+
+diff --git a/core/proto/android/service/graphicsstats.proto b/core/proto/android/service/graphicsstats.proto
+index c2fedf5a572..f42206562fc 100644
+--- a/core/proto/android/service/graphicsstats.proto
++++ b/core/proto/android/service/graphicsstats.proto
+@@ -56,7 +56,7 @@ message GraphicsStatsJankSummaryProto {
+     // Number of "missed vsync" events.
+     optional int32 missed_vsync_count = 3;
+ 
+-    // Number of frames in triple-buffering scenario (high input latency)
++    // Number of "high input latency" events.
+     optional int32 high_input_latency_count = 4;
+ 
+     // Number of "slow UI thread" events.
+@@ -67,9 +67,6 @@ message GraphicsStatsJankSummaryProto {
+ 
+     // Number of "slow draw" events.
+     optional int32 slow_draw_count = 7;
+-
+-    // Number of frames that missed their deadline (aka, visibly janked)
+-    optional int32 missed_deadline_count = 8;
+ }
+ 
+ message GraphicsStatsHistogramBucketProto {
+diff --git a/libs/hwui/JankTracker.cpp b/libs/hwui/JankTracker.cpp
+index 8110664ad44..cf29e434a35 100644
+--- a/libs/hwui/JankTracker.cpp
++++ b/libs/hwui/JankTracker.cpp
+@@ -129,42 +129,22 @@ void JankTracker::finishFrame(const FrameInfo& frame) {
+             totalDuration -= forgiveAmount;
+         }
+     }
+-
+     LOG_ALWAYS_FATAL_IF(totalDuration <= 0, "Impossible totalDuration %" PRId64, totalDuration);
+     mData->reportFrame(totalDuration);
+     (*mGlobalData)->reportFrame(totalDuration);
+ 
+-    // Only things like Surface.lockHardwareCanvas() are exempt from tracking
+-    if (CC_UNLIKELY(frame[FrameInfoIndex::Flags] & EXEMPT_FRAMES_FLAGS)) {
++    // Keep the fast path as fast as possible.
++    if (CC_LIKELY(totalDuration < mFrameInterval)) {
+         return;
+     }
+ 
+-    if (totalDuration > mFrameInterval) {
+-        mData->reportJank();
+-        (*mGlobalData)->reportJank();
+-    }
+-
+-    bool isTripleBuffered = mSwapDeadline > frame[FrameInfoIndex::IntendedVsync];
+-
+-    mSwapDeadline = std::max(mSwapDeadline + mFrameInterval,
+-                             frame[FrameInfoIndex::IntendedVsync] + mFrameInterval);
+-
+-    // If we hit the deadline, cool!
+-    if (frame[FrameInfoIndex::FrameCompleted] < mSwapDeadline) {
+-        if (isTripleBuffered) {
+-            mData->reportJankType(JankType::kHighInputLatency);
+-            (*mGlobalData)->reportJankType(JankType::kHighInputLatency);
+-        }
++    // Only things like Surface.lockHardwareCanvas() are exempt from tracking
++    if (frame[FrameInfoIndex::Flags] & EXEMPT_FRAMES_FLAGS) {
+         return;
+     }
+ 
+-    mData->reportJankType(JankType::kMissedDeadline);
+-    (*mGlobalData)->reportJankType(JankType::kMissedDeadline);
+-
+-    // Janked, reset the swap deadline
+-    nsecs_t jitterNanos = frame[FrameInfoIndex::FrameCompleted] - frame[FrameInfoIndex::Vsync];
+-    nsecs_t lastFrameOffset = jitterNanos % mFrameInterval;
+-    mSwapDeadline = frame[FrameInfoIndex::FrameCompleted] - lastFrameOffset + mFrameInterval;
++    mData->reportJank();
++    (*mGlobalData)->reportJank();
+ 
+     for (int i = 0; i < NUM_BUCKETS; i++) {
+         int64_t delta = frame.duration(COMPARISONS[i].start, COMPARISONS[i].end);
+diff --git a/libs/hwui/JankTracker.h b/libs/hwui/JankTracker.h
+index 110211eda23..dc6a7ff5ddb 100644
+--- a/libs/hwui/JankTracker.h
++++ b/libs/hwui/JankTracker.h
+@@ -75,7 +75,6 @@ private:
+ 
+     std::array<int64_t, NUM_BUCKETS> mThresholds;
+     int64_t mFrameInterval;
+-    nsecs_t mSwapDeadline;
+     // The amount of time we will erase from the total duration to account
+     // for SF vsync offsets with HWC2 blocking dequeueBuffers.
+     // (Vsync + mDequeueBlockTolerance) is the point at which we expect
+diff --git a/libs/hwui/ProfileData.cpp b/libs/hwui/ProfileData.cpp
+index f9cf5499803..b392ecdde18 100644
+--- a/libs/hwui/ProfileData.cpp
++++ b/libs/hwui/ProfileData.cpp
+@@ -23,7 +23,8 @@ namespace uirenderer {
+ 
+ static const char* JANK_TYPE_NAMES[] = {
+         "Missed Vsync",        "High input latency",       "Slow UI thread",
+-        "Slow bitmap uploads", "Slow issue draw commands", "Frame deadline missed"};
++        "Slow bitmap uploads", "Slow issue draw commands",
++};
+ 
+ // The bucketing algorithm controls so to speak
+ // If a frame is <= to this it goes in bucket 0
+diff --git a/libs/hwui/ProfileData.h b/libs/hwui/ProfileData.h
+index 564920b6032..1e688ab6fa6 100644
+--- a/libs/hwui/ProfileData.h
++++ b/libs/hwui/ProfileData.h
+@@ -33,7 +33,6 @@ enum JankType {
+     kSlowUI,
+     kSlowSync,
+     kSlowRT,
+-    kMissedDeadline,
+ 
+     // must be last
+     NUM_BUCKETS,
+diff --git a/libs/hwui/service/GraphicsStatsService.cpp b/libs/hwui/service/GraphicsStatsService.cpp
+index 599226bebe8..e0303a8a62d 100644
+--- a/libs/hwui/service/GraphicsStatsService.cpp
++++ b/libs/hwui/service/GraphicsStatsService.cpp
+@@ -176,8 +176,6 @@ bool mergeProfileDataIntoProto(service::GraphicsStatsProto* proto, const std::st
+     summary->set_slow_bitmap_upload_count(summary->slow_bitmap_upload_count() +
+                                           data->jankTypeCount(kSlowSync));
+     summary->set_slow_draw_count(summary->slow_draw_count() + data->jankTypeCount(kSlowRT));
+-    summary->set_missed_deadline_count(summary->missed_deadline_count()
+-            + data->jankTypeCount(kMissedDeadline));
+ 
+     bool creatingHistogram = false;
+     if (proto->histogram_size() == 0) {
+@@ -248,7 +246,6 @@ void dumpAsTextToFd(service::GraphicsStatsProto* proto, int fd) {
+     dprintf(fd, "\nNumber Slow UI thread: %d", summary.slow_ui_thread_count());
+     dprintf(fd, "\nNumber Slow bitmap uploads: %d", summary.slow_bitmap_upload_count());
+     dprintf(fd, "\nNumber Slow issue draw commands: %d", summary.slow_draw_count());
+-    dprintf(fd, "\nNumber Frame deadline missed: %d", summary.missed_deadline_count());
+     dprintf(fd, "\nHISTOGRAM:");
+     for (const auto& it : proto->histogram()) {
+         dprintf(fd, " %dms=%d", it.render_millis(), it.frame_count());
+diff --git a/libs/hwui/tests/common/scenes/JankyScene.cpp b/libs/hwui/tests/common/scenes/JankyScene.cpp
+deleted file mode 100644
+index f5e6b317529..00000000000
+--- a/libs/hwui/tests/common/scenes/JankyScene.cpp
++++ /dev/null
+@@ -1,51 +0,0 @@
+-/*
+- * Copyright (C) 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#include "TestSceneBase.h"
+-
+-#include <unistd.h>
+-
+-class JankyScene;
+-
+-static TestScene::Registrar _JankyScene(TestScene::Info{
+-        "janky",
+-        "A scene that intentionally janks just enough to stay in "
+-        "triple buffering.",
+-        TestScene::simpleCreateScene<JankyScene>});
+-
+-class JankyScene : public TestScene {
+-public:
+-    sp<RenderNode> card;
+-
+-    void createContent(int width, int height, Canvas& canvas) override {
+-        card = TestUtils::createNode(0, 0, 200, 200, [](RenderProperties& props, Canvas& canvas) {
+-            canvas.drawColor(0xFF0000FF, SkBlendMode::kSrcOver);
+-        });
+-        canvas.drawColor(0xFFFFFFFF, SkBlendMode::kSrcOver);  // background
+-        canvas.drawRenderNode(card.get());
+-    }
+-
+-    void doFrame(int frameNr) override {
+-        int curFrame = frameNr % 150;
+-        if (curFrame & 1) {
+-            usleep(15000);
+-        }
+-        // we animate left and top coordinates, which in turn animates width and
+-        // height (bottom/right coordinates are fixed)
+-        card->mutateStagingProperties().setLeftTop(curFrame, curFrame);
+-        card->setPropertyFieldsDirty(RenderNode::X | RenderNode::Y);
+-    }
+-};
+\ No newline at end of file
+-- 
+2.17.1
+

@@ -1,0 +1,32 @@
+From d6edfb7a8ba5af2a28b1313c87b6eff5ef5b561e Mon Sep 17 00:00:00 2001
+From: Winson Chung <winsonc@google.com>
+Date: Thu, 15 Feb 2018 15:52:49 -0800
+Subject: [PATCH 137/306] Fix crash when starting quickscrub while ending
+ quickscrub animation.
+
+Bug: 73500810
+Test: Drag quickscrub, release, and before animation ends, drag again
+Change-Id: I9d099282b9494d9dd7d70ded4e17a037d931879e
+(cherry picked from commit 0be8f08dc1d859853d432d4733e40cf0f35567e7)
+---
+ .../systemui/statusbar/phone/QuickScrubController.java        | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java
+index 0bf01b0cb94..378858a9b81 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java
+@@ -224,6 +224,10 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+             case MotionEvent.ACTION_DOWN: {
+                 int x = (int) event.getX();
+                 int y = (int) event.getY();
++                // End any existing quickscrub animations before starting the new transition
++                if (mQuickScrubEndAnimator != null) {
++                    mQuickScrubEndAnimator.end();
++                }
+                 mHomeButtonView = homeButton.getCurrentView();
+                 if (mNavigationBarView.isQuickScrubEnabled()
+                         && mNavigationBarView.getDownHitTarget() == HIT_TARGET_HOME) {
+-- 
+2.17.1
+

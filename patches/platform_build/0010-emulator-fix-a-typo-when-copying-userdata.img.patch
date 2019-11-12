@@ -1,0 +1,36 @@
+From a83fc0e482a91f7c860198d06dda0d0fac95b28e Mon Sep 17 00:00:00 2001
+From: bohu <bohu@google.com>
+Date: Mon, 25 Jun 2018 15:33:14 -0700
+Subject: [PATCH 10/81] emulator: fix a typo when copying userdata.img
+
+replaced TARGET_CPU_ADI with TARGET_CPU_ABI
+
+BUG: 110492064
+
+this cl does not impact real devices
+
+Test:
+nohup make -j100 ANDROID_USE_BUILDCACHE=false PRODUCT-sdk_gphone_x86-sdk_addon showcommands dist DIST_DIR=${PWD}/dist/x86 sdk_repo
+unzip the image package sdk-repo-linux-system-images-eng.zip and  make sure userdata.img is inside
+
+Change-Id: I24101c78d789c9b72132efc41a2e98d5274b5ff1
+---
+ core/tasks/sdk-addon.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/tasks/sdk-addon.mk b/core/tasks/sdk-addon.mk
+index 55a55d4bb..bc11b4941 100644
+--- a/core/tasks/sdk-addon.mk
++++ b/core/tasks/sdk-addon.mk
+@@ -67,7 +67,7 @@ files_to_copy += \
+ 	$(addon_dir_img):$(INSTALLED_QEMU_VENDORIMAGE):images/$(TARGET_CPU_ABI)/vendor.img \
+ 	$(addon_dir_img):$(BUILT_RAMDISK_TARGET):images/$(TARGET_CPU_ABI)/ramdisk.img \
+ 	$(addon_dir_img):$(PRODUCT_OUT)/system/build.prop:images/$(TARGET_CPU_ABI)/build.prop \
+-	$(addon_dir_img):device/generic/goldfish/data/etc/userdata.img:images/$(TARGET_CPU_ADI)/userdata.img \
++	$(addon_dir_img):device/generic/goldfish/data/etc/userdata.img:images/$(TARGET_CPU_ABI)/userdata.img \
+ 	$(addon_dir_img):$(target_notice_file_txt):images/$(TARGET_CPU_ABI)/NOTICE.txt \
+ 	$(addon_dir_img):$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP):images/source.properties
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,950 @@
+From 12c9be12552aaf6f61e5eaba7f839e274e424b4f Mon Sep 17 00:00:00 2001
+From: Adrian Roos <roosa@google.com>
+Date: Tue, 21 Aug 2018 20:25:47 +0200
+Subject: [PATCH 30/71] DO NOT MERGE leverage default_theme string for
+ display_cutout_emulation_device_default
+
+Bug: 112876936
+Test: manual
+Change-Id: I1a41b96f9f19a5d5854eb1cce214616e303ca4f9
+---
+ res/values-af/strings.xml        | 1 +
+ res/values-am/strings.xml        | 1 +
+ res/values-ar/strings.xml        | 1 +
+ res/values-as/strings.xml        | 1 +
+ res/values-az/strings.xml        | 1 +
+ res/values-b+sr+Latn/strings.xml | 1 +
+ res/values-be/strings.xml        | 1 +
+ res/values-bg/strings.xml        | 1 +
+ res/values-bn/strings.xml        | 1 +
+ res/values-bs/strings.xml        | 1 +
+ res/values-ca/strings.xml        | 1 +
+ res/values-cs/strings.xml        | 1 +
+ res/values-da/strings.xml        | 1 +
+ res/values-de/strings.xml        | 1 +
+ res/values-el/strings.xml        | 1 +
+ res/values-en-rAU/strings.xml    | 1 +
+ res/values-en-rCA/strings.xml    | 1 +
+ res/values-en-rGB/strings.xml    | 1 +
+ res/values-en-rIN/strings.xml    | 1 +
+ res/values-en-rXC/strings.xml    | 1 +
+ res/values-es-rUS/strings.xml    | 1 +
+ res/values-es/strings.xml        | 1 +
+ res/values-et/strings.xml        | 1 +
+ res/values-eu/strings.xml        | 1 +
+ res/values-fa/strings.xml        | 1 +
+ res/values-fi/strings.xml        | 1 +
+ res/values-fr-rCA/strings.xml    | 1 +
+ res/values-fr/strings.xml        | 1 +
+ res/values-gl/strings.xml        | 1 +
+ res/values-gu/strings.xml        | 1 +
+ res/values-hi/strings.xml        | 1 +
+ res/values-hr/strings.xml        | 1 +
+ res/values-hu/strings.xml        | 1 +
+ res/values-hy/strings.xml        | 1 +
+ res/values-in/strings.xml        | 1 +
+ res/values-is/strings.xml        | 1 +
+ res/values-it/strings.xml        | 1 +
+ res/values-iw/strings.xml        | 1 +
+ res/values-ja/strings.xml        | 1 +
+ res/values-ka/strings.xml        | 1 +
+ res/values-kk/strings.xml        | 1 +
+ res/values-km/strings.xml        | 1 +
+ res/values-kn/strings.xml        | 1 +
+ res/values-ko/strings.xml        | 1 +
+ res/values-ky/strings.xml        | 1 +
+ res/values-lo/strings.xml        | 1 +
+ res/values-lt/strings.xml        | 1 +
+ res/values-lv/strings.xml        | 1 +
+ res/values-mk/strings.xml        | 1 +
+ res/values-ml/strings.xml        | 1 +
+ res/values-mn/strings.xml        | 1 +
+ res/values-mr/strings.xml        | 1 +
+ res/values-ms/strings.xml        | 1 +
+ res/values-my/strings.xml        | 1 +
+ res/values-nb/strings.xml        | 1 +
+ res/values-ne/strings.xml        | 1 +
+ res/values-nl/strings.xml        | 1 +
+ res/values-or/strings.xml        | 1 +
+ res/values-pa/strings.xml        | 1 +
+ res/values-pl/strings.xml        | 1 +
+ res/values-pt-rBR/strings.xml    | 1 +
+ res/values-pt-rPT/strings.xml    | 1 +
+ res/values-pt/strings.xml        | 1 +
+ res/values-ro/strings.xml        | 1 +
+ res/values-ru/strings.xml        | 1 +
+ res/values-si/strings.xml        | 1 +
+ res/values-sk/strings.xml        | 1 +
+ res/values-sl/strings.xml        | 1 +
+ res/values-sq/strings.xml        | 1 +
+ res/values-sr/strings.xml        | 1 +
+ res/values-sv/strings.xml        | 1 +
+ res/values-sw/strings.xml        | 1 +
+ res/values-ta/strings.xml        | 1 +
+ res/values-te/strings.xml        | 1 +
+ res/values-th/strings.xml        | 1 +
+ res/values-tl/strings.xml        | 1 +
+ res/values-tr/strings.xml        | 1 +
+ res/values-uk/strings.xml        | 1 +
+ res/values-ur/strings.xml        | 1 +
+ res/values-uz/strings.xml        | 1 +
+ res/values-vi/strings.xml        | 1 +
+ res/values-zh-rCN/strings.xml    | 1 +
+ res/values-zh-rHK/strings.xml    | 1 +
+ res/values-zh-rTW/strings.xml    | 1 +
+ res/values-zu/strings.xml        | 1 +
+ 85 files changed, 85 insertions(+)
+
+diff --git a/res/values-af/strings.xml b/res/values-af/strings.xml
+index 18223eeafd..84939d0783 100644
+--- a/res/values-af/strings.xml
++++ b/res/values-af/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Netwerkbesonderhede"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Programme op jou foon kan jou toestelnaam sien. Ander mense sal dit dalk ook kan sien wanneer jy aan Bluetooth-toestelle koppel of \'n Wi-Fi-warmkol opstel."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Toestelle"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Verstek"</string>
+ </resources>
+diff --git a/res/values-am/strings.xml b/res/values-am/strings.xml
+index 9bc05d2228..de00ad2e06 100644
+--- a/res/values-am/strings.xml
++++ b/res/values-am/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"የአውታረ መረብ ዝርዝሮች"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"የእርስዎ መሣሪያ በእርስዎ ስልክ ላይ ላሉ መተግበሪያዎች የሚታይ ነው። ወድ ብሉቱዝ መሣሪያዎች ሲያገኙ ወይም የWi-Fi መገናኛ ነጥብን ሲያቀናብሩ በተጨማሪ በሌሎች ሰዎች የሚታይ ይሆናል።"</string>
+     <string name="devices_title" msgid="7701726109334110391">"መሣሪያዎች"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ነባሪ"</string>
+ </resources>
+diff --git a/res/values-ar/strings.xml b/res/values-ar/strings.xml
+index 9a9b70c229..30f0d8efef 100644
+--- a/res/values-ar/strings.xml
++++ b/res/values-ar/strings.xml
+@@ -4428,4 +4428,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"تفاصيل الشبكة"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"‏اسم جهازك مرئي للتطبيقات على هاتفك. ويمكن أيضًا أن يراه أشخاص آخرون عند الاتصال بأجهزة بلوتوث أو إعداد نقطة اتصال Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"الأجهزة"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"تلقائي"</string>
+ </resources>
+diff --git a/res/values-as/strings.xml b/res/values-as/strings.xml
+index d17c32d22f..4811c55486 100644
+--- a/res/values-as/strings.xml
++++ b/res/values-as/strings.xml
+@@ -4154,4 +4154,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"নেটৱৰ্কৰ সবিশেষ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"আপোনাৰ ডিভাইচটোৰ নাম আপোনাৰ ফ\'নটোত থকা এপসমূহৰ বাবে দৃশ্যমান। আপুনি ব্লুটুথ ডিভাইচৰ সৈতে সংযোগ কৰোঁতে বা ৱাই-ফাই হ\'টস্প\'ট  ছেট আপ কৰোঁতেও নামটো অইনে দেখা পাব পাৰে।"</string>
+     <string name="devices_title" msgid="7701726109334110391">"ডিভাইচসমূহ"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ডিফ'ল্ট"</string>
+ </resources>
+diff --git a/res/values-az/strings.xml b/res/values-az/strings.xml
+index df1a0f9059..089cd1ed9e 100644
+--- a/res/values-az/strings.xml
++++ b/res/values-az/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Şəbəkə məlumatları"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Cihazın adı telefondakı tətbiqlərdə görünəcək. Bluetooth cihazlarına qoşulduqda və ya Wi-Fi hotspotu ayarladıqda digərləri də onu görə bilər."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Cihazlar"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Defolt"</string>
+ </resources>
+diff --git a/res/values-b+sr+Latn/strings.xml b/res/values-b+sr+Latn/strings.xml
+index f0530717b0..442ec5fb57 100644
+--- a/res/values-b+sr+Latn/strings.xml
++++ b/res/values-b+sr+Latn/strings.xml
+@@ -4221,4 +4221,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalji o mreži"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Ime uređaja vide aplikacije na telefonu. Mogu da ga vide i drugi ljudi kad se povežete sa Bluetooth uređajima ili podesite Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Uređaji"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Podrazumevana"</string>
+ </resources>
+diff --git a/res/values-be/strings.xml b/res/values-be/strings.xml
+index e789d795eb..1bc0f6c0af 100644
+--- a/res/values-be/strings.xml
++++ b/res/values-be/strings.xml
+@@ -4292,4 +4292,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Інфармацыя аб сетцы"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Назва вашай прылады даступная для праграм на вашым тэлефоне. Яе таксама будуць бачыць іншыя людзі, калі вы падключыцеся да прылад праз Bluetooth ці наладзіце хот-спот Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Прылады"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Стандартная"</string>
+ </resources>
+diff --git a/res/values-bg/strings.xml b/res/values-bg/strings.xml
+index cfbd56dde7..9488eb288c 100644
+--- a/res/values-bg/strings.xml
++++ b/res/values-bg/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Подробности за мрежата"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Името на устройството ви е видимо за приложенията на телефона ви. То може да се вижда и от други хора, когато се свържете с устройства с Bluetooth или настроите точка за достъп до Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Устройства"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Стандартно"</string>
+ </resources>
+diff --git a/res/values-bn/strings.xml b/res/values-bn/strings.xml
+index ab208e6e6e..5deb82933e 100644
+--- a/res/values-bn/strings.xml
++++ b/res/values-bn/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"নেটওয়ার্কের বিবরণ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"আপনার ডিভাইসের নাম আপনার ফোনে থাকা অ্যাপে দেখা যাবে। আপনি যখন এটিকে ব্লুটুথ ডিভাইসের সাথে কানেক্ট করেন বা ওয়াই-ফাই হটস্পট সেট-আপ করেন তখন এটি অন্যরাও দেখতে পেতে পারেন।"</string>
+     <string name="devices_title" msgid="7701726109334110391">"ডিভাইস"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ডিফল্ট"</string>
+ </resources>
+diff --git a/res/values-bs/strings.xml b/res/values-bs/strings.xml
+index 2d4be9eb28..7b5d7cc04b 100644
+--- a/res/values-bs/strings.xml
++++ b/res/values-bs/strings.xml
+@@ -4221,4 +4221,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalji o mreži"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Naziv uređaja mogu vidjeti aplikacije na telefonu. Mogu ga vidjeti i druge osobe kada se povežete na Bluetooth uređaje ili postavite WiFi pristupnu tačku."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Uređaji"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Zadano"</string>
+ </resources>
+diff --git a/res/values-ca/strings.xml b/res/values-ca/strings.xml
+index f314c3b475..c419095745 100644
+--- a/res/values-ca/strings.xml
++++ b/res/values-ca/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalls de la xarxa"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"El nom del dispositiu és visible per a les aplicacions del telèfon. També el poden veure altres persones si el connectes a un dispositiu Bluetooth o si configures un punt d\'accés Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositius"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Predeterminat"</string>
+ </resources>
+diff --git a/res/values-cs/strings.xml b/res/values-cs/strings.xml
+index ce225312e7..7a403d7fb6 100644
+--- a/res/values-cs/strings.xml
++++ b/res/values-cs/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Podrobnosti sítě"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Název vašeho zařízení je viditelný pro aplikace v telefonu. Mohou ho vidět také ostatní uživatelé, když se připojíte k zařízení Bluetooth nebo hotspotu Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Zařízení"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Výchozí"</string>
+ </resources>
+diff --git a/res/values-da/strings.xml b/res/values-da/strings.xml
+index e66a6f231a..25cd7fcc85 100644
+--- a/res/values-da/strings.xml
++++ b/res/values-da/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Netværksoplysninger"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Navnet på din enhed er synligt for apps på din telefon. Det kan muligvis også ses af andre, når du opretter forbindelse til Bluetooth-enheder eller konfigurerer et Wi-Fi-hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Enheder"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Standard"</string>
+ </resources>
+diff --git a/res/values-de/strings.xml b/res/values-de/strings.xml
+index 9c37cf83cd..ddd92c6e7d 100644
+--- a/res/values-de/strings.xml
++++ b/res/values-de/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Netzwerkdetails"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Dein Gerätename ist für Apps auf deinem Smartphone sichtbar. Wenn du dich mit Bluetooth-Geräten verbindest oder einen WLAN-Hotspot einrichtest, kann er möglicherweise auch von anderen Personen gesehen werden."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Geräte"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Standard"</string>
+ </resources>
+diff --git a/res/values-el/strings.xml b/res/values-el/strings.xml
+index ffc074c145..73c1b4ce80 100644
+--- a/res/values-el/strings.xml
++++ b/res/values-el/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Λεπτομέρειες δικτύου"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Το όνομα της συσκευής σας είναι ορατό σε εφαρμογές στο τηλέφωνό σας. Ενδέχεται επίσης να είναι ορατό και σε άλλα άτομα, όταν συνδέεστε σε συσκευές Bluetooth ή ρυθμίζετε ένα σημείο πρόσβασης Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Συσκευές"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Προεπιλογή"</string>
+ </resources>
+diff --git a/res/values-en-rAU/strings.xml b/res/values-en-rAU/strings.xml
+index a985923900..5f350ef78a 100644
+--- a/res/values-en-rAU/strings.xml
++++ b/res/values-en-rAU/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Network details"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Your device name is visible to apps on your phone. It may also be seen by other people when you connect to Bluetooth devices or set up a Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Devices"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Default"</string>
+ </resources>
+diff --git a/res/values-en-rCA/strings.xml b/res/values-en-rCA/strings.xml
+index 6660d8a150..213f0b8c8e 100644
+--- a/res/values-en-rCA/strings.xml
++++ b/res/values-en-rCA/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Network details"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Your device name is visible to apps on your phone. It may also be seen by other people when you connect to Bluetooth devices or set up a Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Devices"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Default"</string>
+ </resources>
+diff --git a/res/values-en-rGB/strings.xml b/res/values-en-rGB/strings.xml
+index a985923900..5f350ef78a 100644
+--- a/res/values-en-rGB/strings.xml
++++ b/res/values-en-rGB/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Network details"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Your device name is visible to apps on your phone. It may also be seen by other people when you connect to Bluetooth devices or set up a Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Devices"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Default"</string>
+ </resources>
+diff --git a/res/values-en-rIN/strings.xml b/res/values-en-rIN/strings.xml
+index a985923900..5f350ef78a 100644
+--- a/res/values-en-rIN/strings.xml
++++ b/res/values-en-rIN/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Network details"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Your device name is visible to apps on your phone. It may also be seen by other people when you connect to Bluetooth devices or set up a Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Devices"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Default"</string>
+ </resources>
+diff --git a/res/values-en-rXC/strings.xml b/res/values-en-rXC/strings.xml
+index 7faabda4f3..064258d3c0 100644
+--- a/res/values-en-rXC/strings.xml
++++ b/res/values-en-rXC/strings.xml
+@@ -4151,4 +4151,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‏‎‎‏‎‎‎‏‎‏‏‏‏‏‏‏‏‎‎‎‏‏‏‎‏‏‏‎‏‏‎‏‎‎‏‎‎‏‏‏‎‏‏‏‎‏‎‏‏‎‏‎‏‎‏‏‎‎‎‎‎‎‎‏‏‏‏‏‏‏‏‏‏‏‎‏‎‎‎Network details‎‏‎‎‏‎"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‏‎‎‏‎‎‎‏‎‏‏‏‏‏‏‏‏‏‏‎‏‏‎‏‎‏‎‎‎‎‎‎‏‏‏‏‏‎‎‎‏‎‏‎‏‎‎‎‏‎‎‏‎‏‏‎‎‎‏‎‏‎‎‏‏‎‏‎‏‎‎‏‏‎‎‏‎‎‎Your device name is visible to apps on your phone. It may also be seen by other people when you connect to Bluetooth devices or set up a Wi-Fi hotspot.‎‏‎‎‏‎"</string>
+     <string name="devices_title" msgid="7701726109334110391">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‏‎‎‏‎‎‎‏‎‏‏‏‏‏‏‏‏‎‏‎‏‎‏‏‏‎‎‎‏‎‎‎‎‎‎‏‏‏‎‎‎‏‎‏‏‏‎‏‎‎‏‎‎‎‎‎‏‏‎‏‏‎‎‎‎‎‎‎‎‎‏‎‏‏‎‏‏‏‎Devices‎‏‎‎‏‎"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‏‎‎‏‎‎‎‏‎‏‏‏‏‏‏‏‏‎‎‎‏‎‎‏‎‏‎‏‎‏‎‏‎‎‎‏‎‎‏‎‎‏‎‏‎‎‎‎‏‏‎‏‎‏‎‏‎‏‏‏‏‎‏‎‎‎‎‏‎‏‏‎‎‎‎‏‎‎‎Default‎‏‎‎‏‎"</string>
+ </resources>
+diff --git a/res/values-es-rUS/strings.xml b/res/values-es-rUS/strings.xml
+index b9150828d5..fbe68fd282 100644
+--- a/res/values-es-rUS/strings.xml
++++ b/res/values-es-rUS/strings.xml
+@@ -4150,4 +4150,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalles de la red"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"El nombre de tu dispositivo es visible para las apps del teléfono. Es posible que también lo vean otras personas cuando te conectes a dispositivos Bluetooth o configures un hotspot de Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivos"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Predeterminado"</string>
+ </resources>
+diff --git a/res/values-es/strings.xml b/res/values-es/strings.xml
+index 0afc3760eb..43e802ad2b 100644
+--- a/res/values-es/strings.xml
++++ b/res/values-es/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalles de la red"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Las aplicaciones de tu teléfono pueden ver el nombre de tu dispositivo. También es posible que lo vean otros usuarios si lo conectas con dispositivos Bluetooth o configuras un punto de acceso Wi‑Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivos"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Predeterminado"</string>
+ </resources>
+diff --git a/res/values-et/strings.xml b/res/values-et/strings.xml
+index a080908615..fb02afb9a6 100644
+--- a/res/values-et/strings.xml
++++ b/res/values-et/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Võrgu üksikasjad"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Teie seadme nimi on telefonis rakendustele nähtav. Bluetoothi seadmetega ühendamisel või WiFi-pääsupunkti loomisel võivad seda näha ka teised inimesed."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Seadmed"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Vaikeseade"</string>
+ </resources>
+diff --git a/res/values-eu/strings.xml b/res/values-eu/strings.xml
+index 4cd9dc59a8..0b09abe192 100644
+--- a/res/values-eu/strings.xml
++++ b/res/values-eu/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Sarearen xehetasunak"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Mugikorreko aplikazioek gailuaren izena ikus dezakete. Halaber, jendeak ere ikus dezake Bluetooth gailuetara konektatzean edo Wi-Fi sare publiko bat konfiguratzean."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Gailuak"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Lehenetsia"</string>
+ </resources>
+diff --git a/res/values-fa/strings.xml b/res/values-fa/strings.xml
+index f68fefc462..2fefadc816 100644
+--- a/res/values-fa/strings.xml
++++ b/res/values-fa/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"جزئیات شبکه"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"‏نام دستگاه شما برای برنامه‌های موجود در تلفنتان قابل‌مشاهده است. ممکن است وقتی به دستگاه‌های بلوتوث متصل می‌شوید یا نقطه اتصال Wi-Fi راه‌اندازی می‌کنید، برای سایر افراد نیز قابل‌مشاهده باشد."</string>
+     <string name="devices_title" msgid="7701726109334110391">"دستگاه‌ها"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"پیش‌فرض"</string>
+ </resources>
+diff --git a/res/values-fi/strings.xml b/res/values-fi/strings.xml
+index bc1dc37bce..af57ea6dcb 100644
+--- a/res/values-fi/strings.xml
++++ b/res/values-fi/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Verkon tiedot"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Puhelimen sovellukset näkevät laitteesi nimen. Muut voivat myös nähdä nimen, kun muodostat Bluetooth-yhteyden laitteisiin tai aktivoit Wi-Fi-hotspotin."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Laitteet"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Oletus"</string>
+ </resources>
+diff --git a/res/values-fr-rCA/strings.xml b/res/values-fr-rCA/strings.xml
+index dec7a5992a..e1380fa671 100644
+--- a/res/values-fr-rCA/strings.xml
++++ b/res/values-fr-rCA/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Détails du réseau"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Le nom de votre appareil est visible pour les applications de votre téléphone. Il est aussi possible que d\'autres personnes le voient lorsque vous vous connectez à des appareils Bluetooth ou lorsque vous configurez un point d\'accès Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Appareils"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Par défaut"</string>
+ </resources>
+diff --git a/res/values-fr/strings.xml b/res/values-fr/strings.xml
+index 96c301ce14..2eccda430a 100644
+--- a/res/values-fr/strings.xml
++++ b/res/values-fr/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Détails du réseau"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Le nom de votre appareil est visible par les applications installées sur votre téléphone. Il peut l\'être également par d\'autres personnes en cas de connexion à des appareils Bluetooth ou de configuration d\'un point d\'accès Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Appareils"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Par défaut"</string>
+ </resources>
+diff --git a/res/values-gl/strings.xml b/res/values-gl/strings.xml
+index 47ed64ff7e..cbe396a89b 100644
+--- a/res/values-gl/strings.xml
++++ b/res/values-gl/strings.xml
+@@ -4153,4 +4153,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalles da rede"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"As aplicacións do teu teléfono poden consultar o nome do teu dispositivo. Tamén poden velo outros usuarios cando te conectes a dispositivos Bluetooth ou configures zonas wifi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivos"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Predeterminado"</string>
+ </resources>
+diff --git a/res/values-gu/strings.xml b/res/values-gu/strings.xml
+index d20fe3d8dd..93c5255feb 100644
+--- a/res/values-gu/strings.xml
++++ b/res/values-gu/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"નેટવર્કની વિગતો"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"તમારા ઉપકરણનું નામ તમારા ફોનની ઍપ પર જોઈ શકાય છે. તમે બ્લૂટૂથથી કનેક્ટ કરો અથવા વાઇ-ફાઇ હૉટસ્પૉટને સેટ કરો ત્યારે તે અન્ય લોકોને પણ દેખાઈ શકે છે."</string>
+     <string name="devices_title" msgid="7701726109334110391">"ઉપકરણો"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ડિફૉલ્ટ"</string>
+ </resources>
+diff --git a/res/values-hi/strings.xml b/res/values-hi/strings.xml
+index 0da9502d74..8a38bf3c57 100644
+--- a/res/values-hi/strings.xml
++++ b/res/values-hi/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"नेटवर्क के बारे में जानकारी"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"आपके फ़ोन पर मौजूद ऐप्लिकेशन, आपके डिवाइस का नाम जान सकते हैं. ब्लूटूथ डिवाइस जोड़ते समय या वाई-फ़ाई हॉटस्पॉट सेटअप करते समय, इसे दूसरे लोग भी देख सकते हैं."</string>
+     <string name="devices_title" msgid="7701726109334110391">"डिवाइस"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"डिफ़ॉल्ट"</string>
+ </resources>
+diff --git a/res/values-hr/strings.xml b/res/values-hr/strings.xml
+index e6b5e65302..08ed45d8fd 100644
+--- a/res/values-hr/strings.xml
++++ b/res/values-hr/strings.xml
+@@ -4221,4 +4221,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Pojedinosti o mreži"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Naziv vašeg uređaja vidljiv je aplikacijama na vašem telefonu. Mogu ga vidjeti i drugi ljudi kada se povežete s Bluetooth uređajima ili postavite Wi-Fi žarišnu točku."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Uređaji"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Zadano"</string>
+ </resources>
+diff --git a/res/values-hu/strings.xml b/res/values-hu/strings.xml
+index 25f5f8e62f..36628731ac 100644
+--- a/res/values-hu/strings.xml
++++ b/res/values-hu/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Hálózati információk"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Eszköze neve látható a telefonján lévő alkalmazások számára. Mások is láthatják, ha csatlakoztatja telefonját más Bluetooth-eszközökhöz, vagy ha Wi-Fi-hotspotot állít be."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Eszközök"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Alapértelmezett"</string>
+ </resources>
+diff --git a/res/values-hy/strings.xml b/res/values-hy/strings.xml
+index b7334aa50f..7933a760b0 100644
+--- a/res/values-hy/strings.xml
++++ b/res/values-hy/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Ցանցի տվյալներ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Ձեր սարքի անունը տեսանելի է հեռախոսի հավելվածներին։ Այն կարող են տեսնել օգտատերերը, երբ միանում եք Bluetooth սարքերի կամ կարգավորում եք Wi-Fi թեժ կետը։"</string>
+     <string name="devices_title" msgid="7701726109334110391">"Սարքեր"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Կանխադրված"</string>
+ </resources>
+diff --git a/res/values-in/strings.xml b/res/values-in/strings.xml
+index c95f629597..da6b05a3c2 100644
+--- a/res/values-in/strings.xml
++++ b/res/values-in/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detail jaringan"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Nama perangkat terlihat oleh aplikasi di ponsel, dan juga mungkin dilihat oleh orang lain saat Anda menghubungkan ke perangkat Bluetooth atau menyiapkan hotspot Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Perangkat"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Default"</string>
+ </resources>
+diff --git a/res/values-is/strings.xml b/res/values-is/strings.xml
+index 3e67fd5b02..6cf1b53bcf 100644
+--- a/res/values-is/strings.xml
++++ b/res/values-is/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Upplýsingar um net"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Heiti tækisins þíns er sýnilegt forritum í símanum. Heiti þess er hugsanlega einnig sýnilegt öðru fólki þegar þú tengist Bluetooth-tækjum eða setur upp heitan Wi-Fi reit."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Tæki"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Sjálfgefið"</string>
+ </resources>
+diff --git a/res/values-it/strings.xml b/res/values-it/strings.xml
+index 5bc0deca50..839c559117 100644
+--- a/res/values-it/strings.xml
++++ b/res/values-it/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Dettagli rete"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Il nome del tuo dispositivo è visibile alle app installate sul telefono. Potrebbe essere visibile anche ad altre persone se ti connetti a dispositivi Bluetooth o configuri un hotspot Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivi"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Valore predefinito"</string>
+ </resources>
+diff --git a/res/values-iw/strings.xml b/res/values-iw/strings.xml
+index b0fcc5c1c1..b11dd248e0 100644
+--- a/res/values-iw/strings.xml
++++ b/res/values-iw/strings.xml
+@@ -4292,4 +4292,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"פרטי הרשת"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"‏שם המכשיר שלך גלוי לאפליקציות בטלפון שלך. כמו כן, ייתכן שאנשים אחרים יראו אותו בהתחברות למכשירי Bluetooth או כשמגדירים נקודת Wi-Fi לשיתוף אינטרנט."</string>
+     <string name="devices_title" msgid="7701726109334110391">"מכשירים"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ברירת מחדל"</string>
+ </resources>
+diff --git a/res/values-ja/strings.xml b/res/values-ja/strings.xml
+index 4eb7c88b3a..542c80922d 100644
+--- a/res/values-ja/strings.xml
++++ b/res/values-ja/strings.xml
+@@ -4156,4 +4156,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ネットワークの詳細"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"端末名がスマートフォンのアプリに表示されます。また、Bluetooth デバイスに接続したり Wi-Fi アクセス ポイントを設定したりすると、他のユーザーも端末名を確認できるようになります。"</string>
+     <string name="devices_title" msgid="7701726109334110391">"端末"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"デフォルト"</string>
+ </resources>
+diff --git a/res/values-ka/strings.xml b/res/values-ka/strings.xml
+index ed452041b9..cb2dfcd7dd 100644
+--- a/res/values-ka/strings.xml
++++ b/res/values-ka/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ქსელის დეტალები"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"თქვენი მოწყობილობის სახელი ხილულია თქვენს ტელეფონზე არსებული აპებისთვის. მისი დანახვას ასევე შეძლებენ სხვა პირები, როცა Bluetooth მოწყობილობებს დაუკავშირდებით ან Wi-Fi უსადენო ქსელით ისარგებლებთ."</string>
+     <string name="devices_title" msgid="7701726109334110391">"მოწყობილობები"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ნაგულისხმევი"</string>
+ </resources>
+diff --git a/res/values-kk/strings.xml b/res/values-kk/strings.xml
+index 2a319cc3e0..38661f317d 100644
+--- a/res/values-kk/strings.xml
++++ b/res/values-kk/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Желі деректері"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Құрылғыңыздың аты телефоныңыздағы қолданбаларға көрінеді. Сонымен қатар Bluetooth құрылғыларына қосылғанда немесе Wi-Fi хотспотын орнатқанда, басқа адамдарға көрінуі мүмкін."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Құрылғылар"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Әдепкі"</string>
+ </resources>
+diff --git a/res/values-km/strings.xml b/res/values-km/strings.xml
+index fc4eb490fc..b64f4f7409 100644
+--- a/res/values-km/strings.xml
++++ b/res/values-km/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ព័ត៌មាន​លម្អិតនៃ​បណ្ដាញ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"ឈ្មោះ​ឧបករណ៍​របស់អ្នក​អាច​ឱ្យ​កម្មវិធី​នៅលើ​ទូរសព្ទ​របស់អ្នក​មើលឃើញ។ វា​ក៏​អាច​ឱ្យ​អ្នក​ដទៃ​មើល​ឃើញ​ផងដែរ នៅពេល​ដែលអ្នក​ភ្ជាប់​ទៅ​ឧបករណ៍​ប៊្លូធូស ឬ​រៀបចំ​ហតស្ប៉ត Wi-Fi ។"</string>
+     <string name="devices_title" msgid="7701726109334110391">"ឧបករណ៍"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"លំ​នាំ​ដើម"</string>
+ </resources>
+diff --git a/res/values-kn/strings.xml b/res/values-kn/strings.xml
+index 4cafa03b78..b6c9ab32c0 100644
+--- a/res/values-kn/strings.xml
++++ b/res/values-kn/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ನೆಟ್‌ವರ್ಕ್‌ ವಿವರಗಳು"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"ನಿಮ್ಮ ಸಾಧನದ ಹೆಸರು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್‌ಗಳಲ್ಲಿ ಗೋಚರಿಸುತ್ತದೆ. ನೀವು ಬ್ಲೂಟೂತ್ ಸಾಧನಗಳನ್ನು ಸಂಪರ್ಕಿಸಿದಾಗ ಅಥವಾ ವೈ-ಫೈ ಹಾಟ್‌ಸ್ಪಾಟ್ ಅನ್ನು ಹೊಂದಿಸಿದಾಗ ಇತರ ಜನರು ಸಹ ಅದನ್ನು ನೋಡಬಹುದು."</string>
+     <string name="devices_title" msgid="7701726109334110391">"ಸಾಧನಗಳು"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ಡಿಫಾಲ್ಟ್"</string>
+ </resources>
+diff --git a/res/values-ko/strings.xml b/res/values-ko/strings.xml
+index 704dced6ad..dbe85f6eec 100644
+--- a/res/values-ko/strings.xml
++++ b/res/values-ko/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"네트워크 세부정보"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"휴대전화에 설치된 앱에 기기 이름이 표시됩니다. 기기 이름은 블루투스 기기에 연결하거나 Wi-Fi 핫스팟을 설정할 때 다른 사용자에게 표시될 수도 있습니다."</string>
+     <string name="devices_title" msgid="7701726109334110391">"기기"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"기본값"</string>
+ </resources>
+diff --git a/res/values-ky/strings.xml b/res/values-ky/strings.xml
+index 09ee09839f..68a9d5dbd5 100644
+--- a/res/values-ky/strings.xml
++++ b/res/values-ky/strings.xml
+@@ -4151,4 +4151,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Тармактын чоо-жайы"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Түзмөгүңүздүн аталышы телефонуңуздагы колдонмолорго көрүнүктүү. Bluetooth түзмөктөрүнө туташканыңызда же Wi‑Fi туташуу түйүнүн жөндөгөнүңүздө, аны башка адамдар да көрүшү мүмкүн."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Түзмөктөр"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Демейки"</string>
+ </resources>
+diff --git a/res/values-lo/strings.xml b/res/values-lo/strings.xml
+index 667639034f..12e8bdb49d 100644
+--- a/res/values-lo/strings.xml
++++ b/res/values-lo/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ລາຍລະອຽດເຄືອຂ່າຍ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"ຊື່ອຸປະກອນຂອງທ່ານຈະສາມາດເບິ່ງເຫັນໄດ້ໂດຍແອັບຢູ່ໂທລະສັບຂອງທ່ານ. ນອກຈາກນັ້ນ, ຄົນອື່ນອາດຈະເຫັນມັນໄດ້ເມື່ອທ່ານເຊື່ອມຕໍ່ຫາອຸປະກອນ Bluetooth ຫຼື ຕັ້ງ Wi-Fi ຮັອດສະປອດ."</string>
+     <string name="devices_title" msgid="7701726109334110391">"ອຸປະກອນ"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ຄ່າເລີ່ມຕົ້ນ"</string>
+ </resources>
+diff --git a/res/values-lt/strings.xml b/res/values-lt/strings.xml
+index c054942773..dd772a3af8 100644
+--- a/res/values-lt/strings.xml
++++ b/res/values-lt/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Išsami tinklo informacija"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Įrenginio pavadinimas matomas jūsų telefone esančioms programoms. Kai prisijungiate prie „Bluetooth“ įrenginių arba nustatote „Wi-Fi“ viešosios interneto prieigos tašką, jį taip pat gali matyti kiti žmonės."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Įrenginiai"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Numatytoji"</string>
+ </resources>
+diff --git a/res/values-lv/strings.xml b/res/values-lv/strings.xml
+index 103017b9cc..92d568dab7 100644
+--- a/res/values-lv/strings.xml
++++ b/res/values-lv/strings.xml
+@@ -4221,4 +4221,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Dati par tīklu"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Jūsu ierīces nosaukums ir redzams tālrunī instalētajām lietotnēm. Ja izveidosiet savienojumu ar Bluetooth ierīcēm vai iestatīsiet Wi-Fi tīklāju, tas būs redzams arī citām personām."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Ierīces"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Noklusējums"</string>
+ </resources>
+diff --git a/res/values-mk/strings.xml b/res/values-mk/strings.xml
+index f1427caaf2..bef4ee244a 100644
+--- a/res/values-mk/strings.xml
++++ b/res/values-mk/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Детали за мрежа"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Името на уредот е видливо за апликациите на телефонот. Може да го видат и други луѓе кога ќе се поврзете со уреди со Bluetooth или кога ќе поставите Wi-Fi точка на пристап."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Уреди"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Стандардно"</string>
+ </resources>
+diff --git a/res/values-ml/strings.xml b/res/values-ml/strings.xml
+index c782cd9f88..1ebf329d0a 100644
+--- a/res/values-ml/strings.xml
++++ b/res/values-ml/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"നെറ്റ്‌വർക്ക് വിശദാംശങ്ങൾ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"നിങ്ങളുടെ ഫോണിലെ അപ്ലിക്കേഷനുകൾക്ക് നിങ്ങളുടെ ഉപകരണത്തിന്റെ പേര് ദൃശ്യമാണ്. വൈഫൈ ഹോട്ട്‌സ്‌പോട്ട് സജ്ജീകരിക്കുമ്പോഴോ Bluetooth ഉപകരണങ്ങളുമായി കണക്‌റ്റ് ചെയ്യുമ്പോഴോ, ഇത് മറ്റ് ആളുകൾക്കും കാണാനായേക്കും."</string>
+     <string name="devices_title" msgid="7701726109334110391">"ഉപകരണങ്ങൾ"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ഡിഫോൾട്ട്"</string>
+ </resources>
+diff --git a/res/values-mn/strings.xml b/res/values-mn/strings.xml
+index 4a4c6d9581..a5d846485a 100644
+--- a/res/values-mn/strings.xml
++++ b/res/values-mn/strings.xml
+@@ -4150,4 +4150,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Сүлжээний мэдээлэл"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Таны төхөөрөмжийн нэр таны утасны аппуудад харагдана. Та Bluetooth төхөөрөмжүүдэд холбогдох эсвэл Wi-Fi сүлжээний цэгийг тохируулах үед энэ нь бусад хүмүүст харагдаж болзошгүй."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Төхөөрөмжүүд"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Өгөгдмөл"</string>
+ </resources>
+diff --git a/res/values-mr/strings.xml b/res/values-mr/strings.xml
+index fa5d17b39b..502fd10103 100644
+--- a/res/values-mr/strings.xml
++++ b/res/values-mr/strings.xml
+@@ -4153,4 +4153,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"नेटवर्क तपशील"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"तुमचे डिव्हाइस नाव तुमच्या फोनवरील अॅप्सना दृश्यमान आहे. तुम्ही ब्लूटूथ डिव्हाइसशी जोडता किंवा वाय-फाय हॉटस्पॉट सेट करता, तेव्हा हे इतर लोकांद्वारे देखील बघितले जाऊ शकते."</string>
+     <string name="devices_title" msgid="7701726109334110391">"डिव्हाइस"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"डीफॉल्ट"</string>
+ </resources>
+diff --git a/res/values-ms/strings.xml b/res/values-ms/strings.xml
+index 8d1b2fdbec..0f36fc9c21 100644
+--- a/res/values-ms/strings.xml
++++ b/res/values-ms/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Butiran rangkaian"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Nama peranti anda kelihatan kepada apl pada telefon anda. Nama ini mungkin dapat dilihat oleh orang lain juga apabila anda menyambung ke peranti Bluetooth atau menyediakan tempat liputan Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Peranti"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Lalai"</string>
+ </resources>
+diff --git a/res/values-my/strings.xml b/res/values-my/strings.xml
+index cf1f4492ac..94dd6a1d47 100644
+--- a/res/values-my/strings.xml
++++ b/res/values-my/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ကွန်ရက် အသေးစိတ်များ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"သင့်စက်ပစ္စည်းအမည်ကို သင့်ဖုန်းပေါ်ရှိ အက်ပ်များက မြင်ရပါသည်။ သင် \'ဘလူးတုသ်\' စက်ပစ္စည်းများသို့ ချိတ်ဆက်သည့်အခါ သို့မဟုတ် Wi-Fi ဟော့စပေါ့ ထုတ်လွှင့်သည့်အခါ အခြားသူများက မြင်နိုင်ပါသည်။"</string>
+     <string name="devices_title" msgid="7701726109334110391">"စက်များ"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"မူရင်း"</string>
+ </resources>
+diff --git a/res/values-nb/strings.xml b/res/values-nb/strings.xml
+index 29be3bfe90..136b23d2d1 100644
+--- a/res/values-nb/strings.xml
++++ b/res/values-nb/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Nettverksdetaljer"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Enhetsnavnet ditt er synlig for apper på telefonen. Det kan også ses av andre personer når du kobler til Bluetooth-enheter eller konfigurerer en Wi-Fi-sone."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Enheter"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Standard"</string>
+ </resources>
+diff --git a/res/values-ne/strings.xml b/res/values-ne/strings.xml
+index eea73afc8b..0c21e54143 100644
+--- a/res/values-ne/strings.xml
++++ b/res/values-ne/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"नेटवर्कसम्बन्धी विवरणहरू"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"तपाईंको फोनमा रहेका अनुप्रयोगहरूले तपाईंको यन्त्रको नाम देख्न सक्छन्। तपाईंले ब्लुटुथ यन्त्रहरूमा जडान गर्दा वा कुनै Wi-Fi हटस्पट सेटअप गर्दा अरू मान्छेहरू पनि यसलाई देख्न सक्छन्।"</string>
+     <string name="devices_title" msgid="7701726109334110391">"यन्त्रहरू"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"पूर्वनिर्धारित"</string>
+ </resources>
+diff --git a/res/values-nl/strings.xml b/res/values-nl/strings.xml
+index 0202d63cca..824663e802 100644
+--- a/res/values-nl/strings.xml
++++ b/res/values-nl/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Netwerkgegevens"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"De naam van je apparaat is zichtbaar voor apps op je telefoon. De apparaatnaam kan ook door andere mensen worden gezien wanneer je verbinding maakt met Bluetooth-apparaten of een wifi-hotspot instelt."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Apparaten"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Standaard"</string>
+ </resources>
+diff --git a/res/values-or/strings.xml b/res/values-or/strings.xml
+index bdba01cce4..a9ceba598c 100644
+--- a/res/values-or/strings.xml
++++ b/res/values-or/strings.xml
+@@ -4154,4 +4154,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ନେଟୱର୍କ୍‌ର ବିବରଣୀ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"ଆପଣଙ୍କ ଡିଭାଇସ୍‌ରେ ଥିବା ଆପ୍‌ଗୁଡ଼ିକୁ ଆପଣଙ୍କର ଡିଭାଇସ୍‍ ନାମ ଦେଖାଯାଉଛି। ବ୍ଲୁ-ଟୂଥ୍‍ ଡିଭାଇସ୍‍ ସହ ଯୋଡ଼ି ହେବାବେଳେ କିମ୍ୱା ଏକ ୱାଇ-ଫାଇ ହଟସ୍ପଟ୍ ସେଟ୍ କରିବା ସମୟରେ, ଏହା ଅନ୍ୟ ଲୋକମାନଙ୍କୁ ମଧ୍ୟ ଦେଖାଦେଇପାରେ।"</string>
+     <string name="devices_title" msgid="7701726109334110391">"ଡିଭାଇସ୍‌"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ପ୍ରାକ୍‌-ନିର୍ଦ୍ଧାରିତ"</string>
+ </resources>
+diff --git a/res/values-pa/strings.xml b/res/values-pa/strings.xml
+index a52de05e27..fada5842f0 100644
+--- a/res/values-pa/strings.xml
++++ b/res/values-pa/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ਨੈੱਟਵਰਕ ਵੇਰਵੇ"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"ਤੁਹਾਡੇ ਡੀਵਾਈਸ ਦਾ ਨਾਮ ਤੁਹਾਡੇ ਫ਼ੋਨ \'ਤੇ ਐਪਾਂ ਨੂੰ ਦਿਖਾਈ ਦਿੰਦਾ ਹੈ। ਇਹ ਤੁਹਾਡੇ ਬਲੂਟੁੱਥ ਡੀਵਾਈਸ ਨਾਲ ਕਨੈਕਟ ਕਰਨ ਜਾਂ ਵਾਈ-ਫਾਈ ਹੌਟਸਪੌਟ ਸੈੱਟਅੱਪ ਕਰਨ \'ਤੇ ਹੋਰ ਲੋਕਾਂ ਵੱਲੋਂ ਵੀ ਦੇਖਿਆ ਜਾ ਸਕਦਾ ਹੈ।"</string>
+     <string name="devices_title" msgid="7701726109334110391">"ਡੀਵਾਈਸਾਂ"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ਪੂਰਵ-ਨਿਰਧਾਰਤ"</string>
+ </resources>
+diff --git a/res/values-pl/strings.xml b/res/values-pl/strings.xml
+index 70a754c2cd..86f0b9a664 100644
+--- a/res/values-pl/strings.xml
++++ b/res/values-pl/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Szczegóły sieci"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Nazwa urządzenia jest widoczna dla aplikacji na telefonie. Mogą ją też zobaczyć inne osoby, gdy łączysz się z urządzeniami przez Bluetooth lub konfigurujesz hotspot Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Urządzenia"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Wartość domyślna"</string>
+ </resources>
+diff --git a/res/values-pt-rBR/strings.xml b/res/values-pt-rBR/strings.xml
+index 593f527512..1af0e5e289 100644
+--- a/res/values-pt-rBR/strings.xml
++++ b/res/values-pt-rBR/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalhes da rede"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"O nome do seu dispositivo está visível para os apps no seu smartphone. Ele também pode ser visto por outras pessoas quando você se conecta a dispositivos Bluetooth ou configura um ponto de acesso Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivos"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Padrão"</string>
+ </resources>
+diff --git a/res/values-pt-rPT/strings.xml b/res/values-pt-rPT/strings.xml
+index 44b4a04d6c..65a8df8966 100644
+--- a/res/values-pt-rPT/strings.xml
++++ b/res/values-pt-rPT/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalhes da rede"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"O nome do seu dispositivo é visível para as aplicações do telemóvel. Também pode ser visto por outras pessoas quando se liga a dispositivos Bluetooth ou configura uma zona Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivos"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Predefinição"</string>
+ </resources>
+diff --git a/res/values-pt/strings.xml b/res/values-pt/strings.xml
+index 593f527512..1af0e5e289 100644
+--- a/res/values-pt/strings.xml
++++ b/res/values-pt/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalhes da rede"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"O nome do seu dispositivo está visível para os apps no seu smartphone. Ele também pode ser visto por outras pessoas quando você se conecta a dispositivos Bluetooth ou configura um ponto de acesso Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispositivos"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Padrão"</string>
+ </resources>
+diff --git a/res/values-ro/strings.xml b/res/values-ro/strings.xml
+index e77e1fa5b6..f2c0e74ea0 100644
+--- a/res/values-ro/strings.xml
++++ b/res/values-ro/strings.xml
+@@ -4221,4 +4221,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detalii despre rețea"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Numele dispozitivului este vizibil aplicațiilor de pe telefon. Poate fi văzut și de alte persoane când vă conectați la dispozitivele Bluetooth sau configurați un hotspot Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Dispozitive"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Prestabilită"</string>
+ </resources>
+diff --git a/res/values-ru/strings.xml b/res/values-ru/strings.xml
+index 5f5fc33e38..c6096b0b81 100644
+--- a/res/values-ru/strings.xml
++++ b/res/values-ru/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Сведения о сети"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"У приложений на телефоне есть доступ к названию устройства. Его могут видеть другие пользователи, когда вы подключаетесь к устройствам по Bluetooth или настраиваете точку доступа Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Устройства"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"По умолчанию"</string>
+ </resources>
+diff --git a/res/values-si/strings.xml b/res/values-si/strings.xml
+index a4a5eef456..61441708ee 100644
+--- a/res/values-si/strings.xml
++++ b/res/values-si/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"ජාල විස්තර"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"ඔබගේ උපාංගයේ නම ඔබගේ දුරකථනයේ යෙදුම්වලට දෘශ්‍යමානය. ඔබ බ්ලූටූත්වලට සම්බන්ධ වූ විට හෝ Wi-Fi හොට්ස්පොට් එකක් පිහිට වූ විට වෙනත් පුද්ගලයන්ද එය දැකිය හැකිය."</string>
+     <string name="devices_title" msgid="7701726109334110391">"උපාංග"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"පෙරනිමි"</string>
+ </resources>
+diff --git a/res/values-sk/strings.xml b/res/values-sk/strings.xml
+index e5c58e70cf..29fc56340b 100644
+--- a/res/values-sk/strings.xml
++++ b/res/values-sk/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Podrobnosti siete"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Názov zariadenia je viditeľný pre aplikácie v telefóne. Môže sa zobrazovať aj ostatným používateľom po pripojení k zariadeniu Bluetooth alebo nastavení hotspotu Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Zariadenia"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Predvolený"</string>
+ </resources>
+diff --git a/res/values-sl/strings.xml b/res/values-sl/strings.xml
+index f89fa3c34e..0982474b89 100644
+--- a/res/values-sl/strings.xml
++++ b/res/values-sl/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"O omrežju"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Ime naprave je vidno aplikacijam v telefonu. Ko vzpostavite povezavo z napravami Bluetooth ali nastavite dostopno točko Wi-Fi, ga bodo morda videle tudi druge osebe."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Naprave"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Privzeto"</string>
+ </resources>
+diff --git a/res/values-sq/strings.xml b/res/values-sq/strings.xml
+index faf55611e9..35d48e7fc6 100644
+--- a/res/values-sq/strings.xml
++++ b/res/values-sq/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Detajet e rrjetit"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Emri i pajisjes sate është i dukshëm për aplikacionet në telefonin tënd. Ai mund të shikohet po ashtu nga persona të tjerë kur lidhesh me pajisje me Bluetooth ose kur konfiguron një zonë të qasjes për internet me Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Pajisjet"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"I parazgjedhur"</string>
+ </resources>
+diff --git a/res/values-sr/strings.xml b/res/values-sr/strings.xml
+index 2a5acacd1a..d763e3b351 100644
+--- a/res/values-sr/strings.xml
++++ b/res/values-sr/strings.xml
+@@ -4221,4 +4221,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Детаљи о мрежи"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Име уређаја виде апликације на телефону. Могу да га виде и други људи кад се повежете са Bluetooth уређајима или подесите Wi-Fi хотспот."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Уређаји"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Подразумевана"</string>
+ </resources>
+diff --git a/res/values-sv/strings.xml b/res/values-sv/strings.xml
+index 151a56c821..93305e43e6 100644
+--- a/res/values-sv/strings.xml
++++ b/res/values-sv/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Nätverksinformation"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Enhetens namn är synligt för appar i mobilen. Det kan också vara synligt för andra personer när du ansluter till Bluetooth-enheter eller om du skapar en Wi-Fi-surfzon."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Enheter"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Standard"</string>
+ </resources>
+diff --git a/res/values-sw/strings.xml b/res/values-sw/strings.xml
+index a97ef30740..b392576b63 100644
+--- a/res/values-sw/strings.xml
++++ b/res/values-sw/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Maelezo ya mtandao"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Jina la kifaa chako litaonekana kwenye programu zilizo katika simu yako. Pia linaweza kuonekana kwa watu wengine wakati unaunganisha vifaa vya Bluetooth au kuweka mtandao hewa wa Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Vifaa"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Chaguomsingi"</string>
+ </resources>
+diff --git a/res/values-ta/strings.xml b/res/values-ta/strings.xml
+index 8437eb963d..9b6f81a871 100644
+--- a/res/values-ta/strings.xml
++++ b/res/values-ta/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"நெட்வொர்க் விவரங்கள்"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"உங்களது மொபைலில் உள்ள ஆப்ஸிற்கு, உங்கள் சாதனத்தின் பெயர் தெரியும். புளூடூத் சாதனங்களுடன் இணைக்கும்போது அல்லது வைஃபை ஹாட்ஸ்பாட்டை அமைக்கும்போது, அப்பெயர் பிறருக்குக் காட்டப்படலாம்."</string>
+     <string name="devices_title" msgid="7701726109334110391">"சாதனங்கள்"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"இயல்பு"</string>
+ </resources>
+diff --git a/res/values-te/strings.xml b/res/values-te/strings.xml
+index 03b771dc17..97f470b991 100644
+--- a/res/values-te/strings.xml
++++ b/res/values-te/strings.xml
+@@ -4153,4 +4153,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"నెట్‌వర్క్ వివరాలు"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"మీ ఫోన్‌లోని యాప్‌లకు మీ పరికరం పేరు కనిపిస్తుంది. మీరు బ్లూటూత్ పరికరాలకు కనెక్ట్ చేసినప్పుడు లేదా Wi-Fi హాట్‌స్పాట్‌ని సెటప్ చేసినప్పుడు ఇతర వ్యక్తులకు కూడా ఇది కనిపించవచ్చు."</string>
+     <string name="devices_title" msgid="7701726109334110391">"పరికరాలు"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"డిఫాల్ట్"</string>
+ </resources>
+diff --git a/res/values-th/strings.xml b/res/values-th/strings.xml
+index 651f1026a9..f396320c0f 100644
+--- a/res/values-th/strings.xml
++++ b/res/values-th/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"รายละเอียดเครือข่าย"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"แอปในโทรศัพท์จะเห็นชื่อของอุปกรณ์ และคนอื่นก็อาจเห็นเช่นกันหากคุณเชื่อมต่อกับอุปกรณ์บลูทูธหรือตั้งค่าฮอตสปอต Wi-Fi"</string>
+     <string name="devices_title" msgid="7701726109334110391">"อุปกรณ์"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ค่าเริ่มต้น"</string>
+ </resources>
+diff --git a/res/values-tl/strings.xml b/res/values-tl/strings.xml
+index 202a9defbf..fa0bb84f90 100644
+--- a/res/values-tl/strings.xml
++++ b/res/values-tl/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Mga detalye ng network"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Nakikita ang pangalan ng iyong device sa mga app sa iyong telepono. Maaari rin itong makita ng ibang tao kapag kumonekta ka sa mga Bluetooth device o nag-set up ka ng Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Mga Device"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Default"</string>
+ </resources>
+diff --git a/res/values-tr/strings.xml b/res/values-tr/strings.xml
+index 6f6c7821fe..058074f031 100644
+--- a/res/values-tr/strings.xml
++++ b/res/values-tr/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Ağ ayrıntıları"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Telefonunuzdaki uygulamalar cihazınızın adını görür. Bluetooth cihazlarına bağlandığınızda veya bir kablosuz hotspot ayarladığınızda başka kişiler de bu adı görebilir."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Cihazlar"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Varsayılan"</string>
+ </resources>
+diff --git a/res/values-uk/strings.xml b/res/values-uk/strings.xml
+index 887bc81041..234434e1e3 100644
+--- a/res/values-uk/strings.xml
++++ b/res/values-uk/strings.xml
+@@ -4290,4 +4290,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Дані мережі"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Додатки на телефоні бачать назву пристрою. Її також можуть бачити інші люди, коли ви під’єднуєтеся до пристроїв Bluetooth або налаштовуєте точку доступу Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Пристрої"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"За умовчанням"</string>
+ </resources>
+diff --git a/res/values-ur/strings.xml b/res/values-ur/strings.xml
+index 9840bd0aab..15b06c5401 100644
+--- a/res/values-ur/strings.xml
++++ b/res/values-ur/strings.xml
+@@ -4150,4 +4150,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"نیٹ ورک کی تفصیلات"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"‏آپ کے آلہ کا نام آپ کے فون پر موجود ایپس میں مرئی ہوتا ہے۔ جب آپ بلوٹوتھ آلات سے منسلک ہوتے ہیں یا Wi-Fi ہاٹ اسپاٹ سیٹ اپ کرتے ہیں تو دوسرے لوگ بھی اسے دیکھ سکتے ہیں۔"</string>
+     <string name="devices_title" msgid="7701726109334110391">"آلات"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ڈیفالٹ"</string>
+ </resources>
+diff --git a/res/values-uz/strings.xml b/res/values-uz/strings.xml
+index 2a6608f325..c9e483ee9a 100644
+--- a/res/values-uz/strings.xml
++++ b/res/values-uz/strings.xml
+@@ -4168,4 +4168,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Tarmoq tafsilotlari"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Telefoningizdagi barcha ilovalarga qurilma nomi ko‘rinadi. Qurilmalarga Bluetooth orqali ulanganingizda yoki Wi-Fi hotspot sozlaganingizda boshqa foydalanuvchilarni ularni ko‘rishi mumkin."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Qurilmalar"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Standart"</string>
+ </resources>
+diff --git a/res/values-vi/strings.xml b/res/values-vi/strings.xml
+index 4463c282ba..712ec36eb8 100644
+--- a/res/values-vi/strings.xml
++++ b/res/values-vi/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Thông tin chi tiết về mạng"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Tên thiết bị của bạn sẽ hiển thị với các ứng dụng trên điện thoại. Những người khác cũng có thể thấy tên thiết bị này khi bạn kết nối với thiết bị Bluetooth hoặc thiết lập điểm phát sóng Wi-Fi."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Thiết bị"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Mặc định"</string>
+ </resources>
+diff --git a/res/values-zh-rCN/strings.xml b/res/values-zh-rCN/strings.xml
+index 8bf6eeeb34..f625940642 100644
+--- a/res/values-zh-rCN/strings.xml
++++ b/res/values-zh-rCN/strings.xml
+@@ -4152,4 +4152,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"网络详情"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"您的设备名称会显示在手机上的应用中。此外，当您连接到蓝牙设备或设置 WLAN 热点时，其他人可能也会看到您的设备名称。"</string>
+     <string name="devices_title" msgid="7701726109334110391">"设备"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"默认"</string>
+ </resources>
+diff --git a/res/values-zh-rHK/strings.xml b/res/values-zh-rHK/strings.xml
+index f8621fd113..219c30179a 100644
+--- a/res/values-zh-rHK/strings.xml
++++ b/res/values-zh-rHK/strings.xml
+@@ -4155,4 +4155,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"網絡詳細資料"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"您的裝置名稱會在手機的應用程式上顯示。當您連接藍牙裝置或設定 Wi-Fi 熱點時，其他人亦可能會看到您的裝置名稱。"</string>
+     <string name="devices_title" msgid="7701726109334110391">"裝置"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"預設"</string>
+ </resources>
+diff --git a/res/values-zh-rTW/strings.xml b/res/values-zh-rTW/strings.xml
+index 55c9fb3ba7..6ee29a6cb4 100644
+--- a/res/values-zh-rTW/strings.xml
++++ b/res/values-zh-rTW/strings.xml
+@@ -4156,4 +4156,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"網路詳細資料"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"你的裝置名稱會顯示在手機的應用程式上。此外，當你連上藍牙裝置或設定 Wi-Fi 無線基地台時，其他人可能也會看到你的裝置名稱。"</string>
+     <string name="devices_title" msgid="7701726109334110391">"裝置"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"預設"</string>
+ </resources>
+diff --git a/res/values-zu/strings.xml b/res/values-zu/strings.xml
+index cf7b7667c1..607cbc10e9 100644
+--- a/res/values-zu/strings.xml
++++ b/res/values-zu/strings.xml
+@@ -4153,4 +4153,5 @@
+     <string name="pref_title_network_details" msgid="7186418845727358964">"Imininingwane yenethiwekhi"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"Igama ledivayisi yakho liyabonakala kuzinhlelo zokusebenza efonini yakho. Futhi lingabonwa ngabanye abantu uma uxhuma kumadivayisi e-Bluetooth noma usetha i-Wi-Fi hotspot."</string>
+     <string name="devices_title" msgid="7701726109334110391">"Amadivayisi"</string>
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"Okuzenzakalelayo"</string>
+ </resources>
+-- 
+2.17.1
+

@@ -1,0 +1,92 @@
+From bd93404936da1a4229f1dcc0a195562a3798f4de Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Mon, 11 Dec 2017 12:42:26 -0800
+Subject: [PATCH 033/306] Always invoke scrim callback
+
+Callback needs to be invoked if we're trying to switch
+to the same state, otherwise the window will never know
+that we're done fading the keyguard.
+
+Change-Id: I6779ecf18fbb23f621731d851ab343b82c3529e3
+Fixes: 70481733
+Fixes: 70392591
+Test: Unlock by tapping on notification
+Test: Unlock with pin, fingerprint
+Test: Unlock with fingerprint when pulsing
+Test: Unlock by tapping on notification when pulsing
+Test: Open Settings from QS when Maps is SHOW_WHEN_LOCKED
+Test: runtest -x packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/ScrimControllerTest.java
+(cherry picked from commit 19aba8e2e71e52ff4133b1f924a6254aa62ee72f)
+---
+ .../systemui/statusbar/phone/ScrimController.java        | 4 ++++
+ .../com/android/systemui/statusbar/phone/StatusBar.java  | 4 +++-
+ .../statusbar/phone/StatusBarKeyguardViewManager.java    | 2 --
+ .../systemui/statusbar/phone/ScrimControllerTest.java    | 9 +++++++++
+ 4 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+index 05fcbb0a11b..168758f64b6 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+@@ -195,6 +195,10 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+ 
+     public void transitionTo(ScrimState state, Callback callback) {
+         if (state == mState) {
++            // Call the callback anyway, unless it's already enqueued
++            if (callback != null && mCallback != callback) {
++                callback.onFinished();
++            }
+             return;
+         } else if (DEBUG) {
+             Log.d(TAG, "State changed to: " + state);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index c61b7e84a31..0cfad1805dd 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -656,7 +656,9 @@ public class StatusBar extends SystemUI implements DemoMode,
+                         + "mStatusBarKeyguardViewManager was null");
+                 return;
+             }
+-            mStatusBarKeyguardViewManager.onKeyguardFadedAway();
++            if (mKeyguardFadingAway) {
++                mStatusBarKeyguardViewManager.onKeyguardFadedAway();
++            }
+         }
+ 
+         @Override
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java
+index dacd3d935d0..8504d8e5fee 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarKeyguardViewManager.java
+@@ -380,8 +380,6 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
+                 mStatusBar.fadeKeyguardWhilePulsing();
+                 wakeAndUnlockDejank();
+             } else {
+-                mFingerprintUnlockController.startKeyguardFadingAway();
+-                mStatusBar.setKeyguardFadingAway(startTime, delay, fadeoutDuration);
+                 boolean staying = mStatusBar.hideKeyguard();
+                 if (!staying) {
+                     mStatusBarWindowManager.setKeyguardFadingAway(true);
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/ScrimControllerTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/ScrimControllerTest.java
+index b9f695be90c..37dcaa8bd55 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/ScrimControllerTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/ScrimControllerTest.java
+@@ -229,6 +229,15 @@ public class ScrimControllerTest extends SysuiTestCase {
+         verify(mWakeLock, times(1)).release();
+     }
+ 
++    @Test
++    public void testCallbackInvokedOnSameStateTransition() {
++        mScrimController.transitionTo(ScrimState.UNLOCKED);
++        mScrimController.finishAnimationsImmediately();
++        ScrimController.Callback callback = mock(ScrimController.Callback.class);
++        mScrimController.transitionTo(ScrimState.UNLOCKED, callback);
++        verify(callback, times(1)).onFinished();
++    }
++
+     private void assertScrimTint(ScrimView scrimView, boolean tinted) {
+         final boolean viewIsTinted = scrimView.getTint() != Color.TRANSPARENT;
+         final String name = scrimView == mScrimInFront ? "front" : "back";
+-- 
+2.17.1
+

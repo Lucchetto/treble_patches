@@ -1,0 +1,630 @@
+From ee080fed199e60df07c0fcef970182ba09bf4367 Mon Sep 17 00:00:00 2001
+From: Eino-Ville Talvala <etalvala@google.com>
+Date: Mon, 25 Jun 2018 10:41:04 -0700
+Subject: [PATCH 10/80] Camera: DistortionMapper: Fix to work consistently
+
+- Ensure the conversions between pre-correction and active array coordinates
+  are applied consistenly
+- Only some regions were being clamped to ensure they were within the
+  destination region. Add more clamping, though some outputs still
+  need to not be clamped, such as face rectangles which may extend outside
+  the FOV.
+- Add simple transform mode since the full transform cannot safely be used
+  to meet all consistency requirements in Android P
+
+Also update the unit tests to try to check for this corner case and the
+simple mode.
+
+Test: adb shell /data/nativetest/cameraservice_tests/cameraservice_test \
+    --gtest_filter=*Distortion*
+Bug: 109766306
+Change-Id: Id6f23794d60d5ed9e04b155426741a504487e3d6
+---
+ .../device3/DistortionMapper.cpp              | 143 +++++++++++++-----
+ .../device3/DistortionMapper.h                |  41 +++--
+ .../tests/DistortionMapperTest.cpp            | 128 ++++++++++++----
+ 3 files changed, 235 insertions(+), 77 deletions(-)
+
+diff --git a/services/camera/libcameraservice/device3/DistortionMapper.cpp b/services/camera/libcameraservice/device3/DistortionMapper.cpp
+index eef6658ac..4dafefde5 100644
+--- a/services/camera/libcameraservice/device3/DistortionMapper.cpp
++++ b/services/camera/libcameraservice/device3/DistortionMapper.cpp
+@@ -49,7 +49,7 @@ constexpr std::array<uint32_t, 1> DistortionMapper::kResultRectsToCorrect = {
+ };
+ 
+ // Only for capture result
+-constexpr std::array<uint32_t, 2> DistortionMapper::kResultPointsToCorrect = {
++constexpr std::array<uint32_t, 2> DistortionMapper::kResultPointsToCorrectNoClamp = {
+     ANDROID_STATISTICS_FACE_RECTANGLES, // Says rectangles, is really points
+     ANDROID_STATISTICS_FACE_LANDMARKS,
+ };
+@@ -79,12 +79,21 @@ status_t DistortionMapper::setupStaticInfo(const CameraMetadata &deviceInfo) {
+     array = deviceInfo.find(ANDROID_SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE);
+     if (array.count != 4) return BAD_VALUE;
+ 
+-    mArrayWidth = array.data.i32[2];
+-    mArrayHeight = array.data.i32[3];
++    float arrayX = static_cast<float>(array.data.i32[0]);
++    float arrayY = static_cast<float>(array.data.i32[1]);
++    mArrayWidth = static_cast<float>(array.data.i32[2]);
++    mArrayHeight = static_cast<float>(array.data.i32[3]);
+ 
+     array = deviceInfo.find(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+-    mActiveWidth = array.data.i32[2];
+-    mActiveHeight = array.data.i32[3];
++    if (array.count != 4) return BAD_VALUE;
++
++    float activeX = static_cast<float>(array.data.i32[0]);
++    float activeY = static_cast<float>(array.data.i32[1]);
++    mActiveWidth = static_cast<float>(array.data.i32[2]);
++    mActiveHeight = static_cast<float>(array.data.i32[3]);
++
++    mArrayDiffX = activeX - arrayX;
++    mArrayDiffY = activeY - arrayY;
+ 
+     return updateCalibration(deviceInfo);
+ }
+@@ -111,22 +120,13 @@ status_t DistortionMapper::correctCaptureRequest(CameraMetadata *request) {
+                 if (weight == 0) {
+                     continue;
+                 }
+-                res = mapCorrectedToRaw(e.data.i32 + j, 2);
++                res = mapCorrectedToRaw(e.data.i32 + j, 2, /*clamp*/true);
+                 if (res != OK) return res;
+-                for (size_t k = 0; k < 4; k+=2) {
+-                    int32_t& x = e.data.i32[j + k];
+-                    int32_t& y = e.data.i32[j + k + 1];
+-                    // Clamp to within active array
+-                    x = std::max(0, x);
+-                    x = std::min(mActiveWidth - 1, x);
+-                    y = std::max(0, y);
+-                    y = std::min(mActiveHeight - 1, y);
+-                }
+             }
+         }
+         for (auto rect : kRequestRectsToCorrect) {
+             e = request->find(rect);
+-            res = mapCorrectedRectToRaw(e.data.i32, e.count / 4);
++            res = mapCorrectedRectToRaw(e.data.i32, e.count / 4, /*clamp*/true);
+             if (res != OK) return res;
+         }
+     }
+@@ -156,27 +156,18 @@ status_t DistortionMapper::correctCaptureResult(CameraMetadata *result) {
+                 if (weight == 0) {
+                     continue;
+                 }
+-                res = mapRawToCorrected(e.data.i32 + j, 2);
++                res = mapRawToCorrected(e.data.i32 + j, 2, /*clamp*/true);
+                 if (res != OK) return res;
+-                for (size_t k = 0; k < 4; k+=2) {
+-                    int32_t& x = e.data.i32[j + k];
+-                    int32_t& y = e.data.i32[j + k + 1];
+-                    // Clamp to within active array
+-                    x = std::max(0, x);
+-                    x = std::min(mActiveWidth - 1, x);
+-                    y = std::max(0, y);
+-                    y = std::min(mActiveHeight - 1, y);
+-                }
+             }
+         }
+         for (auto rect : kResultRectsToCorrect) {
+             e = result->find(rect);
+-            res = mapRawRectToCorrected(e.data.i32, e.count / 4);
++            res = mapRawRectToCorrected(e.data.i32, e.count / 4, /*clamp*/true);
+             if (res != OK) return res;
+         }
+-        for (auto pts : kResultPointsToCorrect) {
++        for (auto pts : kResultPointsToCorrectNoClamp) {
+             e = result->find(pts);
+-            res = mapRawToCorrected(e.data.i32, e.count / 2);
++            res = mapRawToCorrected(e.data.i32, e.count / 2, /*clamp*/false);
+             if (res != OK) return res;
+         }
+     }
+@@ -232,9 +223,12 @@ status_t DistortionMapper::updateCalibration(const CameraMetadata &result) {
+     return OK;
+ }
+ 
+-status_t DistortionMapper::mapRawToCorrected(int32_t *coordPairs, int coordCount) {
++status_t DistortionMapper::mapRawToCorrected(int32_t *coordPairs, int coordCount,
++        bool clamp, bool simple) {
+     if (!mValidMapping) return INVALID_OPERATION;
+ 
++    if (simple) return mapRawToCorrectedSimple(coordPairs, coordCount, clamp);
++
+     if (!mValidGrids) {
+         status_t res = buildGrids();
+         if (res != OK) return res;
+@@ -275,6 +269,12 @@ status_t DistortionMapper::mapRawToCorrected(int32_t *coordPairs, int coordCount
+         // Interpolate along left edge of corrected quad (which are axis-aligned) for y
+         float corrY = corrQuad->coords[1] + v * (corrQuad->coords[7] - corrQuad->coords[1]);
+ 
++        // Clamp to within active array
++        if (clamp) {
++            corrX = std::min(mActiveWidth - 1, std::max(0.f, corrX));
++            corrY = std::min(mActiveHeight - 1, std::max(0.f, corrY));
++        }
++
+         coordPairs[i] = static_cast<int32_t>(std::round(corrX));
+         coordPairs[i + 1] = static_cast<int32_t>(std::round(corrY));
+     }
+@@ -282,7 +282,30 @@ status_t DistortionMapper::mapRawToCorrected(int32_t *coordPairs, int coordCount
+     return OK;
+ }
+ 
+-status_t DistortionMapper::mapRawRectToCorrected(int32_t *rects, int rectCount) {
++status_t DistortionMapper::mapRawToCorrectedSimple(int32_t *coordPairs, int coordCount,
++        bool clamp) const {
++    if (!mValidMapping) return INVALID_OPERATION;
++
++    float scaleX = mActiveWidth / mArrayWidth;
++    float scaleY = mActiveHeight / mArrayHeight;
++    for (int i = 0; i < coordCount * 2; i += 2) {
++        float x = coordPairs[i];
++        float y = coordPairs[i + 1];
++        float corrX = x * scaleX;
++        float corrY = y * scaleY;
++        if (clamp) {
++            corrX = std::min(mActiveWidth - 1, std::max(0.f, corrX));
++            corrY = std::min(mActiveHeight - 1, std::max(0.f, corrY));
++        }
++        coordPairs[i] = static_cast<int32_t>(std::round(corrX));
++        coordPairs[i + 1] = static_cast<int32_t>(std::round(corrY));
++    }
++
++    return OK;
++}
++
++status_t DistortionMapper::mapRawRectToCorrected(int32_t *rects, int rectCount, bool clamp,
++        bool simple) {
+     if (!mValidMapping) return INVALID_OPERATION;
+     for (int i = 0; i < rectCount * 4; i += 4) {
+         // Map from (l, t, width, height) to (l, t, r, b)
+@@ -293,7 +316,7 @@ status_t DistortionMapper::mapRawRectToCorrected(int32_t *rects, int rectCount)
+             rects[i + 1] + rects[i + 3]
+         };
+ 
+-        mapRawToCorrected(coords, 2);
++        mapRawToCorrected(coords, 2, clamp, simple);
+ 
+         // Map back to (l, t, width, height)
+         rects[i] = coords[0];
+@@ -305,14 +328,24 @@ status_t DistortionMapper::mapRawRectToCorrected(int32_t *rects, int rectCount)
+     return OK;
+ }
+ 
++status_t DistortionMapper::mapCorrectedToRaw(int32_t *coordPairs, int coordCount, bool clamp,
++        bool simple) const {
++    return mapCorrectedToRawImpl(coordPairs, coordCount, clamp, simple);
++}
++
+ template<typename T>
+-status_t DistortionMapper::mapCorrectedToRaw(T *coordPairs, int coordCount) const {
++status_t DistortionMapper::mapCorrectedToRawImpl(T *coordPairs, int coordCount, bool clamp,
++        bool simple) const {
+     if (!mValidMapping) return INVALID_OPERATION;
+ 
++    if (simple) return mapCorrectedToRawImplSimple(coordPairs, coordCount, clamp);
++
++    float activeCx = mCx - mArrayDiffX;
++    float activeCy = mCy - mArrayDiffY;
+     for (int i = 0; i < coordCount * 2; i += 2) {
+-        // Move to normalized space
+-        float ywi = (coordPairs[i + 1] - mCy) * mInvFy;
+-        float xwi = (coordPairs[i] - mCx - mS * ywi) * mInvFx;
++        // Move to normalized space from active array space
++        float ywi = (coordPairs[i + 1] - activeCy) * mInvFy;
++        float xwi = (coordPairs[i] - activeCx - mS * ywi) * mInvFx;
+         // Apply distortion model to calculate raw image coordinates
+         float rSq = xwi * xwi + ywi * ywi;
+         float Fr = 1.f + (mK[0] * rSq) + (mK[1] * rSq * rSq) + (mK[2] * rSq * rSq * rSq);
+@@ -321,6 +354,11 @@ status_t DistortionMapper::mapCorrectedToRaw(T *coordPairs, int coordCount) cons
+         // Move back to image space
+         float xr = mFx * xc + mS * yc + mCx;
+         float yr = mFy * yc + mCy;
++        // Clamp to within pre-correction active array
++        if (clamp) {
++            xr = std::min(mArrayWidth - 1, std::max(0.f, xr));
++            yr = std::min(mArrayHeight - 1, std::max(0.f, yr));
++        }
+ 
+         coordPairs[i] = static_cast<T>(std::round(xr));
+         coordPairs[i + 1] = static_cast<T>(std::round(yr));
+@@ -329,10 +367,32 @@ status_t DistortionMapper::mapCorrectedToRaw(T *coordPairs, int coordCount) cons
+     return OK;
+ }
+ 
+-template status_t DistortionMapper::mapCorrectedToRaw(int32_t*, int) const;
+-template status_t DistortionMapper::mapCorrectedToRaw(float*, int) const;
++template<typename T>
++status_t DistortionMapper::mapCorrectedToRawImplSimple(T *coordPairs, int coordCount,
++        bool clamp) const {
++    if (!mValidMapping) return INVALID_OPERATION;
++
++    float scaleX = mArrayWidth / mActiveWidth;
++    float scaleY = mArrayHeight / mActiveHeight;
++    for (int i = 0; i < coordCount * 2; i += 2) {
++        float x = coordPairs[i];
++        float y = coordPairs[i + 1];
++        float rawX = x * scaleX;
++        float rawY = y * scaleY;
++        if (clamp) {
++            rawX = std::min(mArrayWidth - 1, std::max(0.f, rawX));
++            rawY = std::min(mArrayHeight - 1, std::max(0.f, rawY));
++        }
++        coordPairs[i] = static_cast<T>(std::round(rawX));
++        coordPairs[i + 1] = static_cast<T>(std::round(rawY));
++    }
++
++    return OK;
++}
++
+ 
+-status_t DistortionMapper::mapCorrectedRectToRaw(int32_t *rects, int rectCount) const {
++status_t DistortionMapper::mapCorrectedRectToRaw(int32_t *rects, int rectCount, bool clamp,
++        bool simple) const {
+     if (!mValidMapping) return INVALID_OPERATION;
+ 
+     for (int i = 0; i < rectCount * 4; i += 4) {
+@@ -344,7 +404,7 @@ status_t DistortionMapper::mapCorrectedRectToRaw(int32_t *rects, int rectCount)
+             rects[i + 1] + rects[i + 3]
+         };
+ 
+-        mapCorrectedToRaw(coords, 2);
++        mapCorrectedToRaw(coords, 2, clamp, simple);
+ 
+         // Map back to (l, t, width, height)
+         rects[i] = coords[0];
+@@ -380,7 +440,8 @@ status_t DistortionMapper::buildGrids() {
+             };
+             mDistortedGrid[index].src = &mCorrectedGrid[index];
+             mDistortedGrid[index].coords = mCorrectedGrid[index].coords;
+-            status_t res = mapCorrectedToRaw(mDistortedGrid[index].coords.data(), 4);
++            status_t res = mapCorrectedToRawImpl(mDistortedGrid[index].coords.data(), 4,
++                    /*clamp*/false, /*simple*/false);
+             if (res != OK) return res;
+         }
+     }
+diff --git a/services/camera/libcameraservice/device3/DistortionMapper.h b/services/camera/libcameraservice/device3/DistortionMapper.h
+index 00cbd3222..4c0a1a617 100644
+--- a/services/camera/libcameraservice/device3/DistortionMapper.h
++++ b/services/camera/libcameraservice/device3/DistortionMapper.h
+@@ -73,8 +73,11 @@ class DistortionMapper {
+      *
+      *   coordPairs: A pointer to an array of consecutive (x,y) points
+      *   coordCount: Number of (x,y) pairs to transform
++     *   clamp: Whether to clamp the result to the bounds of the active array
++     *   simple: Whether to do complex correction or just a simple linear map
+      */
+-    status_t mapRawToCorrected(int32_t *coordPairs, int coordCount);
++    status_t mapRawToCorrected(int32_t *coordPairs, int coordCount, bool clamp,
++            bool simple = true);
+ 
+     /**
+      * Transform from distorted (original) to corrected (warped) coordinates.
+@@ -82,8 +85,11 @@ class DistortionMapper {
+      *
+      *   rects: A pointer to an array of consecutive (x,y, w, h) rectangles
+      *   rectCount: Number of rectangles to transform
++     *   clamp: Whether to clamp the result to the bounds of the active array
++     *   simple: Whether to do complex correction or just a simple linear map
+      */
+-    status_t mapRawRectToCorrected(int32_t *rects, int rectCount);
++    status_t mapRawRectToCorrected(int32_t *rects, int rectCount, bool clamp,
++            bool simple = true);
+ 
+     /**
+      * Transform from corrected (warped) to distorted (original) coordinates.
+@@ -91,9 +97,11 @@ class DistortionMapper {
+      *
+      *   coordPairs: A pointer to an array of consecutive (x,y) points
+      *   coordCount: Number of (x,y) pairs to transform
++     *   clamp: Whether to clamp the result to the bounds of the precorrection active array
++     *   simple: Whether to do complex correction or just a simple linear map
+      */
+-    template<typename T>
+-    status_t mapCorrectedToRaw(T* coordPairs, int coordCount) const;
++    status_t mapCorrectedToRaw(int32_t* coordPairs, int coordCount, bool clamp,
++            bool simple = true) const;
+ 
+     /**
+      * Transform from corrected (warped) to distorted (original) coordinates.
+@@ -101,8 +109,11 @@ class DistortionMapper {
+      *
+      *   rects: A pointer to an array of consecutive (x,y, w, h) rectangles
+      *   rectCount: Number of rectangles to transform
++     *   clamp: Whether to clamp the result to the bounds of the precorrection active array
++     *   simple: Whether to do complex correction or just a simple linear map
+      */
+-    status_t mapCorrectedRectToRaw(int32_t *rects, int rectCount) const;
++    status_t mapCorrectedRectToRaw(int32_t *rects, int rectCount, bool clamp,
++            bool simple = true) const;
+ 
+     struct GridQuad {
+         // Source grid quad, or null
+@@ -150,8 +161,18 @@ class DistortionMapper {
+     // Only capture result
+     static const std::array<uint32_t, 1> kResultRectsToCorrect;
+ 
+-    // Only for capture results
+-    static const std::array<uint32_t, 2> kResultPointsToCorrect;
++    // Only for capture results; don't clamp
++    static const std::array<uint32_t, 2> kResultPointsToCorrectNoClamp;
++
++    // Single implementation for various mapCorrectedToRaw methods
++    template<typename T>
++    status_t mapCorrectedToRawImpl(T* coordPairs, int coordCount, bool clamp, bool simple) const;
++
++    // Simple linear interpolation option
++    template<typename T>
++    status_t mapCorrectedToRawImplSimple(T* coordPairs, int coordCount, bool clamp) const;
++
++    status_t mapRawToCorrectedSimple(int32_t *coordPairs, int coordCount, bool clamp) const;
+ 
+     // Utility to create reverse mapping grids
+     status_t buildGrids();
+@@ -168,9 +189,11 @@ class DistortionMapper {
+     float mK[5];
+ 
+     // pre-correction active array dimensions
+-    int mArrayWidth, mArrayHeight;
++    float mArrayWidth, mArrayHeight;
+     // active array dimensions
+-    int mActiveWidth, mActiveHeight;
++    float mActiveWidth, mActiveHeight;
++    // corner offsets between pre-correction and active arrays
++    float mArrayDiffX, mArrayDiffY;
+ 
+     std::vector<GridQuad> mCorrectedGrid;
+     std::vector<GridQuad> mDistortedGrid;
+diff --git a/services/camera/libcameraservice/tests/DistortionMapperTest.cpp b/services/camera/libcameraservice/tests/DistortionMapperTest.cpp
+index b489931b9..2a689c6bb 100644
+--- a/services/camera/libcameraservice/tests/DistortionMapperTest.cpp
++++ b/services/camera/libcameraservice/tests/DistortionMapperTest.cpp
+@@ -30,6 +30,7 @@ using namespace android::camera3;
+ 
+ 
+ int32_t testActiveArray[] = {100, 100, 1000, 750};
++int32_t testPreCorrActiveArray[] = {90, 90, 1020, 770};
+ 
+ float testICal[] = { 1000.f, 1000.f, 500.f, 500.f, 0.f };
+ 
+@@ -45,14 +46,19 @@ std::array<int32_t, 12> basicCoords = {
+ };
+ 
+ 
+-void setupTestMapper(DistortionMapper *m, float distortion[5]) {
++void setupTestMapper(DistortionMapper *m,
++        float distortion[5], float intrinsics[5],
++        int32_t activeArray[4], int32_t preCorrectionActiveArray[4]) {
+     CameraMetadata deviceInfo;
+ 
+     deviceInfo.update(ANDROID_SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE,
+-            testActiveArray, 4);
++            preCorrectionActiveArray, 4);
++
++    deviceInfo.update(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
++            activeArray, 4);
+ 
+     deviceInfo.update(ANDROID_LENS_INTRINSIC_CALIBRATION,
+-            testICal, 5);
++            intrinsics, 5);
+ 
+     deviceInfo.update(ANDROID_LENS_DISTORTION,
+             distortion, 5);
+@@ -89,6 +95,9 @@ TEST(DistortionMapperTest, Initialization) {
+     ASSERT_FALSE(m.calibrationValid());
+ 
+     deviceInfo.update(ANDROID_SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE,
++            testPreCorrActiveArray, 4);
++
++    deviceInfo.update(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
+             testActiveArray, 4);
+ 
+     deviceInfo.update(ANDROID_LENS_INTRINSIC_CALIBRATION,
+@@ -118,17 +127,19 @@ TEST(DistortionMapperTest, IdentityTransform) {
+     status_t res;
+ 
+     DistortionMapper m;
+-    setupTestMapper(&m, identityDistortion);
++    setupTestMapper(&m, identityDistortion, testICal,
++            /*activeArray*/ testActiveArray,
++            /*preCorrectionActiveArray*/ testActiveArray);
+ 
+     auto coords = basicCoords;
+-    res = m.mapCorrectedToRaw(coords.data(), 5);
++    res = m.mapCorrectedToRaw(coords.data(), 5,  /*clamp*/true);
+     ASSERT_EQ(res, OK);
+ 
+     for (size_t i = 0; i < coords.size(); i++) {
+         EXPECT_EQ(coords[i], basicCoords[i]);
+     }
+ 
+-    res = m.mapRawToCorrected(coords.data(), 5);
++    res = m.mapRawToCorrected(coords.data(), 5, /*clamp*/true);
+     ASSERT_EQ(res, OK);
+ 
+     for (size_t i = 0; i < coords.size(); i++) {
+@@ -137,18 +148,18 @@ TEST(DistortionMapperTest, IdentityTransform) {
+ 
+     std::array<int32_t, 8> rects = {
+         0, 0, 100, 100,
+-        testActiveArray[2] - 100, testActiveArray[3]-100, 100, 100
++        testActiveArray[2] - 101, testActiveArray[3] - 101, 100, 100
+     };
+ 
+     auto rectsOrig = rects;
+-    res = m.mapCorrectedRectToRaw(rects.data(), 2);
++    res = m.mapCorrectedRectToRaw(rects.data(), 2, /*clamp*/true);
+     ASSERT_EQ(res, OK);
+ 
+     for (size_t i = 0; i < rects.size(); i++) {
+         EXPECT_EQ(rects[i], rectsOrig[i]);
+     }
+ 
+-    res = m.mapRawRectToCorrected(rects.data(), 2);
++    res = m.mapRawRectToCorrected(rects.data(), 2, /*clamp*/true);
+     ASSERT_EQ(res, OK);
+ 
+     for (size_t i = 0; i < rects.size(); i++) {
+@@ -156,23 +167,39 @@ TEST(DistortionMapperTest, IdentityTransform) {
+     }
+ }
+ 
+-TEST(DistortionMapperTest, LargeTransform) {
++TEST(DistortionMapperTest, SimpleTransform) {
++    status_t res;
++
++    DistortionMapper m;
++    setupTestMapper(&m, identityDistortion, testICal,
++            /*activeArray*/ testActiveArray,
++            /*preCorrectionActiveArray*/ testPreCorrActiveArray);
++
++    auto coords = basicCoords;
++    res = m.mapCorrectedToRaw(coords.data(), 5,  /*clamp*/true, /*simple*/true);
++    ASSERT_EQ(res, OK);
++
++    ASSERT_EQ(coords[0], 0); ASSERT_EQ(coords[1], 0);
++    ASSERT_EQ(coords[2], testPreCorrActiveArray[2] - 1); ASSERT_EQ(coords[3], 0);
++    ASSERT_EQ(coords[4], testPreCorrActiveArray[2] - 1); ASSERT_EQ(coords[5], testPreCorrActiveArray[3] - 1);
++    ASSERT_EQ(coords[6], 0); ASSERT_EQ(coords[7], testPreCorrActiveArray[3] - 1);
++    ASSERT_EQ(coords[8], testPreCorrActiveArray[2] / 2); ASSERT_EQ(coords[9], testPreCorrActiveArray[3] / 2);
++}
++
++
++void RandomTransformTest(::testing::Test *test,
++        int32_t* activeArray, DistortionMapper &m, bool clamp, bool simple) {
+     status_t res;
+     constexpr int maxAllowedPixelError = 2; // Maximum per-pixel error allowed
+     constexpr int bucketsPerPixel = 3; // Histogram granularity
+ 
+     unsigned int seed = 1234; // Ensure repeatability for debugging
+-    const size_t coordCount = 1e6; // Number of random test points
+-
+-    float bigDistortion[] = {0.1, -0.003, 0.004, 0.02, 0.01};
+-
+-    DistortionMapper m;
+-    setupTestMapper(&m, bigDistortion);
++    const size_t coordCount = 1e5; // Number of random test points
+ 
+     std::default_random_engine gen(seed);
+ 
+-    std::uniform_int_distribution<int> x_dist(0, testActiveArray[2] - 1);
+-    std::uniform_int_distribution<int> y_dist(0, testActiveArray[3] - 1);
++    std::uniform_int_distribution<int> x_dist(0, activeArray[2] - 1);
++    std::uniform_int_distribution<int> y_dist(0, activeArray[3] - 1);
+ 
+     std::vector<int32_t> randCoords(coordCount * 2);
+ 
+@@ -186,12 +213,12 @@ TEST(DistortionMapperTest, LargeTransform) {
+     auto origCoords = randCoords;
+ 
+     base::Timer correctedToRawTimer;
+-    res = m.mapCorrectedToRaw(randCoords.data(), randCoords.size() / 2);
++    res = m.mapCorrectedToRaw(randCoords.data(), randCoords.size() / 2, clamp, simple);
+     auto correctedToRawDurationMs = correctedToRawTimer.duration();
+     EXPECT_EQ(res, OK);
+ 
+     base::Timer rawToCorrectedTimer;
+-    res = m.mapRawToCorrected(randCoords.data(), randCoords.size() / 2);
++    res = m.mapRawToCorrected(randCoords.data(), randCoords.size() / 2, clamp, simple);
+     auto rawToCorrectedDurationMs = rawToCorrectedTimer.duration();
+     EXPECT_EQ(res, OK);
+ 
+@@ -202,9 +229,9 @@ TEST(DistortionMapperTest, LargeTransform) {
+             (std::chrono::duration_cast<std::chrono::duration<double, std::micro>>(
+                 rawToCorrectedDurationMs) / (randCoords.size() / 2) ).count();
+ 
+-    RecordProperty("CorrectedToRawDurationPerCoordUs",
++    test->RecordProperty("CorrectedToRawDurationPerCoordUs",
+             base::StringPrintf("%f", correctedToRawDurationPerCoordUs));
+-    RecordProperty("RawToCorrectedDurationPerCoordUs",
++    test->RecordProperty("RawToCorrectedDurationPerCoordUs",
+             base::StringPrintf("%f", rawToCorrectedDurationPerCoordUs));
+ 
+     // Calculate mapping errors after round trip
+@@ -239,17 +266,61 @@ TEST(DistortionMapperTest, LargeTransform) {
+     }
+ 
+     float rmsError = std::sqrt(totalErrorSq / randCoords.size());
+-    RecordProperty("RmsError", base::StringPrintf("%f", rmsError));
++    test->RecordProperty("RmsError", base::StringPrintf("%f", rmsError));
+     for (size_t i = 0; i < histogram.size(); i++) {
+         std::string label = base::StringPrintf("HistogramBin[%f,%f)",
+                 (float)i/bucketsPerPixel, (float)(i + 1)/bucketsPerPixel);
+-        RecordProperty(label, histogram[i]);
++        test->RecordProperty(label, histogram[i]);
+     }
+-    RecordProperty("HistogramOutOfRange", outOfHistogram);
++    test->RecordProperty("HistogramOutOfRange", outOfHistogram);
++}
++
++// Test a realistic distortion function with matching calibration values, enforcing
++// clamping.
++TEST(DistortionMapperTest, DISABLED_SmallTransform) {
++    int32_t activeArray[] = {0, 8, 3278, 2450};
++    int32_t preCorrectionActiveArray[] = {0, 0, 3280, 2464};
++
++    float distortion[] = {0.06875723, -0.13922249, 0.02818312, -0.00032781, -0.00025431};
++    float intrinsics[] = {1812.50000000, 1812.50000000, 1645.59533691, 1229.23229980, 0.00000000};
++
++    DistortionMapper m;
++    setupTestMapper(&m, distortion, intrinsics, activeArray, preCorrectionActiveArray);
++
++    RandomTransformTest(this, activeArray, m, /*clamp*/true, /*simple*/false);
++}
++
++// Test a realistic distortion function with matching calibration values, enforcing
++// clamping, but using the simple linear transform
++TEST(DistortionMapperTest, SmallSimpleTransform) {
++    int32_t activeArray[] = {0, 8, 3278, 2450};
++    int32_t preCorrectionActiveArray[] = {0, 0, 3280, 2464};
++
++    float distortion[] = {0.06875723, -0.13922249, 0.02818312, -0.00032781, -0.00025431};
++    float intrinsics[] = {1812.50000000, 1812.50000000, 1645.59533691, 1229.23229980, 0.00000000};
++
++    DistortionMapper m;
++    setupTestMapper(&m, distortion, intrinsics, activeArray, preCorrectionActiveArray);
++
++    RandomTransformTest(this, activeArray, m, /*clamp*/true, /*simple*/true);
++}
++
++// Test a very large distortion function; the regions aren't valid for such a big transform,
++// so disable clamping.  This test is just to verify round-trip math accuracy for big transforms
++TEST(DistortionMapperTest, LargeTransform) {
++    float bigDistortion[] = {0.1, -0.003, 0.004, 0.02, 0.01};
++
++    DistortionMapper m;
++    setupTestMapper(&m, bigDistortion, testICal,
++            /*activeArray*/testActiveArray,
++            /*preCorrectionActiveArray*/testPreCorrActiveArray);
++
++    RandomTransformTest(this, testActiveArray, m, /*clamp*/false, /*simple*/false);
+ }
+ 
+ // Compare against values calculated by OpenCV
+ // undistortPoints() method, which is the same as mapRawToCorrected
++// Ignore clamping
+ // See script DistortionMapperComp.py
+ #include "DistortionMapperTest_OpenCvData.h"
+ 
+@@ -262,11 +333,14 @@ TEST(DistortionMapperTest, CompareToOpenCV) {
+     const int32_t maxSqError = 2;
+ 
+     DistortionMapper m;
+-    setupTestMapper(&m, bigDistortion);
++    setupTestMapper(&m, bigDistortion, testICal,
++            /*activeArray*/testActiveArray,
++            /*preCorrectionActiveArray*/testActiveArray);
+ 
+     using namespace openCvData;
+ 
+-    res = m.mapRawToCorrected(rawCoords.data(), rawCoords.size() / 2);
++    res = m.mapRawToCorrected(rawCoords.data(), rawCoords.size() / 2, /*clamp*/false,
++            /*simple*/false);
+ 
+     for (size_t i = 0; i < rawCoords.size(); i+=2) {
+         int32_t dist = (rawCoords[i] - expCoords[i]) * (rawCoords[i] - expCoords[i]) +
+-- 
+2.17.1
+

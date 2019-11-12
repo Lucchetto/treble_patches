@@ -1,0 +1,96 @@
+From fbde08eb073b690467aadb722da47bc287649dc4 Mon Sep 17 00:00:00 2001
+From: bohu <bohu@google.com>
+Date: Mon, 11 Jun 2018 23:23:10 -0700
+Subject: [PATCH 03/81] emulator: base sdk_phone_armv7/64 on aosp
+
+Switch to GSI images for arm/arm64 sdk images.
+
+BUG: 79941736
+
+This cl does not impact real device images
+
+Test: make -j110 PRODUCT-sdk_phone_armv7-sdk showcommands dist \
+DIST_DIR=git_master-without-vendor-linux-sdk_x86-sdk sdk_repo
+
+Change-Id: Ia50be068cc5e5307cdf7ee3a8e11014ed8019992
+---
+ target/product/sdk_phone_arm64.mk | 28 ++++------------------------
+ target/product/sdk_phone_armv7.mk | 20 ++++----------------
+ 2 files changed, 8 insertions(+), 40 deletions(-)
+
+diff --git a/target/product/sdk_phone_arm64.mk b/target/product/sdk_phone_arm64.mk
+index 56eb8c791..c6b290f79 100644
+--- a/target/product/sdk_phone_arm64.mk
++++ b/target/product/sdk_phone_arm64.mk
+@@ -14,31 +14,11 @@
+ # limitations under the License.
+ #
+ 
+-PRODUCT_PROPERTY_OVERRIDES += \
+-	rild.libpath=/vendor/lib64/libreference-ril.so
++$(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_arm64.mk)
+ 
+-# This is a build configuration for a full-featured build of the
+-# Open-Source part of the tree. It's geared toward a US-centric
+-# build quite specifically for the emulator, and might not be
+-# entirely appropriate to inherit from for on-device configurations.
+-
+-# Note: the following lines need to stay at the beginning so that it can
+-# take priority  and override the rules it inherit from other mk files
+-# see copy file rules in core/Makefile
+-PRODUCT_COPY_FILES += \
+-    development/sys-img/advancedFeatures.ini.arm:advancedFeatures.ini \
+-    prebuilts/qemu-kernel/arm64/3.18/kernel-qemu2:kernel-ranchu \
+-    device/generic/goldfish/fstab.ranchu.arm:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.ranchu
+-
+-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
+-$(call inherit-product, $(SRC_TARGET_DIR)/product/sdk_base.mk)
+-$(call inherit-product, $(SRC_TARGET_DIR)/board/generic_arm64/device.mk)
+-
+-# AOSP emulator images build the AOSP messaging app.
+-# Google API images override with the Google API app.
+-# See vendor/google/products/sdk_google_phone_*.mk
+-PRODUCT_PACKAGES += \
+-    messaging
++# Define the host tools and libs that are parts of the SDK.
++$(call inherit-product, sdk/build/product_sdk.mk)
++$(call inherit-product, development/build/product_sdk.mk)
+ 
+ # Overrides
+ PRODUCT_BRAND := Android
+diff --git a/target/product/sdk_phone_armv7.mk b/target/product/sdk_phone_armv7.mk
+index 73c42c381..f2b51cfd7 100644
+--- a/target/product/sdk_phone_armv7.mk
++++ b/target/product/sdk_phone_armv7.mk
+@@ -14,24 +14,12 @@
+ # limitations under the License.
+ #
+ 
+-PRODUCT_PROPERTY_OVERRIDES += \
+-	rild.libpath=/vendor/lib/libreference-ril.so
++$(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_arm.mk)
+ 
+-# Note: the following lines need to stay at the beginning so that it can
+-# take priority  and override the rules it inherit from other mk files
+-# see copy file rules in core/Makefile
+-PRODUCT_COPY_FILES += \
+-    development/sys-img/advancedFeatures.ini.arm:advancedFeatures.ini \
+-    prebuilts/qemu-kernel/arm64/3.18/kernel-qemu2:kernel-ranchu-64 \
+-    device/generic/goldfish/fstab.ranchu.arm:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.ranchu
++# Define the host tools and libs that are parts of the SDK.
++$(call inherit-product, sdk/build/product_sdk.mk)
++$(call inherit-product, development/build/product_sdk.mk)
+ 
+-$(call inherit-product, $(SRC_TARGET_DIR)/product/sdk_base.mk)
+-
+-# AOSP emulator images build the AOSP messaging app.
+-# Google API images override with the Google API app.
+-# See vendor/google/products/sdk_google_phone_*.mk
+-PRODUCT_PACKAGES += \
+-    messaging
+ 
+ # Overrides
+ PRODUCT_BRAND := Android
+-- 
+2.17.1
+

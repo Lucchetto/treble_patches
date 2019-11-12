@@ -1,0 +1,111 @@
+From 255fb12c9ec4813080cddeb8475c866c1d8800bd Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Thu, 8 Mar 2018 10:34:58 -0800
+Subject: [PATCH 153/306] Show battery percentage on indication field
+
+Supports two battery formats until all locales are updated
+
+Test: visual
+Test: switch language, observe.
+Change-Id: Ib8f43601a85f24b8e315d7c67c8693060fc6d32b
+Bug: 74386188
+(cherry picked from commit 8d595d200fbf0ecbb2e6a2e36a138bbb1a593334)
+---
+ .../SystemUI/res-keyguard/values/strings.xml  |  6 +++---
+ packages/SystemUI/res/values/strings.xml      | 12 +++++------
+ .../KeyguardIndicationController.java         | 20 +++++++++++++++++--
+ 3 files changed, 27 insertions(+), 11 deletions(-)
+
+diff --git a/packages/SystemUI/res-keyguard/values/strings.xml b/packages/SystemUI/res-keyguard/values/strings.xml
+index 8a48e7bd935..02d0d702e13 100644
+--- a/packages/SystemUI/res-keyguard/values/strings.xml
++++ b/packages/SystemUI/res-keyguard/values/strings.xml
+@@ -57,15 +57,15 @@
+ 
+     <!-- When the lock screen is showing and the phone plugged in, and the battery
+          is not fully charged, say that it's charging.  -->
+-    <string name="keyguard_plugged_in">Charging</string>
++    <string name="keyguard_plugged_in"><xliff:g id="percentage">%s</xliff:g> • Charging</string>
+ 
+     <!-- When the lock screen is showing and the phone plugged in, and the battery
+          is not fully charged, and it's plugged into a fast charger, say that it's charging fast.  -->
+-    <string name="keyguard_plugged_in_charging_fast">Charging rapidly</string>
++    <string name="keyguard_plugged_in_charging_fast"><xliff:g id="percentage">%s</xliff:g> • Charging rapidly</string>
+ 
+     <!-- When the lock screen is showing and the phone plugged in, and the battery
+          is not fully charged, and it's plugged into a slow charger, say that it's charging slowly.  -->
+-    <string name="keyguard_plugged_in_charging_slowly">Charging slowly</string>
++    <string name="keyguard_plugged_in_charging_slowly"><xliff:g id="percentage">%s</xliff:g> • Charging slowly</string>
+ 
+     <!-- When the lock screen is showing and the battery is low, warn user to plug
+          in the phone soon. -->
+diff --git a/packages/SystemUI/res/values/strings.xml b/packages/SystemUI/res/values/strings.xml
+index cd40ca047cf..4420103f14f 100644
+--- a/packages/SystemUI/res/values/strings.xml
++++ b/packages/SystemUI/res/values/strings.xml
+@@ -946,14 +946,14 @@
+     <!-- Interruption level: Alarms only.  Optimized for narrow two-line display. [CHAR LIMIT=40] -->
+     <string name="interruption_level_alarms_twoline">Alarms\nonly</string>
+ 
+-    <!-- Indication on the keyguard that is shown when the device is charging. [CHAR LIMIT=40]-->
+-    <string name="keyguard_indication_charging_time">Charging (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> until full)</string>
++    <!-- Indication on the keyguard that is shown when the device is charging. [CHAR LIMIT=50]-->
++    <string name="keyguard_indication_charging_time"><xliff:g id="percentage">%2$s</xliff:g> • Charging (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> until full)</string>
+ 
+-    <!-- Indication on the keyguard that is shown when the device is charging rapidly. Should match keyguard_plugged_in_charging_fast [CHAR LIMIT=40]-->
+-    <string name="keyguard_indication_charging_time_fast">Charging rapidly (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> until full)</string>
++    <!-- Indication on the keyguard that is shown when the device is charging rapidly. Should match keyguard_plugged_in_charging_fast [CHAR LIMIT=50]-->
++    <string name="keyguard_indication_charging_time_fast"><xliff:g id="percentage">%2$s</xliff:g> • Charging rapidly (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> until full)</string>
+ 
+-    <!-- Indication on the keyguard that is shown when the device is charging slowly. Should match keyguard_plugged_in_charging_slowly [CHAR LIMIT=40]-->
+-    <string name="keyguard_indication_charging_time_slowly">Charging slowly (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> until full)</string>
++    <!-- Indication on the keyguard that is shown when the device is charging slowly. Should match keyguard_plugged_in_charging_slowly [CHAR LIMIT=50]-->
++    <string name="keyguard_indication_charging_time_slowly"><xliff:g id="percentage">%2$s</xliff:g> • Charging slowly (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> until full)</string>
+ 
+     <!-- Related to user switcher --><skip/>
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/KeyguardIndicationController.java b/packages/SystemUI/src/com/android/systemui/statusbar/KeyguardIndicationController.java
+index 22e8909b481..859dc39b77c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/KeyguardIndicationController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/KeyguardIndicationController.java
+@@ -58,6 +58,7 @@ import com.android.systemui.util.wakelock.WakeLock;
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+ import java.text.NumberFormat;
++import java.util.IllegalFormatConversionException;
+ 
+ /**
+  * Controls the indications and error messages shown on the Keyguard
+@@ -411,12 +412,27 @@ public class KeyguardIndicationController {
+                 break;
+         }
+ 
++        String percentage = NumberFormat.getPercentInstance()
++                .format(mBatteryLevel / 100f);
+         if (hasChargingTime) {
++            // We now have battery percentage in these strings and it's expected that all
++            // locales will also have it in the future. For now, we still have to support the old
++            // format until all languages get the new translations.
+             String chargingTimeFormatted = Formatter.formatShortElapsedTimeRoundingUpToMinutes(
+                     mContext, chargingTimeRemaining);
+-            return mContext.getResources().getString(chargingId, chargingTimeFormatted);
++            try {
++                return mContext.getResources().getString(chargingId, chargingTimeFormatted,
++                        percentage);
++            } catch (IllegalFormatConversionException e) {
++                return mContext.getResources().getString(chargingId, chargingTimeFormatted);
++            }
+         } else {
+-            return mContext.getResources().getString(chargingId);
++            // Same as above
++            try {
++                return mContext.getResources().getString(chargingId, percentage);
++            } catch (IllegalFormatConversionException e) {
++                return mContext.getResources().getString(chargingId);
++            }
+         }
+     }
+ 
+-- 
+2.17.1
+

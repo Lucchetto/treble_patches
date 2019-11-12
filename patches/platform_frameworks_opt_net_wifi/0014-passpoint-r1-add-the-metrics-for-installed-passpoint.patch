@@ -1,0 +1,374 @@
+From aa7c4ae667d9c2e6d50fcf4acd5453544c854185 Mon Sep 17 00:00:00 2001
+From: Ecco Park <eccopark@google.com>
+Date: Mon, 23 Jul 2018 15:50:56 -0700
+Subject: [PATCH 14/32] passpoint-r1: add the metrics for installed passpoint
+ profile type
+
+add count for each EAP method type for installed passpoint profiles.
+
+Bug: 111473296
+Test:./frameworks/opt/net/wifi/tests/wifitests/runtests.sh
+Test: adb shell dumpsys wifi
+captured the print line like below after intalling passpoint profile for
+EAP_TTLS.
+mWifiLogProto.installedPasspointProfileType:
+EAP_METHOD (2): 1
+
+captured the print line after removing the profile.
+mWifiLogProto.installedPasspointProfileType
+
+Merged-In: Ica6cbd87cc003f02da47c58cb51b56cff9433789
+Change-Id: Ica6cbd87cc003f02da47c58cb51b56cff9433789
+---
+ .../com/android/server/wifi/WifiMetrics.java  | 80 ++++++++++++++++++
+ .../wifi/hotspot2/PasspointManager.java       |  1 +
+ .../android/server/wifi/WifiMetricsTest.java  | 81 ++++++++++++++++++-
+ .../wifi/hotspot2/PasspointManagerTest.java   | 12 ++-
+ 4 files changed, 170 insertions(+), 4 deletions(-)
+
+diff --git a/service/java/com/android/server/wifi/WifiMetrics.java b/service/java/com/android/server/wifi/WifiMetrics.java
+index a3bd1697c..0b746196f 100644
+--- a/service/java/com/android/server/wifi/WifiMetrics.java
++++ b/service/java/com/android/server/wifi/WifiMetrics.java
+@@ -18,11 +18,13 @@ package com.android.server.wifi;
+ 
+ import android.hardware.wifi.supplicant.V1_0.ISupplicantStaIfaceCallback;
+ import android.net.NetworkAgent;
++import android.net.wifi.EAPConstants;
+ import android.net.wifi.ScanResult;
+ import android.net.wifi.SupplicantState;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiInfo;
+ import android.net.wifi.WifiManager;
++import android.net.wifi.hotspot2.PasspointConfiguration;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.os.Message;
+@@ -175,6 +177,8 @@ public class WifiMetrics {
+     private final SparseIntArray mAvailableSavedPasspointProviderBssidsInScanHistogram =
+             new SparseIntArray();
+ 
++    private final SparseIntArray mInstalledPasspointProfileType = new SparseIntArray();
++
+     /** Mapping of "Connect to Network" notifications to counts. */
+     private final SparseIntArray mConnectToNetworkNotificationCount = new SparseIntArray();
+     /** Mapping of "Connect to Network" notification user actions to counts. */
+@@ -2028,6 +2032,14 @@ public class WifiMetrics {
+                         + mWifiLogProto.numPasspointProviderUninstallSuccess);
+                 pw.println("mWifiLogProto.numPasspointProvidersSuccessfullyConnected="
+                         + mWifiLogProto.numPasspointProvidersSuccessfullyConnected);
++
++                pw.println("mWifiLogProto.installedPasspointProfileType: ");
++                for (int i = 0; i < mInstalledPasspointProfileType.size(); i++) {
++                    int eapType = mInstalledPasspointProfileType.keyAt(i);
++                    pw.println("EAP_METHOD (" + eapType + "): "
++                            + mInstalledPasspointProfileType.valueAt(i));
++                }
++
+                 pw.println("mWifiLogProto.numRadioModeChangeToMcc="
+                         + mWifiLogProto.numRadioModeChangeToMcc);
+                 pw.println("mWifiLogProto.numRadioModeChangeToScc="
+@@ -2205,6 +2217,56 @@ public class WifiMetrics {
+         }
+     }
+ 
++    /**
++     * Update number of times for type of saved Passpoint profile.
++     *
++     * @param providers Passpoint providers installed on the device.
++     */
++    public void updateSavedPasspointProfilesInfo(
++            Map<String, PasspointProvider> providers) {
++        int passpointType;
++        int eapType;
++        PasspointConfiguration config;
++        synchronized (mLock) {
++            mInstalledPasspointProfileType.clear();
++            for (Map.Entry<String, PasspointProvider> entry : providers.entrySet()) {
++                config = entry.getValue().getConfig();
++                if (config.getCredential().getUserCredential() != null) {
++                    eapType = EAPConstants.EAP_TTLS;
++                } else if (config.getCredential().getCertCredential() != null) {
++                    eapType = EAPConstants.EAP_TLS;
++                } else if (config.getCredential().getSimCredential() != null) {
++                    eapType = config.getCredential().getSimCredential().getEapType();
++                } else {
++                    eapType = -1;
++                }
++                switch (eapType) {
++                    case EAPConstants.EAP_TLS:
++                        passpointType = WifiMetricsProto.PasspointProfileTypeCount.TYPE_EAP_TLS;
++                        break;
++                    case EAPConstants.EAP_TTLS:
++                        passpointType = WifiMetricsProto.PasspointProfileTypeCount.TYPE_EAP_TTLS;
++                        break;
++                    case EAPConstants.EAP_SIM:
++                        passpointType = WifiMetricsProto.PasspointProfileTypeCount.TYPE_EAP_SIM;
++                        break;
++                    case EAPConstants.EAP_AKA:
++                        passpointType = WifiMetricsProto.PasspointProfileTypeCount.TYPE_EAP_AKA;
++                        break;
++                    case EAPConstants.EAP_AKA_PRIME:
++                        passpointType =
++                                WifiMetricsProto.PasspointProfileTypeCount.TYPE_EAP_AKA_PRIME;
++                        break;
++                    default:
++                        passpointType = WifiMetricsProto.PasspointProfileTypeCount.TYPE_UNKNOWN;
++
++                }
++                int count = mInstalledPasspointProfileType.get(passpointType);
++                mInstalledPasspointProfileType.put(passpointType, count + 1);
++            }
++        }
++    }
++
+     /**
+      * append the separate ConnectionEvent, SystemStateEntry and ScanReturnCode collections to their
+      * respective lists within mWifiLogProto
+@@ -2405,6 +2467,23 @@ public class WifiMetrics {
+                 keyVal.count = mConnectToNetworkNotificationActionCount.valueAt(i);
+                 notificationActionCountArray[i] = keyVal;
+             }
++
++            /**
++             * Convert the SparseIntArray of saved Passpoint profile types and counts to proto's
++             * repeated IntKeyVal array.
++             */
++            int counts = mInstalledPasspointProfileType.size();
++            mWifiLogProto.installedPasspointProfileType =
++                    new WifiMetricsProto.PasspointProfileTypeCount[counts];
++            for (int i = 0; i < counts; i++) {
++                mWifiLogProto.installedPasspointProfileType[i] =
++                        new WifiMetricsProto.PasspointProfileTypeCount();
++                mWifiLogProto.installedPasspointProfileType[i].eapMethodType =
++                        mInstalledPasspointProfileType.keyAt(i);
++                mWifiLogProto.installedPasspointProfileType[i].count =
++                        mInstalledPasspointProfileType.valueAt(i);
++            }
++
+             mWifiLogProto.connectToNetworkNotificationActionCount = notificationActionCountArray;
+ 
+             mWifiLogProto.openNetworkRecommenderBlacklistSize =
+@@ -2529,6 +2608,7 @@ public class WifiMetrics {
+             mWpsMetrics.clear();
+             mWifiWakeMetrics.clear();
+             mObserved80211mcApInScanHistogram.clear();
++            mInstalledPasspointProfileType.clear();
+         }
+     }
+ 
+diff --git a/service/java/com/android/server/wifi/hotspot2/PasspointManager.java b/service/java/com/android/server/wifi/hotspot2/PasspointManager.java
+index a0915fa52..4c2937cb5 100644
+--- a/service/java/com/android/server/wifi/hotspot2/PasspointManager.java
++++ b/service/java/com/android/server/wifi/hotspot2/PasspointManager.java
+@@ -656,6 +656,7 @@ public class PasspointManager {
+                 numConnectedProviders++;
+             }
+         }
++        mWifiMetrics.updateSavedPasspointProfilesInfo(mProviders);
+         mWifiMetrics.updateSavedPasspointProfiles(numProviders, numConnectedProviders);
+     }
+ 
+diff --git a/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java b/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java
+index 2a60a1096..5646efc62 100644
+--- a/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java
++++ b/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java
+@@ -18,21 +18,26 @@ package com.android.server.wifi;
+ import static org.junit.Assert.assertEquals;
+ import static org.junit.Assert.assertNotNull;
+ import static org.junit.Assert.assertTrue;
++import static org.junit.Assert.fail;
+ import static org.mockito.Mockito.eq;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.when;
+ 
+ import android.net.NetworkAgent;
++import android.net.wifi.EAPConstants;
+ import android.net.wifi.ScanResult;
+ import android.net.wifi.SupplicantState;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiManager;
+ import android.net.wifi.WifiSsid;
++import android.net.wifi.hotspot2.PasspointConfiguration;
++import android.net.wifi.hotspot2.pps.Credential;
+ import android.os.Handler;
+ import android.os.test.TestLooper;
+ import android.support.test.filters.SmallTest;
+ import android.util.Base64;
+ import android.util.Pair;
++import android.util.SparseIntArray;
+ 
+ import com.android.server.wifi.aware.WifiAwareMetrics;
+ import com.android.server.wifi.hotspot2.NetworkDetail;
+@@ -41,6 +46,7 @@ import com.android.server.wifi.hotspot2.PasspointMatch;
+ import com.android.server.wifi.hotspot2.PasspointProvider;
+ import com.android.server.wifi.nano.WifiMetricsProto;
+ import com.android.server.wifi.nano.WifiMetricsProto.ConnectToNetworkNotificationAndActionCount;
++import com.android.server.wifi.nano.WifiMetricsProto.PasspointProfileTypeCount;
+ import com.android.server.wifi.nano.WifiMetricsProto.PnoScanMetrics;
+ import com.android.server.wifi.nano.WifiMetricsProto.SoftApConnectedClientsEvent;
+ import com.android.server.wifi.nano.WifiMetricsProto.StaEvent;
+@@ -58,7 +64,9 @@ import java.io.PrintWriter;
+ import java.io.StringWriter;
+ import java.util.ArrayList;
+ import java.util.BitSet;
++import java.util.HashMap;
+ import java.util.List;
++import java.util.Map;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
+@@ -269,12 +277,26 @@ public class WifiMetricsTest {
+     private static final int NUM_SOFTAP_ON_FAILURE_DUE_TO_HOSTAPD = 31;
+     private static final int NUM_SOFTAP_INTERFACE_DOWN = 65;
+     private static final int NUM_CLIENT_INTERFACE_DOWN = 12;
+-    private static final int NUM_PASSPOINT_PROVIDERS = 4;
++    private static final int NUM_PASSPOINT_PROVIDERS = 7;
+     private static final int NUM_PASSPOINT_PROVIDER_INSTALLATION = 5;
+     private static final int NUM_PASSPOINT_PROVIDER_INSTALL_SUCCESS = 4;
+     private static final int NUM_PASSPOINT_PROVIDER_UNINSTALLATION = 3;
+     private static final int NUM_PASSPOINT_PROVIDER_UNINSTALL_SUCCESS = 2;
+     private static final int NUM_PASSPOINT_PROVIDERS_SUCCESSFULLY_CONNECTED = 1;
++    private static final int NUM_EAP_SIM_TYPE = 1;
++    private static final int NUM_EAP_TTLS_TYPE = 2;
++    private static final int NUM_EAP_TLS_TYPE = 3;
++    private static final int NUM_EAP_AKA_TYPE = 4;
++    private static final int NUM_EAP_AKA_PRIME_TYPE = 5;
++    private static final SparseIntArray SAVED_PASSPOINT_PROVIDERS_TYPE = new SparseIntArray();
++    static {
++        SAVED_PASSPOINT_PROVIDERS_TYPE.put(EAPConstants.EAP_SIM, NUM_EAP_SIM_TYPE);
++        SAVED_PASSPOINT_PROVIDERS_TYPE.put(EAPConstants.EAP_TTLS, NUM_EAP_TTLS_TYPE);
++        SAVED_PASSPOINT_PROVIDERS_TYPE.put(EAPConstants.EAP_TLS, NUM_EAP_TLS_TYPE);
++        SAVED_PASSPOINT_PROVIDERS_TYPE.put(EAPConstants.EAP_AKA, NUM_EAP_AKA_TYPE);
++        SAVED_PASSPOINT_PROVIDERS_TYPE.put(EAPConstants.EAP_AKA_PRIME, NUM_EAP_AKA_PRIME_TYPE);
++    }
++
+     private static final int NUM_PARTIAL_SCAN_RESULTS = 73;
+     private static final int NUM_PNO_SCAN_ATTEMPTS = 20;
+     private static final int NUM_PNO_SCAN_FAILED = 5;
+@@ -404,13 +426,48 @@ public class WifiMetricsTest {
+         return testSavedNetworks;
+     }
+ 
++    private PasspointProvider createMockProvider(int eapType) {
++        PasspointProvider provider = mock(PasspointProvider.class);
++        PasspointConfiguration config = new PasspointConfiguration();
++        Credential credential = new Credential();
++
++        config.setCredential(credential);
++        switch (eapType) {
++            case EAPConstants.EAP_TLS:
++                credential.setCertCredential(new Credential.CertificateCredential());
++                break;
++            case EAPConstants.EAP_TTLS:
++                credential.setUserCredential(new Credential.UserCredential());
++                break;
++            case EAPConstants.EAP_AKA:
++            case EAPConstants.EAP_AKA_PRIME:
++            case EAPConstants.EAP_SIM:
++                Credential.SimCredential simCredential = new Credential.SimCredential();
++                simCredential.setEapType(eapType);
++                credential.setSimCredential(simCredential);
++                break;
++        }
++        when(provider.getConfig()).thenReturn(config);
++        return provider;
++    }
++
+     /**
+      * Set simple metrics, increment others
+      */
+     public void setAndIncrementMetrics() throws Exception {
++        Map<String, PasspointProvider> providers = new HashMap<>();
+         mWifiMetrics.updateSavedNetworks(buildSavedNetworkList());
+         mWifiMetrics.updateSavedPasspointProfiles(NUM_PASSPOINT_PROVIDERS,
+                 NUM_PASSPOINT_PROVIDERS_SUCCESSFULLY_CONNECTED);
++        for (int i = 0; i < SAVED_PASSPOINT_PROVIDERS_TYPE.size(); i++) {
++            int eapType = SAVED_PASSPOINT_PROVIDERS_TYPE.keyAt(i);
++            int count = SAVED_PASSPOINT_PROVIDERS_TYPE.valueAt(i);
++            for (int j = 0; j < count; j++) {
++                providers.put(Integer.toString(eapType) + j, createMockProvider(eapType));
++            }
++        }
++        mWifiMetrics.updateSavedPasspointProfilesInfo(providers);
++
+         mWifiMetrics.setIsLocationEnabled(TEST_VAL_IS_LOCATION_ENABLED);
+         mWifiMetrics.setIsScanningAlwaysEnabled(IS_SCANNING_ALWAYS_ENABLED);
+ 
+@@ -898,6 +955,28 @@ public class WifiMetricsTest {
+         assertEquals(NUM_CLIENT_INTERFACE_DOWN, mDecodedProto.numClientInterfaceDown);
+         assertEquals(NUM_SOFTAP_INTERFACE_DOWN, mDecodedProto.numSoftApInterfaceDown);
+         assertEquals(NUM_PASSPOINT_PROVIDERS, mDecodedProto.numPasspointProviders);
++        for (PasspointProfileTypeCount passpointProfileType : mDecodedProto
++                .installedPasspointProfileType) {
++            switch(passpointProfileType.eapMethodType) {
++                case PasspointProfileTypeCount.TYPE_EAP_AKA:
++                    assertEquals(NUM_EAP_AKA_TYPE, passpointProfileType.count);
++                    break;
++                case PasspointProfileTypeCount.TYPE_EAP_AKA_PRIME:
++                    assertEquals(NUM_EAP_AKA_PRIME_TYPE, passpointProfileType.count);
++                    break;
++                case PasspointProfileTypeCount.TYPE_EAP_SIM:
++                    assertEquals(NUM_EAP_SIM_TYPE, passpointProfileType.count);
++                    break;
++                case PasspointProfileTypeCount.TYPE_EAP_TLS:
++                    assertEquals(NUM_EAP_TLS_TYPE, passpointProfileType.count);
++                    break;
++                case PasspointProfileTypeCount.TYPE_EAP_TTLS:
++                    assertEquals(NUM_EAP_TTLS_TYPE, passpointProfileType.count);
++                    break;
++                default:
++                    fail("unknown type counted");
++            }
++        }
+         assertEquals(NUM_PASSPOINT_PROVIDER_INSTALLATION,
+                 mDecodedProto.numPasspointProviderInstallation);
+         assertEquals(NUM_PASSPOINT_PROVIDER_INSTALL_SUCCESS,
+diff --git a/tests/wifitests/src/com/android/server/wifi/hotspot2/PasspointManagerTest.java b/tests/wifitests/src/com/android/server/wifi/hotspot2/PasspointManagerTest.java
+index 2a76d6a32..abcd0bf34 100644
+--- a/tests/wifitests/src/com/android/server/wifi/hotspot2/PasspointManagerTest.java
++++ b/tests/wifitests/src/com/android/server/wifi/hotspot2/PasspointManagerTest.java
+@@ -284,6 +284,7 @@ public class PasspointManagerTest {
+         PasspointProvider provider = createMockProvider(config);
+         when(mObjectFactory.makePasspointProvider(eq(config), eq(mWifiKeyStore),
+                 eq(mSimAccessor), anyLong(), eq(TEST_CREATOR_UID))).thenReturn(provider);
++
+         assertTrue(mManager.addOrUpdateProvider(config, TEST_CREATOR_UID));
+ 
+         return provider;
+@@ -1378,9 +1379,10 @@ public class PasspointManagerTest {
+      * @throws Exception
+      */
+     @Test
+-    public void updateMetrics() throws Exception {
++    public void updateMetrics() {
+         PasspointProvider provider = addTestProvider(TEST_FQDN);
+-
++        ArgumentCaptor<Map<String, PasspointProvider>> argCaptor = ArgumentCaptor.forClass(
++                Map.class);
+         // Provider have not provided a successful network connection.
+         int expectedInstalledProviders = 1;
+         int expectedConnectedProviders = 0;
+@@ -1388,7 +1390,10 @@ public class PasspointManagerTest {
+         mManager.updateMetrics();
+         verify(mWifiMetrics).updateSavedPasspointProfiles(
+                 eq(expectedInstalledProviders), eq(expectedConnectedProviders));
+-        reset(provider);
++
++        verify(mWifiMetrics).updateSavedPasspointProfilesInfo(argCaptor.capture());
++        assertEquals(expectedInstalledProviders, argCaptor.getValue().size());
++        assertEquals(provider, argCaptor.getValue().get(TEST_FQDN));
+         reset(mWifiMetrics);
+ 
+         // Provider have provided a successful network connection.
+@@ -1398,6 +1403,7 @@ public class PasspointManagerTest {
+         verify(mWifiMetrics).updateSavedPasspointProfiles(
+                 eq(expectedInstalledProviders), eq(expectedConnectedProviders));
+     }
++
+     /**
+      * Verify Passpoint Manager's provisioning APIs by invoking methods in PasspointProvisioner for
+      * initiailization and provisioning a provider.
+-- 
+2.17.1
+

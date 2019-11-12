@@ -1,0 +1,70 @@
+From 6df96ddef988f2f7c8d06299158b5827ad57415e Mon Sep 17 00:00:00 2001
+From: Hall Liu <hallliu@google.com>
+Date: Mon, 25 Jun 2018 15:16:53 -0700
+Subject: [PATCH 05/39] Add null checks for getImsCall()
+
+When certain RTT operations are performed near the end of a call, the
+phone process may crash with a NPE since mImsCall in ImsPhoneConnection
+becomes null. Add null checks to fix this.
+
+Change-Id: I4da899f26ce897224429387927a48288454d0c8b
+Fixes: 110570770
+Test: manual
+---
+ .../imsphone/ImsPhoneConnection.java          | 26 +++++++++++++------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneConnection.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneConnection.java
+index d63b9c254..76694c3d5 100644
+--- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneConnection.java
++++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneConnection.java
+@@ -973,8 +973,11 @@ public class ImsPhoneConnection extends Connection implements
+     }
+ 
+     public void sendRttModifyRequest(android.telecom.Connection.RttTextStream textStream) {
+-        getImsCall().sendRttModifyRequest();
+-        setCurrentRttTextStream(textStream);
++        ImsCall imsCall = getImsCall();
++        if (imsCall != null) {
++            getImsCall().sendRttModifyRequest();
++            setCurrentRttTextStream(textStream);
++        }
+     }
+ 
+     /**
+@@ -987,11 +990,13 @@ public class ImsPhoneConnection extends Connection implements
+         boolean accept = textStream != null;
+         ImsCall imsCall = getImsCall();
+ 
+-        imsCall.sendRttModifyResponse(accept);
+-        if (accept) {
+-            setCurrentRttTextStream(textStream);
+-        } else {
+-            Rlog.e(LOG_TAG, "sendRttModifyResponse: foreground call has no connections");
++        if (imsCall != null) {
++            imsCall.sendRttModifyResponse(accept);
++            if (accept) {
++                setCurrentRttTextStream(textStream);
++            } else {
++                Rlog.e(LOG_TAG, "sendRttModifyResponse: foreground call has no connections");
++            }
+         }
+     }
+ 
+@@ -1046,7 +1051,12 @@ public class ImsPhoneConnection extends Connection implements
+     // Make sure to synchronize on ImsPhoneConnection.this before calling.
+     private void createRttTextHandler() {
+         mRttTextHandler = new ImsRttTextHandler(Looper.getMainLooper(),
+-                (message) -> getImsCall().sendRttMessage(message));
++                (message) -> {
++                    ImsCall imsCall = getImsCall();
++                    if (imsCall != null) {
++                        imsCall.sendRttMessage(message);
++                    }
++                });
+         mRttTextHandler.initialize(mRttTextStream);
+     }
+ 
+-- 
+2.17.1
+

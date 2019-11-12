@@ -1,0 +1,98 @@
+From b9263a104bfe80efdf6d5e4ceb436dd44923509c Mon Sep 17 00:00:00 2001
+From: Rob Carr <racarr@google.com>
+Date: Tue, 9 Jan 2018 17:09:51 +0000
+Subject: [PATCH 050/306] Revert "Ensure docked divider is below always-on-top
+ stacks."
+
+This reverts commit 11408826496a2c7a8b23e97ec3340972b0df8c36.
+
+Reason for revert: CL earlier in chain causes 71736995
+
+Change-Id: Ifd4bbdb5a3c1fbe95c3e9f6b0172c022d43fcdf6
+(cherry picked from commit ae3ef5ab3c7f3ea028741392f5dc6b948dc67a8c)
+---
+ .../com/android/server/wm/DisplayContent.java | 13 ---------
+ .../com/android/server/wm/ZOrderingTests.java | 27 -------------------
+ 2 files changed, 40 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+index 722486351e1..ccbeb891028 100644
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -49,7 +49,6 @@ import static android.view.WindowManager.LayoutParams.PRIVATE_FLAG_KEYGUARD;
+ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION;
+ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_STARTING;
+ import static android.view.WindowManager.LayoutParams.TYPE_BOOT_PROGRESS;
+-import static android.view.WindowManager.LayoutParams.TYPE_DOCK_DIVIDER;
+ import static android.view.WindowManager.LayoutParams.TYPE_DRAWN_APPLICATION;
+ import static android.view.WindowManager.LayoutParams.TYPE_DREAM;
+ import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD;
+@@ -3571,18 +3570,6 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+                     && imeContainer.getSurfaceControl() != null;
+             for (int j = 0; j < mChildren.size(); ++j) {
+                 final WindowToken wt = mChildren.get(j);
+-
+-                // The divider is unique in that it does not have an AppWindowToken but needs to be
+-                // interleaved with them. In particular it must be above any split-screen stacks
+-                // but below any always-on-top stacks.
+-                if (wt.windowType == TYPE_DOCK_DIVIDER) {
+-                    final TaskStack dockedStack = getSplitScreenPrimaryStack();
+-                    if (dockedStack != null) {
+-                        wt.assignRelativeLayer(t, dockedStack.getSurfaceControl(),
+-                                Integer.MAX_VALUE);
+-                        continue;
+-                    }
+-                }
+                 wt.assignLayer(t, j);
+                 wt.assignChildLayers(t);
+ 
+diff --git a/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java b/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java
+index 34277c3d0f6..10642919170 100644
+--- a/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java
++++ b/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java
+@@ -21,12 +21,10 @@ import static android.app.WindowConfiguration.ACTIVITY_TYPE_STANDARD;
+ import static android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
+ import static android.app.WindowConfiguration.WINDOWING_MODE_PINNED;
+ import static android.app.WindowConfiguration.WINDOWING_MODE_SPLIT_SCREEN_PRIMARY;
+-import static android.app.WindowConfiguration.WINDOWING_MODE_SPLIT_SCREEN_SECONDARY;
+ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
+ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_MEDIA;
+ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_MEDIA_OVERLAY;
+ import static android.view.WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
+-import static android.view.WindowManager.LayoutParams.TYPE_DOCK_DIVIDER;
+ import static android.view.WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL;
+ import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL;
+ import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR_SUB_PANEL;
+@@ -369,29 +367,4 @@ public class ZOrderingTests extends WindowTestsBase {
+         assertWindowLayerGreaterThan(mTransaction, anyWindow, mediaOverlayChild);
+         assertWindowLayerGreaterThan(mTransaction, mediaOverlayChild, child);
+     }
+-
+-    @Test
+-    public void testDockedDividerPosition() throws Exception {
+-        final WindowState pinnedStackWindow = createWindowOnStack(null, WINDOWING_MODE_PINNED,
+-                ACTIVITY_TYPE_STANDARD, TYPE_BASE_APPLICATION, mDisplayContent,
+-                "pinnedStackWindow");
+-        final WindowState splitScreenWindow = createWindowOnStack(null,
+-                WINDOWING_MODE_SPLIT_SCREEN_PRIMARY, ACTIVITY_TYPE_STANDARD, TYPE_BASE_APPLICATION,
+-                mDisplayContent, "splitScreenWindow");
+-        final WindowState splitScreenSecondaryWindow = createWindowOnStack(null,
+-                WINDOWING_MODE_SPLIT_SCREEN_SECONDARY, ACTIVITY_TYPE_STANDARD,
+-                TYPE_BASE_APPLICATION, mDisplayContent, "splitScreenSecondaryWindow");
+-        final WindowState assistantStackWindow = createWindowOnStack(null, WINDOWING_MODE_FULLSCREEN,
+-                ACTIVITY_TYPE_ASSISTANT, TYPE_BASE_APPLICATION,
+-                mDisplayContent, "assistantStackWindow");
+-        final WindowState dockedDividerWindow = createWindow(null, TYPE_DOCK_DIVIDER,
+-                mDisplayContent, "dockedDivider");
+-
+-        mDisplayContent.assignChildLayers(mTransaction);
+-
+-        assertWindowLayerGreaterThan(mTransaction, dockedDividerWindow, splitScreenWindow);
+-        assertWindowLayerGreaterThan(mTransaction, dockedDividerWindow, splitScreenSecondaryWindow);
+-        assertWindowLayerGreaterThan(mTransaction, assistantStackWindow, dockedDividerWindow);
+-        assertWindowLayerGreaterThan(mTransaction, pinnedStackWindow, dockedDividerWindow);
+-    }
+ }
+-- 
+2.17.1
+

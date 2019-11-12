@@ -1,0 +1,42 @@
+From aeabeb24db02fdb40d07de5d017483615eb6d40f Mon Sep 17 00:00:00 2001
+From: Hansong Zhang <hsz@google.com>
+Date: Tue, 16 Jan 2018 23:57:27 +0000
+Subject: [PATCH 02/59] Revert "Fix buffer overflow in GAP_ConnWriteData"
+
+This reverts commit 9f9c47683e28a0cf99b308deeac04073a9528c59.
+
+Reason for revert: Bluetooth OPP crashing.
+
+Bug: 72049058
+Change-Id: Ic9ee9f28ce480453a9e01d3273595bff2264cd2b
+(cherry picked from commit 3114ecdaa118837ebd2fe0432d8edb663284aca8)
+---
+ stack/gap/gap_conn.cc | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/stack/gap/gap_conn.cc b/stack/gap/gap_conn.cc
+index 0fd70a01b..f7186b349 100644
+--- a/stack/gap/gap_conn.cc
++++ b/stack/gap/gap_conn.cc
+@@ -502,12 +502,14 @@ uint16_t GAP_ConnWriteData(uint16_t gap_handle, uint8_t* p_data,
+   if (p_ccb->con_state != GAP_CCB_STATE_CONNECTED) return (GAP_ERR_BAD_STATE);
+ 
+   while (max_len) {
+-    uint16_t data_len = std::min(p_ccb->rem_mtu_size, max_len);
+-    size_t bufsize = BT_HDR_SIZE + L2CAP_MIN_OFFSET + data_len;
++    if (p_ccb->cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)
++      p_buf = (BT_HDR*)osi_malloc(L2CAP_FCR_ERTM_BUF_SIZE);
++    else
++      p_buf = (BT_HDR*)osi_malloc(GAP_DATA_BUF_SIZE);
+ 
+-    p_buf = (BT_HDR*)osi_malloc(bufsize);
+     p_buf->offset = L2CAP_MIN_OFFSET;
+-    p_buf->len = data_len;
++    p_buf->len =
++        (p_ccb->rem_mtu_size < max_len) ? p_ccb->rem_mtu_size : max_len;
+     p_buf->event = BT_EVT_TO_BTU_SP_DATA;
+ 
+     memcpy((uint8_t*)(p_buf + 1) + p_buf->offset, p_data, p_buf->len);
+-- 
+2.17.1
+

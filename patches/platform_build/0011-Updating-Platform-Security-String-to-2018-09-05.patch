@@ -1,0 +1,26 @@
+From 6bc223c9af044ad06e2f1abc0c4570a7371f9a3a Mon Sep 17 00:00:00 2001
+From: Adam Seaton <aseaton@google.com>
+Date: Mon, 16 Jul 2018 10:17:21 -0700
+Subject: [PATCH 11/81] Updating Platform Security String to 2018-09-05 Bug:
+ 111501777
+
+---
+ core/version_defaults.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/version_defaults.mk b/core/version_defaults.mk
+index 395442e2b..a4185b1ed 100644
+--- a/core/version_defaults.mk
++++ b/core/version_defaults.mk
+@@ -181,7 +181,7 @@ ifndef PLATFORM_SECURITY_PATCH
+     #  It must be of the form "YYYY-MM-DD" on production devices.
+     #  It must match one of the Android Security Patch Level strings of the Public Security Bulletins.
+     #  If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
+-      PLATFORM_SECURITY_PATCH := 2018-08-05
++      PLATFORM_SECURITY_PATCH := 2018-09-05
+ endif
+ 
+ ifndef PLATFORM_BASE_OS
+-- 
+2.17.1
+

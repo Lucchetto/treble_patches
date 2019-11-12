@@ -1,0 +1,52 @@
+From a598e04a91c64741f9f71c6511a7ced7f71d194e Mon Sep 17 00:00:00 2001
+From: Woody Lin <woodylin@google.com>
+Date: Mon, 11 Mar 2019 20:58:20 +0800
+Subject: [PATCH 06/11] Fsync directories before delete key
+
+The boot failure symptom is reproduced on Walleye devices. System boots
+up after taking OTA and try to upgrade key, but keymaster returns "failed
+to ugprade key". Device reboots to recovery mode because of the failure,
+and finally trapped in bootloader screen. Possible scenario is:
+
+(After taking OTA)
+vold sends old key and op=UPGRADE to keymaster
+keymaster creates and saves new key to RPMB, responses new key to vold
+vold saves new key as temp key
+vold renames temp key to main key -------------- (1) -- still in cache
+vold sends old key and op=DELETE_KEY to keymaster
+keymaster removes old key from RPMB ------------ (2) -- write directly to RPMB
+==> SYSTEM INTERRUPTED BY CRASH OR SOMETHING; ALL CACHE LOST.
+==> System boots up, key in RPMB is deleted but key in storage is old key.
+
+Solution: A Fsync is required between (1) and (2) to cover this case.
+
+Detail analysis: b/124279741#comment21
+
+Bug: 112145641
+Bug: 124279741
+Test: Insert fault right after deleteKey in vold::begin (KeyStorage.cpp),
+      original boot failure symptom is NOT reproducible.
+Change-Id: Ia042b23699c37c94758fb660aecec64d39f39738
+Merged-In: Ib8c349d6d033f86b247f4b35b8354d97cf249d26
+---
+ KeyStorage.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/KeyStorage.cpp b/KeyStorage.cpp
+index 84dd8ec..6fc7250 100644
+--- a/KeyStorage.cpp
++++ b/KeyStorage.cpp
+@@ -223,6 +223,10 @@ static KeymasterOperation begin(Keymaster& keymaster, const std::string& dir,
+             PLOG(ERROR) << "Unable to move upgraded key to location: " << kmKeyPath;
+             return KeymasterOperation();
+         }
++        if (!android::vold::FsyncDirectory(dir)) {
++            LOG(ERROR) << "Key dir sync failed: " << dir;
++            return KeymasterOperation();
++        }
+         if (!keymaster.deleteKey(kmKey)) {
+             LOG(ERROR) << "Key deletion failed during upgrade, continuing anyway: " << dir;
+         }
+-- 
+2.17.1
+

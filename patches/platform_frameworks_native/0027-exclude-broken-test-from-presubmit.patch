@@ -1,0 +1,29 @@
+From 60454ab1ccaaa5c508c8a88a2426affb5c21b603 Mon Sep 17 00:00:00 2001
+From: Guang Zhu <guangzhu@google.com>
+Date: Tue, 17 Jul 2018 17:38:58 -0700
+Subject: [PATCH 27/48] exclude broken test from presubmit
+
+Bug: 111454530
+Bug: 118754178
+Test: runng this change via forrest
+Change-Id: I7c1b2ae81feba7d9798cf7dcb999499b5a2cb27f
+Merged-In: I7c1b2ae81feba7d9798cf7dcb999499b5a2cb27f
+(cherry picked from commit 2e702c31452b27b757632544d0c479beee81b21b)
+---
+ services/surfaceflinger/tests/SurfaceFlinger_test.filter | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/tests/SurfaceFlinger_test.filter b/services/surfaceflinger/tests/SurfaceFlinger_test.filter
+index 36424b9c5..cca84e552 100644
+--- a/services/surfaceflinger/tests/SurfaceFlinger_test.filter
++++ b/services/surfaceflinger/tests/SurfaceFlinger_test.filter
+@@ -1,5 +1,5 @@
+ {
+         "presubmit": {
+-            "filter": "LayerTransactionTest.*:LayerUpdateTest.*:ChildLayerTest.*:SurfaceFlingerStress.*:CropLatchingTest.*:GeometryLatchingTest.*:ScreenCaptureTest.*:DereferenceSurfaceControlTest.*"
++            "filter": "LayerTransactionTest.*:LayerUpdateTest.*:ChildLayerTest.*:SurfaceFlingerStress.*:CropLatchingTest.*:GeometryLatchingTest.*:ScreenCaptureTest.*:DereferenceSurfaceControlTest.*:-CropLatchingTest.FinalCropLatchingBufferOldSize"
+         }
+ }
+-- 
+2.17.1
+

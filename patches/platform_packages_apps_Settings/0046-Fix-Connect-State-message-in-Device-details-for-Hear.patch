@@ -1,0 +1,100 @@
+From 69e1bb1cf3b2f7d76ff044c9f7d26b98dd4a600d Mon Sep 17 00:00:00 2001
+From: Stanley Tng <stng@google.com>
+Date: Sun, 30 Sep 2018 22:47:22 -0700
+Subject: [PATCH 46/71] Fix Connect State message in Device details for Hearing
+ Aids
+
+In the Device details of Settings App and when using two Hearing Aids
+devices (left and right sides), this will fix the connect state messages
+for these two devices. Also added Robo tests for the changes.
+
+Bug: 116725094
+Bug: 117074814
+Test: Manual tests and also ran RunSettingsLibRoboTests and RunSettingsRoboTests.
+
+Change-Id: I169cda4a1658b0a67cc7c7367b38d57a021e6953
+Merged-In: I0b1a170967ddcce7f388603fd521f6ed1eeba30b
+Merged-In: I169cda4a1658b0a67cc7c7367b38d57a021e6953
+---
+ .../BluetoothDetailsHeaderController.java          | 14 ++++++++++----
+ .../BluetoothDetailsHeaderControllerTest.java      | 11 ++++++++++-
+ 2 files changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/src/com/android/settings/bluetooth/BluetoothDetailsHeaderController.java b/src/com/android/settings/bluetooth/BluetoothDetailsHeaderController.java
+index 8679b5566c..2170423e55 100644
+--- a/src/com/android/settings/bluetooth/BluetoothDetailsHeaderController.java
++++ b/src/com/android/settings/bluetooth/BluetoothDetailsHeaderController.java
+@@ -20,6 +20,7 @@ import android.content.Context;
+ import android.graphics.drawable.Drawable;
+ import android.support.v14.preference.PreferenceFragment;
+ import android.support.v7.preference.PreferenceScreen;
++import android.util.Log;
+ import android.util.Pair;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+@@ -36,6 +37,7 @@ import com.android.settingslib.bluetooth.LocalBluetoothManager;
+  */
+ public class BluetoothDetailsHeaderController extends BluetoothDetailsController {
+     private static final String KEY_DEVICE_HEADER = "bluetooth_device_header";
++    private static final String TAG = "BluetoothDetailsHeaderController";
+ 
+     private EntityHeaderController mHeaderController;
+     private LocalBluetoothManager mLocalManager;
+@@ -63,12 +65,16 @@ public class BluetoothDetailsHeaderController extends BluetoothDetailsController
+                 .getBtClassDrawableWithDescription(mContext, mCachedDevice,
+                 mContext.getResources().getFraction(R.fraction.bt_battery_scale_fraction, 1, 1));
+         String summaryText = mCachedDevice.getConnectionSummary();
+-        // If both the hearing aids are connected, two battery status should be shown.
+-        final String pairDeviceSummary = mDeviceManager
+-            .getHearingAidPairDeviceSummary(mCachedDevice);
+-        if (pairDeviceSummary != null) {
++
++        if (mCachedDevice.isHearingAidDevice()) {
++            // For Hearing Aid device, display the other battery status.
++            final String pairDeviceSummary = mDeviceManager
++                .getHearingAidPairDeviceSummary(mCachedDevice);
++            Log.d(TAG, "setHeaderProperties: HearingAid: summaryText=" + summaryText
++                  + ", pairDeviceSummary=" + pairDeviceSummary);
+             mHeaderController.setSecondSummary(pairDeviceSummary);
+         }
++
+         mHeaderController.setLabel(mCachedDevice.getName());
+         mHeaderController.setIcon(pair.first);
+         mHeaderController.setIconContentDescription(pair.second);
+diff --git a/tests/robotests/src/com/android/settings/bluetooth/BluetoothDetailsHeaderControllerTest.java b/tests/robotests/src/com/android/settings/bluetooth/BluetoothDetailsHeaderControllerTest.java
+index 2567f534f6..e3f26b2c78 100644
+--- a/tests/robotests/src/com/android/settings/bluetooth/BluetoothDetailsHeaderControllerTest.java
++++ b/tests/robotests/src/com/android/settings/bluetooth/BluetoothDetailsHeaderControllerTest.java
+@@ -19,6 +19,7 @@ package com.android.settings.bluetooth;
+ import static com.google.common.truth.Truth.assertThat;
+ import static org.mockito.Matchers.any;
+ import static org.mockito.Mockito.inOrder;
++import static org.mockito.Mockito.never;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+ 
+@@ -96,7 +97,7 @@ public class BluetoothDetailsHeaderControllerTest extends BluetoothDetailsContro
+         verify(mHeaderController).setIcon(any(Drawable.class));
+         verify(mHeaderController).setIconContentDescription(any(String.class));
+         verify(mHeaderController).setSummary(any(String.class));
+-        verify(mHeaderController).setSecondSummary(any(String.class));
++        verify(mHeaderController, never()).setSecondSummary(any(String.class));
+         verify(mHeaderController).done(mActivity, true);
+     }
+ 
+@@ -119,4 +120,12 @@ public class BluetoothDetailsHeaderControllerTest extends BluetoothDetailsContro
+         inOrder.verify(mHeaderController)
+             .setSummary(mContext.getString(R.string.bluetooth_connecting));
+     }
++
++    @Test
++    public void testSecondSummary_isHearingAidDevice_showSecondSummary() {
++        when(mCachedDevice.isHearingAidDevice()).thenReturn(true);
++        showScreen(mController);
++
++        verify(mHeaderController).setSecondSummary(any(String.class));
++    }
+ }
+-- 
+2.17.1
+

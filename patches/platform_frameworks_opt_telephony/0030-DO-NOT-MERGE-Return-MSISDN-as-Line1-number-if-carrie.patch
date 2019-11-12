@@ -1,0 +1,74 @@
+From 1b75d80ffff871e31a69d77a865c8309ed64c6ff Mon Sep 17 00:00:00 2001
+From: mavishsu <mavishsu@google.com>
+Date: Tue, 5 Mar 2019 17:56:51 +0800
+Subject: [PATCH 30/39] DO NOT MERGE Return MSISDN as Line1 number if carrier
+ config requires it.
+
+Previously getLine1Number() returns MDN for CDMA phone, it will return MSISDN if a carrier config requires it.
+
+Bug: 124524824
+Test: atest GsmCdmaPhoneTest
+      atest PhoneSubInfoControllerTest
+
+Change-Id: I11b2e79c4a991208d6f3c914c2639e8918c4c5a9
+---
+ .../internal/telephony/GsmCdmaPhone.java      |  7 +++++
+ .../internal/telephony/GsmCdmaPhoneTest.java  | 26 +++++++++++++++++++
+ 2 files changed, 33 insertions(+)
+
+diff --git a/src/java/com/android/internal/telephony/GsmCdmaPhone.java b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
+index cd6dc322f..13f8b0bad 100644
+--- a/src/java/com/android/internal/telephony/GsmCdmaPhone.java
++++ b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
+@@ -1610,6 +1610,13 @@ public class GsmCdmaPhone extends Phone {
+             IccRecords r = mIccRecords.get();
+             return (r != null) ? r.getMsisdnNumber() : null;
+         } else {
++            CarrierConfigManager configManager = (CarrierConfigManager)
++                    mContext.getSystemService(Context.CARRIER_CONFIG_SERVICE);
++            boolean use_usim = configManager.getConfigForSubId(getSubId()).getBoolean(
++                    CarrierConfigManager.KEY_USE_USIM_BOOL);
++            if (use_usim) {
++                return (mSimRecords != null) ? mSimRecords.getMsisdnNumber() : null;
++            }
+             return mSST.getMdnNumber();
+         }
+     }
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java b/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java
+index 60bc61f74..3a1822322 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/GsmCdmaPhoneTest.java
+@@ -957,4 +957,30 @@ public class GsmCdmaPhoneTest extends TelephonyTest {
+         assertEquals(EVENT_SET_ICC_LOCK_ENABLED, message.what);
+         assertTrue(ret.exception != null);
+     }
++
++    @Test
++    @SmallTest
++    public void testGetLine1NumberForGsmPhone() {
++        final String msisdn = "+1234567890";
++        doReturn(msisdn).when(mSimRecords).getMsisdnNumber();
++
++        switchToGsm();
++        assertEquals(msisdn, mPhoneUT.getLine1Number());
++    }
++
++    @Test
++    @SmallTest
++    public void testGetLine1NumberForCdmaPhone() {
++        final String mdn = "1234567890";
++        final String msisdn = "+1234567890";
++        doReturn(mdn).when(mSST).getMdnNumber();
++        doReturn(msisdn).when(mSimRecords).getMsisdnNumber();
++
++        switchToCdma();
++        assertEquals(mdn, mPhoneUT.getLine1Number());
++
++        mContextFixture.getCarrierConfigBundle().putBoolean(
++                CarrierConfigManager.KEY_USE_USIM_BOOL, true);
++        assertEquals(msisdn, mPhoneUT.getLine1Number());
++    }
+ }
+-- 
+2.17.1
+

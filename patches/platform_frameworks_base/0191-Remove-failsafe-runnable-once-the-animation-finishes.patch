@@ -1,0 +1,80 @@
+From 5a9a7940648b70965e948211d68020985d7758db Mon Sep 17 00:00:00 2001
+From: Winson Chung <winsonc@google.com>
+Date: Thu, 10 May 2018 10:32:39 -0700
+Subject: [PATCH 191/306] Remove failsafe runnable once the animation finishes.
+
+- The scheduled failsafe runnable was running after we had already
+  cleaned up the reference to the animation runner. Clear the runnable
+  and also mark the animation as canceled so that future calls that
+  happen to get through (from the runner as well) are also ignored.
+
+Bug: 79514993
+Test: atest FrameworksServicesTests:com.android.server.wm.RecentsAnimationControllerTest
+Change-Id: Ib8d565022068833ccad212df3a7f6df68f5343d7
+(cherry picked from commit 7906b3e678596c2e9984232a55551e7439cd3a1c)
+---
+ .../server/wm/RecentsAnimationController.java |  4 ++++
+ .../wm/RecentsAnimationControllerTest.java    | 22 +++++++++++++++++++
+ 2 files changed, 26 insertions(+)
+
+diff --git a/services/core/java/com/android/server/wm/RecentsAnimationController.java b/services/core/java/com/android/server/wm/RecentsAnimationController.java
+index 553b4fe5311..9da69170654 100644
+--- a/services/core/java/com/android/server/wm/RecentsAnimationController.java
++++ b/services/core/java/com/android/server/wm/RecentsAnimationController.java
+@@ -426,9 +426,13 @@ public class RecentsAnimationController implements DeathRecipient {
+             removeAnimation(taskAdapter);
+         }
+ 
++        // Clear any pending failsafe runnables
++        mService.mH.removeCallbacks(mFailsafeRunnable);
++
+         // Clear references to the runner
+         unlinkToDeathOfRunner();
+         mRunner = null;
++        mCanceled = true;
+ 
+         // Clear associated input consumers
+         mService.mInputMonitor.updateInputWindowsLw(true /*force*/);
+diff --git a/services/tests/servicestests/src/com/android/server/wm/RecentsAnimationControllerTest.java b/services/tests/servicestests/src/com/android/server/wm/RecentsAnimationControllerTest.java
+index fbf6691f5bd..a2af9b80fe3 100644
+--- a/services/tests/servicestests/src/com/android/server/wm/RecentsAnimationControllerTest.java
++++ b/services/tests/servicestests/src/com/android/server/wm/RecentsAnimationControllerTest.java
+@@ -19,6 +19,9 @@ package com.android.server.wm;
+ import static android.app.WindowConfiguration.ACTIVITY_TYPE_STANDARD;
+ import static android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
+ import static android.view.Display.DEFAULT_DISPLAY;
++import static com.android.server.wm.RecentsAnimationController.REORDER_KEEP_IN_PLACE;
++import static com.android.server.wm.RecentsAnimationController.REORDER_MOVE_TO_ORIGINAL_POSITION;
++import static org.junit.Assert.fail;
+ import static org.mockito.ArgumentMatchers.eq;
+ import static org.mockito.Mockito.atLeast;
+ import static org.mockito.Mockito.verify;
+@@ -82,6 +85,25 @@ public class RecentsAnimationControllerTest extends WindowTestsBase {
+         verifyNoMoreInteractionsExceptAsBinder(mMockRunner);
+     }
+ 
++    @Test
++    public void testCancelAfterRemove_expectIgnored() throws Exception {
++        final AppWindowToken appWindow = createAppWindowToken(mDisplayContent,
++                WINDOWING_MODE_FULLSCREEN, ACTIVITY_TYPE_STANDARD);
++        AnimationAdapter adapter = mController.addAnimation(appWindow.getTask(),
++                false /* isRecentTaskInvisible */);
++        adapter.startAnimation(mMockLeash, mMockTransaction, mFinishedCallback);
++
++        // Remove the app window so that the animation target can not be created
++        appWindow.removeImmediately();
++        mController.startAnimation();
++        mController.cleanupAnimation(REORDER_KEEP_IN_PLACE);
++        try {
++            mController.cancelAnimation(REORDER_MOVE_TO_ORIGINAL_POSITION, "test");
++        } catch (Exception e) {
++            fail("Unexpected failure when canceling animation after finishing it");
++        }
++    }
++
+     private static void verifyNoMoreInteractionsExceptAsBinder(IInterface binder) {
+         verify(binder, atLeast(0)).asBinder();
+         verifyNoMoreInteractions(binder);
+-- 
+2.17.1
+

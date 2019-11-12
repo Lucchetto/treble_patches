@@ -1,0 +1,79 @@
+From 9f8a1f433e57495e4ecb45d10f86a01e3d35539b Mon Sep 17 00:00:00 2001
+From: Jack Yu <jackyu@google.com>
+Date: Fri, 31 Aug 2018 15:22:30 -0700
+Subject: [PATCH 14/39] Added serial number and timestamp in cell broadcat
+ metrics
+
+The timestamp logging helps analyzing the delivered time
+of emergency alerts among devices.
+
+Test: Telephony sanity tests
+Bug: 113688249
+Change-Id: Ie0b3dc7a876bbc8b14b1b85c099d94a5a9480f74
+---
+ proto/src/telephony.proto                                  | 6 ++++++
+ .../android/internal/telephony/CellBroadcastHandler.java   | 3 ++-
+ .../internal/telephony/metrics/TelephonyMetrics.java       | 7 ++++++-
+ 3 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/proto/src/telephony.proto b/proto/src/telephony.proto
+index c4c6a4f21..36f188332 100644
+--- a/proto/src/telephony.proto
++++ b/proto/src/telephony.proto
+@@ -1358,6 +1358,12 @@ message SmsSession {
+ 
+       // Service category of CB message
+       optional int32 service_category = 4;
++
++      // Message's serial number
++      optional int32 serial_number = 5;
++
++      // The delivered time (UTC) of the message
++      optional int64 delivered_timestamp_millis = 6;
+     }
+ 
+     enum CBMessageType {
+diff --git a/src/java/com/android/internal/telephony/CellBroadcastHandler.java b/src/java/com/android/internal/telephony/CellBroadcastHandler.java
+index 19b7b4065..55e0643e8 100644
+--- a/src/java/com/android/internal/telephony/CellBroadcastHandler.java
++++ b/src/java/com/android/internal/telephony/CellBroadcastHandler.java
+@@ -88,7 +88,8 @@ public class CellBroadcastHandler extends WakeLockStateMachine {
+         TelephonyMetrics metrics = TelephonyMetrics.getInstance();
+         metrics.writeNewCBSms(mPhone.getPhoneId(), message.getMessageFormat(),
+                 message.getMessagePriority(), message.isCmasMessage(), message.isEtwsMessage(),
+-                message.getServiceCategory());
++                message.getServiceCategory(), message.getSerialNumber(),
++                System.currentTimeMillis());
+ 
+         Intent intent;
+         if (message.isEmergencyMessage()) {
+diff --git a/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java b/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java
+index a390b759b..75ea68fdf 100644
+--- a/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java
++++ b/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java
+@@ -1766,9 +1766,12 @@ public class TelephonyMetrics {
+      * @param isCMAS true if msg is CMAS
+      * @param isETWS true if msg is ETWS
+      * @param serviceCategory Service category of CB msg
++     * @param serialNumber Serial number of the message
++     * @param deliveredTimestamp Message's delivered timestamp
+      */
+     public synchronized void writeNewCBSms(int phoneId, int format, int priority, boolean isCMAS,
+-                                           boolean isETWS, int serviceCategory) {
++                                           boolean isETWS, int serviceCategory, int serialNumber,
++                                           long deliveredTimestamp) {
+         InProgressSmsSession smsSession = startNewSmsSessionIfNeeded(phoneId);
+ 
+         int type;
+@@ -1785,6 +1788,8 @@ public class TelephonyMetrics {
+         cbm.msgPriority = priority + 1;
+         cbm.msgType = type;
+         cbm.serviceCategory = serviceCategory;
++        cbm.serialNumber = serialNumber;
++        cbm.deliveredTimestampMillis = deliveredTimestamp;
+ 
+         smsSession.addEvent(new SmsSessionEventBuilder(SmsSession.Event.Type.CB_SMS_RECEIVED)
+                 .setCellBroadcastMessage(cbm)
+-- 
+2.17.1
+

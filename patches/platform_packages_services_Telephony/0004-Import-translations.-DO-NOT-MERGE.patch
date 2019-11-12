@@ -1,0 +1,43 @@
+From 90a4fbf860e006fdf1658a49bc3e83c2a2af4099 Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Thu, 21 Jun 2018 15:02:33 -0700
+Subject: [PATCH 04/70] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: Id0c0353ab2baac0b2a9fd41c7a8390273c7c3374
+---
+ res/values-hi/strings.xml     | 2 +-
+ sip/res/values-iw/strings.xml | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/values-hi/strings.xml b/res/values-hi/strings.xml
+index eeeef063f..8f41e8fdb 100644
+--- a/res/values-hi/strings.xml
++++ b/res/values-hi/strings.xml
+@@ -532,7 +532,7 @@
+     <string name="hac_mode_summary" msgid="6833851160514929341">"श्रवण सहायक साधन संगतता चालू करें"</string>
+     <string name="rtt_mode_title" msgid="6954652435543570121">"(आरटीटी) कॉल से रीयल-टाइम में मैसेज भेजें"</string>
+     <string name="rtt_mode_summary" msgid="5146344277246544580">"वॉइस कॉल में मैसेज भेजने की अनुमति दें"</string>
+-    <string name="rtt_mode_more_information" msgid="6080420780730383030">"आरटीटी उन कॉल करने वालों की मदद करता है, जो बधिर हैं, ऊंचा सुनते हैं, जिन्हें बोलने में दिक्कत है या जिनके लिए सिर्फ़ आवाज़ काफ़ी नहीं होती.&lt;br&gt; &lt;a href=<xliff:g id="URL">http://support.google.com/mobile?p=telephony_rtt</xliff:g>&gt;अधिक जानें&lt;/a&gt;\n       &lt;br&gt;&lt;br&gt; - आरटीटी कॉल, मैसेज लेख के रूप में सेव किए जाते हैं\n       &lt;br&gt; - वीडियो कॉल के लिए आरटीटी उपलब्ध नहीं है"</string>
++    <string name="rtt_mode_more_information" msgid="6080420780730383030">"आरटीटी उन कॉल करने वालों की मदद करता है, जो सुन नहीं सकते हैं, ऊंचा सुनते हैं, जिन्हें बोलने में दिक्कत है या जिनके लिए सिर्फ़ आवाज़ काफ़ी नहीं होती.&lt;br&gt; &lt;a href=<xliff:g id="URL">http://support.google.com/mobile?p=telephony_rtt</xliff:g>&gt;ज़्यादा  जानें&lt;/a&gt;\n       &lt;br&gt;&lt;br&gt; - आरटीटी कॉल, मैसेज लेख के रूप में सेव किए जाते हैं\n       &lt;br&gt; - वीडियो कॉल के लिए आरटीटी उपलब्ध नहीं है"</string>
+   <string-array name="tty_mode_entries">
+     <item msgid="512950011423868021">"TTY बंद"</item>
+     <item msgid="3971695875449640648">"TTY पूर्ण"</item>
+diff --git a/sip/res/values-iw/strings.xml b/sip/res/values-iw/strings.xml
+index edd8d649d..2204e0ac0 100644
+--- a/sip/res/values-iw/strings.xml
++++ b/sip/res/values-iw/strings.xml
+@@ -26,7 +26,7 @@
+     <string name="sip_call_options_entry_1" msgid="7217659161237099900">"לכל השיחות כאשר רשת הנתונים זמינה"</string>
+     <string name="sip_call_options_entry_2" msgid="1815335903940609729">"‏עבור שיחות SIP בלבד"</string>
+     <string name="sip_call_options_wifi_only_entry_1" msgid="1358513095551847314">"לכל השיחות"</string>
+-    <string name="add_sip_account" msgid="800843669753980091">"הוסף חשבון"</string>
++    <string name="add_sip_account" msgid="800843669753980091">"חשבון חדש"</string>
+     <string name="remove_sip_account" msgid="1367664438506503690">"הסר חשבון"</string>
+     <string name="sip_account_list" msgid="5610858485304821480">"‏חשבונות SIP"</string>
+     <string name="saving_account" msgid="5336529880235177448">"שומר את החשבון..."</string>
+-- 
+2.17.1
+

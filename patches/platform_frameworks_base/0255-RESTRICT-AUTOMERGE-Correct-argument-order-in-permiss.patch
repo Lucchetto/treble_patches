@@ -1,0 +1,34 @@
+From dd56d82cb4913ea93117133f45949717e9d98ecc Mon Sep 17 00:00:00 2001
+From: Bryan Ferris <bferris@google.com>
+Date: Thu, 27 Jun 2019 14:39:46 -0700
+Subject: [PATCH 255/306] [RESTRICT AUTOMERGE] Correct argument order in
+ permission check
+
+The function 'checkAccess' recieves the uid and pid in that order and
+forwards them to checkSlicePermission in the same order. However,
+checkSlicePermission expects them in the opposite order.
+
+Bug: 135551349
+Test: atest FrameworksUiServicesTests
+Change-Id: I6e49efeab08f0e2a29d9830e6f81905598ae410c
+(cherry picked from commit d2432fc3e35eacb308b620174849b29aa74eee05)
+---
+ .../core/java/com/android/server/slice/SliceManagerService.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/slice/SliceManagerService.java b/services/core/java/com/android/server/slice/SliceManagerService.java
+index c3b98417280..2863a5be0a3 100644
+--- a/services/core/java/com/android/server/slice/SliceManagerService.java
++++ b/services/core/java/com/android/server/slice/SliceManagerService.java
+@@ -389,7 +389,7 @@ public class SliceManagerService extends ISliceManager.Stub {
+     }
+ 
+     protected int checkAccess(String pkg, Uri uri, int uid, int pid) {
+-        return checkSlicePermission(uri, pkg, uid, pid, null);
++        return checkSlicePermission(uri, pkg, pid, uid, null);
+     }
+ 
+     private String getProviderPkg(Uri uri, int user) {
+-- 
+2.17.1
+

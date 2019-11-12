@@ -1,0 +1,29 @@
+From d9f3994354e7a5db9fe5376d62a6f9ba499a4f7f Mon Sep 17 00:00:00 2001
+From: Winson Chung <winsonc@google.com>
+Date: Thu, 2 Nov 2017 15:57:28 -0700
+Subject: [PATCH 012/306] Ensure closeSystemDialogs() is not oneway.
+
+Bug: 68787785
+Test: Launch overview with QS down
+Change-Id: I136a3d2e45a91abe364027747bca03d4edb454c5
+(cherry picked from commit 84deaa29d4f72f66b645df12048a98a83aaa3fac)
+---
+ core/java/android/app/IActivityManager.aidl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/java/android/app/IActivityManager.aidl b/core/java/android/app/IActivityManager.aidl
+index 388459fbbc6..bbc90c81fae 100644
+--- a/core/java/android/app/IActivityManager.aidl
++++ b/core/java/android/app/IActivityManager.aidl
+@@ -232,7 +232,7 @@ interface IActivityManager {
+             boolean requireFull, in String name, in String callerPackage);
+     void addPackageDependency(in String packageName);
+     void killApplication(in String pkg, int appId, int userId, in String reason);
+-    oneway void closeSystemDialogs(in String reason);
++    void closeSystemDialogs(in String reason);
+     Debug.MemoryInfo[] getProcessMemoryInfo(in int[] pids);
+     void killApplicationProcess(in String processName, int uid);
+     int startActivityIntentSender(in IApplicationThread caller,
+-- 
+2.17.1
+

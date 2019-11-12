@@ -1,0 +1,32 @@
+From 383d2d008fc414852a71217772a739a21c28b63c Mon Sep 17 00:00:00 2001
+From: Alex Chau <alexchau@google.com>
+Date: Thu, 18 Jan 2018 16:07:36 +0000
+Subject: [PATCH 059/306] Check if UserState is null in
+ stopGuestOrEphemeralUserIfBackground
+
+- UserState may be removed from mStartedUsers if it has already been stopped
+
+Bug: 72133858
+Test: Manually create secondary user, and exit the user in SetupWizard
+Change-Id: I92783f89a9d4de9a7eca81e688b4e115c2f5535a
+(cherry picked from commit 62995efee31a264e115719bae6827ebb48a3828c)
+---
+ services/core/java/com/android/server/am/UserController.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/UserController.java b/services/core/java/com/android/server/am/UserController.java
+index c7210a83576..65bebc6c235 100644
+--- a/services/core/java/com/android/server/am/UserController.java
++++ b/services/core/java/com/android/server/am/UserController.java
+@@ -796,7 +796,7 @@ class UserController implements Handler.Callback {
+     private void stopGuestOrEphemeralUserIfBackground(int oldUserId) {
+         if (DEBUG_MU) Slog.i(TAG, "Stop guest or ephemeral user if background: " + oldUserId);
+         UserState oldUss = mStartedUsers.get(oldUserId);
+-        if (oldUserId == UserHandle.USER_SYSTEM || oldUserId == mCurrentUserId
++        if (oldUserId == UserHandle.USER_SYSTEM || oldUserId == mCurrentUserId || oldUss == null
+                 || oldUss.state == UserState.STATE_STOPPING
+                 || oldUss.state == UserState.STATE_SHUTDOWN) {
+             return;
+-- 
+2.17.1
+

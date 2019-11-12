@@ -1,0 +1,120 @@
+From e07c20c32b7e012e278114710f887067ba67b098 Mon Sep 17 00:00:00 2001
+From: Winson Chung <winsonc@google.com>
+Date: Wed, 14 Feb 2018 10:13:41 -0800
+Subject: [PATCH 132/306] Fix issue with quickscrub not getting reset when the
+ state changes
+
+- When resuming launching in forced-portrait, the orientation of the device
+  changes, which causes a state transition in QuickScrub. In such a case,
+  we should end the previous gesture before changing state. In addition, we
+  need to bake the home button view that we are animating, otherwise we may
+  have already updated the home button view by the time we get the state
+  change (and will reset the wrong view's state).
+
+Bug: 73338008
+Test: Go into a forced landscape activity, try to quickscrub home and
+      ensure that the button is reset
+
+Change-Id: Icb09248648dd9643a438344d2357cb42913d1260
+(cherry picked from commit d10ca302f332cfad81164ce8fef73d4e15c5364e)
+---
+ .../statusbar/phone/QuickScrubController.java | 24 +++++++++++++------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java
+index bb2f59718ff..f4da0c38338 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickScrubController.java
+@@ -89,6 +89,7 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+     private int mLightTrackColor;
+     private int mDarkTrackColor;
+     private float mDarkIntensity;
++    private View mHomeButtonView;
+ 
+     private final Handler mHandler = new Handler();
+     private final Interpolator mQuickScrubEndInterpolator = new DecelerateInterpolator();
+@@ -114,11 +115,10 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+         if (!mQuickScrubActive) {
+             pos = mDragPositive ? Math.min((int) mTranslation, pos) : Math.max((int) mTranslation, pos);
+         }
+-        final View homeView = mNavigationBarView.getHomeButton().getCurrentView();
+         if (mIsVertical) {
+-            homeView.setTranslationY(pos);
++            mHomeButtonView.setTranslationY(pos);
+         } else {
+-            homeView.setTranslationX(pos);
++            mHomeButtonView.setTranslationX(pos);
+         }
+     };
+ 
+@@ -126,6 +126,7 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+         @Override
+         public void onAnimationEnd(Animator animation) {
+             mNavigationBarView.getHomeButton().setClickable(true);
++            mHomeButtonView = null;
+             mQuickScrubActive = false;
+             mTranslation = 0;
+         }
+@@ -226,6 +227,7 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+             case MotionEvent.ACTION_DOWN: {
+                 int x = (int) event.getX();
+                 int y = (int) event.getY();
++                mHomeButtonView = homeButton.getCurrentView();
+                 if (isQuickScrubEnabled()
+                         && mNavigationBarView.getDownHitTarget() == HIT_TARGET_HOME) {
+                     mTouchDownX = x;
+@@ -305,9 +307,9 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+                             mTranslation /= SWITCH_STICKINESS;
+                         }
+                         if (mIsVertical) {
+-                            homeButton.getCurrentView().setTranslationY(mTranslation);
++                            mHomeButtonView.setTranslationY(mTranslation);
+                         } else {
+-                            homeButton.getCurrentView().setTranslationX(mTranslation);
++                            mHomeButtonView.setTranslationX(mTranslation);
+                         }
+                     }
+                 }
+@@ -315,7 +317,7 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+             }
+             case MotionEvent.ACTION_CANCEL:
+             case MotionEvent.ACTION_UP:
+-                endQuickScrub();
++                endQuickScrub(true /* animate */);
+                 break;
+         }
+         return mDraggingActive || mQuickScrubActive;
+@@ -357,6 +359,11 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+ 
+     @Override
+     public void setBarState(boolean isVertical, boolean isRTL) {
++        final boolean changed = (mIsVertical != isVertical) || (mIsRTL != isRTL);
++        if (changed) {
++            // End quickscrub if the state changes mid-transition
++            endQuickScrub(false /* animate */);
++        }
+         mIsVertical = isVertical;
+         mIsRTL = isRTL;
+         try {
+@@ -392,7 +399,7 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+         }
+     }
+ 
+-    private void endQuickScrub() {
++    private void endQuickScrub(boolean animate) {
+         mHandler.removeCallbacks(mLongPressRunnable);
+         if (mDraggingActive || mQuickScrubActive) {
+             mButtonAnimator.setIntValues((int) mTranslation, 0);
+@@ -406,6 +413,9 @@ public class QuickScrubController extends GestureDetector.SimpleOnGestureListene
+             } catch (RemoteException e) {
+                 Log.e(TAG, "Failed to send end of quick scrub.", e);
+             }
++            if (!animate) {
++                mQuickScrubEndAnimator.end();
++            }
+         }
+         mDraggingActive = false;
+     }
+-- 
+2.17.1
+

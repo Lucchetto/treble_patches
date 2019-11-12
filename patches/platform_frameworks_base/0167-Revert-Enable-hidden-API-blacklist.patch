@@ -1,0 +1,84 @@
+From d1b5513b6c538b47e352c1ce36def1b3893d850d Mon Sep 17 00:00:00 2001
+From: David Brazdil <dbrazdil@google.com>
+Date: Thu, 22 Mar 2018 18:42:41 +0000
+Subject: [PATCH 167/306] Revert "Enable hidden API blacklist"
+
+This reverts commit 16bfa11b73a34be1f1c72d2ffe86702f85378e92.
+
+Reason for revert: Revert until b/76138670 is fixed
+
+Bug: 64382372
+Bug: 76138670
+Bug: 76157445
+Change-Id: Iaf6c76b773fbea4d4710b38808dee2e7e06f5e78
+(cherry picked from commit f712b23d56226c788f7892a984fb9abe6f5144c2)
+---
+ Android.mk | 35 ++++++++++++++++-------------------
+ 1 file changed, 16 insertions(+), 19 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index ee8fbe0f5ad..e2f88e8990b 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -861,42 +861,39 @@ include $(BUILD_STATIC_JAVA_LIBRARY)
+ 
+ # ==== hiddenapi lists =======================================
+ 
+-# Copy light and dark greylist over into the build folder.
++# Copy blacklist and light greylist over into the build folder.
+ # This is for ART buildbots which need to mock these lists and have alternative
+ # rules for building them. Other rules in the build system should depend on the
+ # files in the build folder.
+ 
++$(eval $(call copy-one-file,frameworks/base/config/hiddenapi-blacklist.txt,\
++                            $(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST)))
++
+ # Temporarily merge light greylist from two files. Vendor list will become dark
+ # grey once we remove the UI toast.
+ $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST): frameworks/base/config/hiddenapi-light-greylist.txt \
+                                                frameworks/base/config/hiddenapi-vendor-list.txt
+ 	sort $^ > $@
+ 
+-$(eval $(call copy-one-file,frameworks/base/config/hiddenapi-dark-greylist.txt,\
+-                            $(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST)))
+-
+ # Generate dark greylist as private API minus (blacklist plus light greylist).
+ 
+-$(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST): PRIVATE_API := $(INTERNAL_PLATFORM_PRIVATE_DEX_API_FILE)
+-$(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST): LIGHT_GREYLIST := $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST)
+-$(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST): DARK_GREYLIST := $(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST)
+-$(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST): $(INTERNAL_PLATFORM_PRIVATE_DEX_API_FILE) \
+-                                          $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST) \
+-                                          $(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST)
+-	if [ ! -z "`comm -12 <(sort $(LIGHT_GREYLIST)) <(sort $(DARK_GREYLIST))`" ]; then \
+-		echo "There should be no overlap between $(LIGHT_GREYLIST) and $(DARK_GREYLIST)" 1>&2; \
+-		comm -12 <(sort $(LIGHT_GREYLIST)) <(sort $(DARK_GREYLIST)) 1>&2; \
++$(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST): PRIVATE_API := $(INTERNAL_PLATFORM_PRIVATE_DEX_API_FILE)
++$(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST): BLACKLIST := $(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST)
++$(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST): LIGHT_GREYLIST := $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST)
++$(INTERNAL_PLATFORM_HIDDENAPI_DARK_GREYLIST): $(INTERNAL_PLATFORM_PRIVATE_DEX_API_FILE) \
++                                              $(INTERNAL_PLATFORM_HIDDENAPI_BLACKLIST) \
++                                              $(INTERNAL_PLATFORM_HIDDENAPI_LIGHT_GREYLIST)
++	if [ ! -z "`comm -12 <(sort $(BLACKLIST)) <(sort $(LIGHT_GREYLIST))`" ]; then \
++		echo "There should be no overlap between $(BLACKLIST) and $(LIGHT_GREYLIST)" 1>&2; \
+ 		exit 1; \
++	elif [ ! -z "`comm -13 <(sort $(PRIVATE_API)) <(sort $(BLACKLIST))`" ]; then \
++		echo "$(BLACKLIST) must be a subset of $(PRIVATE_API)" 1>&2; \
++		exit 2; \
+ 	elif [ ! -z "`comm -13 <(sort $(PRIVATE_API)) <(sort $(LIGHT_GREYLIST))`" ]; then \
+ 		echo "$(LIGHT_GREYLIST) must be a subset of $(PRIVATE_API)" 1>&2; \
+-		comm -13 <(sort $(PRIVATE_API)) <(sort $(LIGHT_GREYLIST)) 1>&2; \
+-		exit 2; \
+-	elif [ ! -z "`comm -13 <(sort $(PRIVATE_API)) <(sort $(DARK_GREYLIST))`" ]; then \
+-		echo "$(DARK_GREYLIST) must be a subset of $(PRIVATE_API)" 1>&2; \
+-		comm -13 <(sort $(PRIVATE_API)) <(sort $(DARK_GREYLIST)) 1>&2; \
+ 		exit 3; \
+ 	fi
+-	comm -23 <(sort $(PRIVATE_API)) <(sort $(LIGHT_GREYLIST) $(DARK_GREYLIST)) > $@
++	comm -23 <(sort $(PRIVATE_API)) <(sort $(BLACKLIST) $(LIGHT_GREYLIST)) > $@
+ 
+ # Include subdirectory makefiles
+ # ============================================================
+-- 
+2.17.1
+

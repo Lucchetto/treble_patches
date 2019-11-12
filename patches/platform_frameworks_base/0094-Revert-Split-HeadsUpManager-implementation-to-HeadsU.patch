@@ -1,0 +1,2037 @@
+From 7d4270bf98bf2d22e356cce07de25eb3b7007cae Mon Sep 17 00:00:00 2001
+From: yoshiki iguchi <yoshiki@google.com>
+Date: Thu, 1 Feb 2018 13:46:26 +0900
+Subject: [PATCH 094/306] Revert "Split HeadsUpManager implementation to
+ HeadsUpManagerPhone"
+
+This reverts commit 78db3d0b0fd4bcae0ec92913e2b39491bffa409b.
+
+Reason for revert: Cause crash
+
+Test: none
+Change-Id: Iffdad2513158c0856a0d3b56f7667063f4bba91c
+(cherry picked from commit 0adf6a6d12df637776cb24bdf29532a6d88be878)
+---
+ .../systemui/statusbar/car/CarStatusBar.java  |   2 +-
+ .../statusbar/phone/HeadsUpManagerPhone.java  | 455 --------------
+ .../statusbar/phone/HeadsUpTouchHelper.java   |   6 +-
+ .../phone/NotificationPanelView.java          |  10 +-
+ .../systemui/statusbar/phone/PanelView.java   |   6 +-
+ .../systemui/statusbar/phone/StatusBar.java   |  35 +-
+ .../statusbar/policy/HeadsUpManager.java      | 566 ++++++++++++------
+ .../statusbar/policy/HeadsUpUtil.java         |  47 --
+ .../statusbar/stack/AmbientState.java         |  15 +-
+ .../stack/NotificationStackScrollLayout.java  |  48 +-
+ .../systemui/statusbar/stack/ViewState.java   |   4 +-
+ .../statusbar/NotificationTestHelper.java     |   3 +-
+ .../phone/HeadsUpManagerPhoneTest.java        | 126 ----
+ .../statusbar/phone/StatusBarTest.java        |   8 +-
+ 14 files changed, 450 insertions(+), 881 deletions(-)
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhone.java
+ delete mode 100644 packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpUtil.java
+ delete mode 100644 packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhoneTest.java
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/car/CarStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/car/CarStatusBar.java
+index 3dfb9130af2..3ebeb4d45c2 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/car/CarStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/car/CarStatusBar.java
+@@ -379,7 +379,7 @@ public class CarStatusBar extends StatusBar implements
+         // Because space is usually constrained in the auto use-case, there should not be a
+         // pinned notification when the shade has been expanded. Ensure this by removing all heads-
+         // up notifications.
+-        mHeadsUpManager.releaseAllImmediately();
++        mHeadsUpManager.removeAllHeadsUpEntries();
+         super.animateExpandNotificationsPanel();
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhone.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhone.java
+deleted file mode 100644
+index c45c5386eda..00000000000
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhone.java
++++ /dev/null
+@@ -1,455 +0,0 @@
+-/*
+- * Copyright (C) 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.statusbar.phone;
+-
+-import android.annotation.NonNull;
+-import android.annotation.Nullable;
+-import android.content.Context;
+-import android.content.res.Resources;
+-import android.support.v4.util.ArraySet;
+-import android.util.Log;
+-import android.util.Pools;
+-import android.view.View;
+-import android.view.ViewTreeObserver;
+-
+-import com.android.internal.annotations.VisibleForTesting;
+-import com.android.systemui.Dumpable;
+-import com.android.systemui.statusbar.ExpandableNotificationRow;
+-import com.android.systemui.statusbar.NotificationData;
+-import com.android.systemui.statusbar.StatusBarState;
+-import com.android.systemui.statusbar.notification.VisualStabilityManager;
+-import com.android.systemui.statusbar.policy.HeadsUpManager;
+-import com.android.systemui.statusbar.policy.OnHeadsUpChangedListener;
+-
+-import java.io.FileDescriptor;
+-import java.io.PrintWriter;
+-import java.util.HashSet;
+-import java.util.Stack;
+-
+-/**
+- * A implementation of HeadsUpManager for phone and car.
+- */
+-public class HeadsUpManagerPhone extends HeadsUpManager implements Dumpable,
+-       ViewTreeObserver.OnComputeInternalInsetsListener, VisualStabilityManager.Callback,
+-       OnHeadsUpChangedListener {
+-    private static final String TAG = "HeadsUpManagerPhone";
+-    private static final boolean DEBUG = false;
+-
+-    private final View mStatusBarWindowView;
+-    private final int mStatusBarHeight;
+-    private final NotificationGroupManager mGroupManager;
+-    private final StatusBar mBar;
+-    private final VisualStabilityManager mVisualStabilityManager;
+-
+-    private boolean mReleaseOnExpandFinish;
+-    private boolean mTrackingHeadsUp;
+-    private HashSet<String> mSwipedOutKeys = new HashSet<>();
+-    private HashSet<NotificationData.Entry> mEntriesToRemoveAfterExpand = new HashSet<>();
+-    private ArraySet<NotificationData.Entry> mEntriesToRemoveWhenReorderingAllowed
+-            = new ArraySet<>();
+-    private boolean mIsExpanded;
+-    private int[] mTmpTwoArray = new int[2];
+-    private boolean mHeadsUpGoingAway;
+-    private boolean mWaitingOnCollapseWhenGoingAway;
+-    private boolean mIsObserving;
+-    private int mStatusBarState;
+-
+-    private final Pools.Pool<HeadsUpEntryPhone> mEntryPool = new Pools.Pool<HeadsUpEntryPhone>() {
+-        private Stack<HeadsUpEntryPhone> mPoolObjects = new Stack<>();
+-
+-        @Override
+-        public HeadsUpEntryPhone acquire() {
+-            if (!mPoolObjects.isEmpty()) {
+-                return mPoolObjects.pop();
+-            }
+-            return new HeadsUpEntryPhone();
+-        }
+-
+-        @Override
+-        public boolean release(@NonNull HeadsUpEntryPhone instance) {
+-            instance.reset();
+-            mPoolObjects.push(instance);
+-            return true;
+-        }
+-    };
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  Constructor:
+-
+-    public HeadsUpManagerPhone(@NonNull final Context context, @NonNull View statusBarWindowView,
+-            @NonNull NotificationGroupManager groupManager, @NonNull StatusBar bar,
+-            @NonNull VisualStabilityManager visualStabilityManager) {
+-        super(context);
+-
+-        mStatusBarWindowView = statusBarWindowView;
+-        mGroupManager = groupManager;
+-        mBar = bar;
+-        mVisualStabilityManager = visualStabilityManager;
+-
+-        Resources resources = mContext.getResources();
+-        mStatusBarHeight = resources.getDimensionPixelSize(
+-                com.android.internal.R.dimen.status_bar_height);
+-
+-        addListener(new OnHeadsUpChangedListener() {
+-            @Override
+-            public void onHeadsUpPinnedModeChanged(boolean hasPinnedNotification) {
+-                if (DEBUG) Log.w(TAG, "onHeadsUpPinnedModeChanged");
+-                updateTouchableRegionListener();
+-            }
+-        });
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  Public methods:
+-
+-    /**
+-     * Decides whether a click is invalid for a notification, i.e it has not been shown long enough
+-     * that a user might have consciously clicked on it.
+-     *
+-     * @param key the key of the touched notification
+-     * @return whether the touch is invalid and should be discarded
+-     */
+-    public boolean shouldSwallowClick(@NonNull String key) {
+-        HeadsUpManager.HeadsUpEntry entry = getHeadsUpEntry(key);
+-        if (entry != null && mClock.currentTimeMillis() < entry.postTime) {
+-            return true;
+-        }
+-        return false;
+-    }
+-
+-    public void onExpandingFinished() {
+-        if (mReleaseOnExpandFinish) {
+-            releaseAllImmediately();
+-            mReleaseOnExpandFinish = false;
+-        } else {
+-            for (NotificationData.Entry entry : mEntriesToRemoveAfterExpand) {
+-                if (isHeadsUp(entry.key)) {
+-                    // Maybe the heads-up was removed already
+-                    removeHeadsUpEntry(entry);
+-                }
+-            }
+-        }
+-        mEntriesToRemoveAfterExpand.clear();
+-    }
+-
+-    /**
+-     * Sets the tracking-heads-up flag. If the flag is true, HeadsUpManager doesn't remove the entry
+-     * from the list even after a Heads Up Notification is gone.
+-     */
+-    public void setTrackingHeadsUp(boolean trackingHeadsUp) {
+-        mTrackingHeadsUp = trackingHeadsUp;
+-    }
+-
+-    /**
+-     * Notify that the status bar panel gets expanded or collapsed.
+-     *
+-     * @param isExpanded True to notify expanded, false to notify collapsed.
+-     */
+-    public void setIsPanelExpanded(boolean isExpanded) {
+-        if (isExpanded != mIsExpanded) {
+-            mIsExpanded = isExpanded;
+-            if (isExpanded) {
+-                // make sure our state is sane
+-                mWaitingOnCollapseWhenGoingAway = false;
+-                mHeadsUpGoingAway = false;
+-                updateTouchableRegionListener();
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Set the current state of the statusbar.
+-     */
+-    public void setStatusBarState(int statusBarState) {
+-        mStatusBarState = statusBarState;
+-    }
+-
+-    /**
+-     * Set that we are exiting the headsUp pinned mode, but some notifications might still be
+-     * animating out. This is used to keep the touchable regions in a sane state.
+-     */
+-    public void setHeadsUpGoingAway(boolean headsUpGoingAway) {
+-        if (headsUpGoingAway != mHeadsUpGoingAway) {
+-            mHeadsUpGoingAway = headsUpGoingAway;
+-            if (!headsUpGoingAway) {
+-                waitForStatusBarLayout();
+-            }
+-            updateTouchableRegionListener();
+-        }
+-    }
+-
+-    /**
+-     * Notifies that a remote input textbox in notification gets active or inactive.
+-     * @param entry The entry of the target notification.
+-     * @param remoteInputActive True to notify active, False to notify inactive.
+-     */
+-    public void setRemoteInputActive(
+-            @NonNull NotificationData.Entry entry, boolean remoteInputActive) {
+-        HeadsUpEntryPhone headsUpEntry = getHeadsUpEntryPhone(entry.key);
+-        if (headsUpEntry != null && headsUpEntry.remoteInputActive != remoteInputActive) {
+-            headsUpEntry.remoteInputActive = remoteInputActive;
+-            if (remoteInputActive) {
+-                headsUpEntry.removeAutoRemovalCallbacks();
+-            } else {
+-                headsUpEntry.updateEntry(false /* updatePostTime */);
+-            }
+-        }
+-    }
+-
+-    @VisibleForTesting
+-    public void removeMinimumDisplayTimeForTesting() {
+-        mMinimumDisplayTime = 1;
+-        mHeadsUpNotificationDecay = 1;
+-        mTouchAcceptanceDelay = 1;
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  HeadsUpManager public methods overrides:
+-
+-    @Override
+-    public boolean isTrackingHeadsUp() {
+-        return mTrackingHeadsUp;
+-    }
+-
+-    @Override
+-    public void snooze() {
+-        super.snooze();
+-        mReleaseOnExpandFinish = true;
+-    }
+-
+-    /**
+-     * React to the removal of the notification in the heads up.
+-     *
+-     * @return true if the notification was removed and false if it still needs to be kept around
+-     * for a bit since it wasn't shown long enough
+-     */
+-    @Override
+-    public boolean removeNotification(@NonNull String key, boolean ignoreEarliestRemovalTime) {
+-        if (wasShownLongEnough(key) || ignoreEarliestRemovalTime) {
+-            return super.removeNotification(key, ignoreEarliestRemovalTime);
+-        } else {
+-            HeadsUpEntryPhone entry = getHeadsUpEntryPhone(key);
+-            entry.removeAsSoonAsPossible();
+-            return false;
+-        }
+-    }
+-
+-    public void addSwipedOutNotification(@NonNull String key) {
+-        mSwipedOutKeys.add(key);
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  Dumpable overrides:
+-
+-    @Override
+-    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+-        pw.println("HeadsUpManagerPhone state:");
+-        dumpInternal(fd, pw, args);
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  ViewTreeObserver.OnComputeInternalInsetsListener overrides:
+-
+-    /**
+-     * Overridden from TreeObserver.
+-     */
+-    @Override
+-    public void onComputeInternalInsets(ViewTreeObserver.InternalInsetsInfo info) {
+-        if (mIsExpanded || mBar.isBouncerShowing()) {
+-            // The touchable region is always the full area when expanded
+-            return;
+-        }
+-        if (hasPinnedHeadsUp()) {
+-            ExpandableNotificationRow topEntry = getTopEntry().row;
+-            if (topEntry.isChildInGroup()) {
+-                final ExpandableNotificationRow groupSummary
+-                        = mGroupManager.getGroupSummary(topEntry.getStatusBarNotification());
+-                if (groupSummary != null) {
+-                    topEntry = groupSummary;
+-                }
+-            }
+-            topEntry.getLocationOnScreen(mTmpTwoArray);
+-            int minX = mTmpTwoArray[0];
+-            int maxX = mTmpTwoArray[0] + topEntry.getWidth();
+-            int maxY = topEntry.getIntrinsicHeight();
+-
+-            info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
+-            info.touchableRegion.set(minX, 0, maxX, maxY);
+-        } else if (mHeadsUpGoingAway || mWaitingOnCollapseWhenGoingAway) {
+-            info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
+-            info.touchableRegion.set(0, 0, mStatusBarWindowView.getWidth(), mStatusBarHeight);
+-        }
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  VisualStabilityManager.Callback overrides:
+-
+-    @Override
+-    public void onReorderingAllowed() {
+-        mBar.getNotificationScrollLayout().setHeadsUpGoingAwayAnimationsAllowed(false);
+-        for (NotificationData.Entry entry : mEntriesToRemoveWhenReorderingAllowed) {
+-            if (isHeadsUp(entry.key)) {
+-                // Maybe the heads-up was removed already
+-                removeHeadsUpEntry(entry);
+-            }
+-        }
+-        mEntriesToRemoveWhenReorderingAllowed.clear();
+-        mBar.getNotificationScrollLayout().setHeadsUpGoingAwayAnimationsAllowed(true);
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  HeadsUpManager utility (protected) methods overrides:
+-
+-    @Override
+-    protected HeadsUpEntry createHeadsUpEntry() {
+-        return mEntryPool.acquire();
+-    }
+-
+-    @Override
+-    protected void releaseHeadsUpEntry(HeadsUpEntry entry) {
+-        mEntryPool.release((HeadsUpEntryPhone) entry);
+-    }
+-
+-    @Override
+-    protected boolean shouldHeadsUpBecomePinned(NotificationData.Entry entry) {
+-          return mStatusBarState != StatusBarState.KEYGUARD && !mIsExpanded
+-                  || super.shouldHeadsUpBecomePinned(entry);
+-    }
+-
+-    @Override
+-    protected void dumpInternal(FileDescriptor fd, PrintWriter pw, String[] args) {
+-        super.dumpInternal(fd, pw, args);
+-        pw.print("  mStatusBarState="); pw.println(mStatusBarState);
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  Protected utility methods:
+-
+-    @Nullable
+-    protected HeadsUpEntryPhone getHeadsUpEntryPhone(@NonNull String key) {
+-        return (HeadsUpEntryPhone) getHeadsUpEntry(key);
+-    }
+-
+-    @Nullable
+-    protected HeadsUpEntryPhone getTopHeadsUpEntryPhone() {
+-        return (HeadsUpEntryPhone) getTopHeadsUpEntry();
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  Private utility methods:
+-
+-    private boolean wasShownLongEnough(@NonNull String key) {
+-        if (mSwipedOutKeys.contains(key)) {
+-            // We always instantly dismiss views being manually swiped out.
+-            mSwipedOutKeys.remove(key);
+-            return true;
+-        }
+-
+-        HeadsUpEntryPhone headsUpEntry = getHeadsUpEntryPhone(key);
+-        HeadsUpEntryPhone topEntry = getTopHeadsUpEntryPhone();
+-        if (headsUpEntry != topEntry) {
+-            return true;
+-        }
+-        return headsUpEntry.wasShownLongEnough();
+-    }
+-
+-    /**
+-     * We need to wait on the whole panel to collapse, before we can remove the touchable region
+-     * listener.
+-     */
+-    private void waitForStatusBarLayout() {
+-        mWaitingOnCollapseWhenGoingAway = true;
+-        mStatusBarWindowView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+-            @Override
+-            public void onLayoutChange(View v, int left, int top, int right, int bottom,
+-                    int oldLeft,
+-                    int oldTop, int oldRight, int oldBottom) {
+-                if (mStatusBarWindowView.getHeight() <= mStatusBarHeight) {
+-                    mStatusBarWindowView.removeOnLayoutChangeListener(this);
+-                    mWaitingOnCollapseWhenGoingAway = false;
+-                    updateTouchableRegionListener();
+-                }
+-            }
+-        });
+-    }
+-
+-    private void updateTouchableRegionListener() {
+-        boolean shouldObserve = hasPinnedHeadsUp() || mHeadsUpGoingAway
+-                || mWaitingOnCollapseWhenGoingAway;
+-        if (shouldObserve == mIsObserving) {
+-            return;
+-        }
+-        if (shouldObserve) {
+-            mStatusBarWindowView.getViewTreeObserver().addOnComputeInternalInsetsListener(this);
+-            mStatusBarWindowView.requestLayout();
+-        } else {
+-            mStatusBarWindowView.getViewTreeObserver().removeOnComputeInternalInsetsListener(this);
+-        }
+-        mIsObserving = shouldObserve;
+-    }
+-
+-    ///////////////////////////////////////////////////////////////////////////////////////////////
+-    //  HeadsUpEntryPhone:
+-
+-    protected class HeadsUpEntryPhone extends HeadsUpManager.HeadsUpEntry {
+-        public void setEntry(@NonNull final NotificationData.Entry entry) {
+-           Runnable removeHeadsUpRunnable = () -> {
+-                if (!mVisualStabilityManager.isReorderingAllowed()) {
+-                    mEntriesToRemoveWhenReorderingAllowed.add(entry);
+-                    mVisualStabilityManager.addReorderingAllowedCallback(
+-                            HeadsUpManagerPhone.this);
+-                } else if (!mTrackingHeadsUp) {
+-                    removeHeadsUpEntry(entry);
+-                } else {
+-                    mEntriesToRemoveAfterExpand.add(entry);
+-                }
+-            };
+-
+-            super.setEntry(entry, removeHeadsUpRunnable);
+-        }
+-
+-        public boolean wasShownLongEnough() {
+-            return earliestRemovaltime < mClock.currentTimeMillis();
+-        }
+-
+-        @Override
+-        public void updateEntry(boolean updatePostTime) {
+-            super.updateEntry(updatePostTime);
+-
+-            if (mEntriesToRemoveAfterExpand.contains(entry)) {
+-                mEntriesToRemoveAfterExpand.remove(entry);
+-            }
+-            if (mEntriesToRemoveWhenReorderingAllowed.contains(entry)) {
+-                mEntriesToRemoveWhenReorderingAllowed.remove(entry);
+-            }
+-        }
+-
+-        @Override
+-        public void expanded(boolean expanded) {
+-            if (this.expanded == expanded) {
+-                return;
+-            }
+-
+-            this.expanded = expanded;
+-            if (expanded) {
+-                removeAutoRemovalCallbacks();
+-            } else {
+-                updateEntry(false /* updatePostTime */);
+-            }
+-        }
+-    }
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpTouchHelper.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpTouchHelper.java
+index 2bfdefe3901..c85571c1895 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpTouchHelper.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/HeadsUpTouchHelper.java
+@@ -23,7 +23,7 @@ import android.view.ViewConfiguration;
+ import com.android.systemui.Gefingerpoken;
+ import com.android.systemui.statusbar.ExpandableNotificationRow;
+ import com.android.systemui.statusbar.ExpandableView;
+-import com.android.systemui.statusbar.phone.HeadsUpManagerPhone;
++import com.android.systemui.statusbar.policy.HeadsUpManager;
+ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
+ 
+ /**
+@@ -31,7 +31,7 @@ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
+  */
+ public class HeadsUpTouchHelper implements Gefingerpoken {
+ 
+-    private HeadsUpManagerPhone mHeadsUpManager;
++    private HeadsUpManager mHeadsUpManager;
+     private NotificationStackScrollLayout mStackScroller;
+     private int mTrackingPointer;
+     private float mTouchSlop;
+@@ -43,7 +43,7 @@ public class HeadsUpTouchHelper implements Gefingerpoken {
+     private NotificationPanelView mPanel;
+     private ExpandableNotificationRow mPickedChild;
+ 
+-    public HeadsUpTouchHelper(HeadsUpManagerPhone headsUpManager,
++    public HeadsUpTouchHelper(HeadsUpManager headsUpManager,
+             NotificationStackScrollLayout stackScroller,
+             NotificationPanelView notificationPanelView) {
+         mHeadsUpManager = headsUpManager;
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NotificationPanelView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NotificationPanelView.java
+index 52d005cb152..cd2e77ae259 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NotificationPanelView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NotificationPanelView.java
+@@ -68,12 +68,14 @@ import com.android.systemui.statusbar.NotificationData;
+ import com.android.systemui.statusbar.NotificationShelf;
+ import com.android.systemui.statusbar.StatusBarState;
+ import com.android.systemui.statusbar.notification.ActivityLaunchAnimator;
++import com.android.systemui.statusbar.policy.HeadsUpManager;
+ import com.android.systemui.statusbar.policy.KeyguardUserSwitcher;
+ import com.android.systemui.statusbar.policy.OnHeadsUpChangedListener;
+ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
+ import com.android.systemui.statusbar.stack.StackStateAnimator;
+ 
+ import java.util.List;
++import java.util.Collection;
+ 
+ public class NotificationPanelView extends PanelView implements
+         ExpandableView.OnHeightChangedListener,
+@@ -1569,7 +1571,7 @@ public class NotificationPanelView extends PanelView implements
+     private void updatePanelExpanded() {
+         boolean isExpanded = !isFullyCollapsed();
+         if (mPanelExpanded != isExpanded) {
+-            mHeadsUpManager.setIsPanelExpanded(isExpanded);
++            mHeadsUpManager.setIsExpanded(isExpanded);
+             mStatusBar.setPanelExpanded(isExpanded);
+             mPanelExpanded = isExpanded;
+         }
+@@ -2336,7 +2338,7 @@ public class NotificationPanelView extends PanelView implements
+     }
+ 
+     @Override
+-    public void setHeadsUpManager(HeadsUpManagerPhone headsUpManager) {
++    public void setHeadsUpManager(HeadsUpManager headsUpManager) {
+         super.setHeadsUpManager(headsUpManager);
+         mHeadsUpTouchHelper = new HeadsUpTouchHelper(headsUpManager, mNotificationStackScroller,
+                 this);
+@@ -2628,8 +2630,8 @@ public class NotificationPanelView extends PanelView implements
+         }
+     }
+ 
+-    public void setPulsing(boolean pulsing) {
+-        mKeyguardStatusView.setPulsing(pulsing);
++    public void setPulsing(Collection<HeadsUpManager.HeadsUpEntry> pulsing) {
++        mKeyguardStatusView.setPulsing(pulsing != null);
+         positionClockAndNotifications();
+         mNotificationStackScroller.setPulsing(pulsing, mKeyguardStatusView.getLocationOnScreen()[1]
+                 + mKeyguardStatusView.getClockBottom());
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
+index 6daabede7f3..2b7e4747a83 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
+@@ -50,7 +50,7 @@ import com.android.systemui.classifier.FalsingManager;
+ import com.android.systemui.doze.DozeLog;
+ import com.android.systemui.statusbar.FlingAnimationUtils;
+ import com.android.systemui.statusbar.StatusBarState;
+-import com.android.systemui.statusbar.phone.HeadsUpManagerPhone;
++import com.android.systemui.statusbar.policy.HeadsUpManager;
+ 
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+@@ -75,7 +75,7 @@ public abstract class PanelView extends FrameLayout {
+     }
+ 
+     protected StatusBar mStatusBar;
+-    protected HeadsUpManagerPhone mHeadsUpManager;
++    protected HeadsUpManager mHeadsUpManager;
+ 
+     private float mPeekHeight;
+     private float mHintDistance;
+@@ -1252,7 +1252,7 @@ public abstract class PanelView extends FrameLayout {
+      */
+     protected abstract int getClearAllHeight();
+ 
+-    public void setHeadsUpManager(HeadsUpManagerPhone headsUpManager) {
++    public void setHeadsUpManager(HeadsUpManager headsUpManager) {
+         mHeadsUpManager = headsUpManager;
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 3777a6c9409..1bf719ae68a 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -208,7 +208,6 @@ import com.android.systemui.statusbar.StatusBarState;
+ import com.android.systemui.statusbar.notification.AboveShelfObserver;
+ import com.android.systemui.statusbar.notification.ActivityLaunchAnimator;
+ import com.android.systemui.statusbar.notification.VisualStabilityManager;
+-import com.android.systemui.statusbar.phone.HeadsUpManagerPhone;
+ import com.android.systemui.statusbar.phone.UnlockMethodCache.OnUnlockMethodChangedListener;
+ import com.android.systemui.statusbar.policy.BatteryController;
+ import com.android.systemui.statusbar.policy.BatteryController.BatteryStateChangeCallback;
+@@ -220,7 +219,6 @@ import com.android.systemui.statusbar.policy.DeviceProvisionedController;
+ import com.android.systemui.statusbar.policy.DeviceProvisionedController.DeviceProvisionedListener;
+ import com.android.systemui.statusbar.policy.ExtensionController;
+ import com.android.systemui.statusbar.policy.HeadsUpManager;
+-import com.android.systemui.statusbar.policy.HeadsUpUtil;
+ import com.android.systemui.statusbar.policy.KeyguardMonitor;
+ import com.android.systemui.statusbar.policy.KeyguardMonitorImpl;
+ import com.android.systemui.statusbar.policy.KeyguardUserSwitcher;
+@@ -811,14 +809,15 @@ public class StatusBar extends SystemUI implements DemoMode,
+                 .commit();
+         mIconController = Dependency.get(StatusBarIconController.class);
+ 
+-        mHeadsUpManager = new HeadsUpManagerPhone(context, mStatusBarWindow, mGroupManager, this,
+-                mVisualStabilityManager);
++        mHeadsUpManager = new HeadsUpManager(context, mStatusBarWindow, mGroupManager);
++        mHeadsUpManager.setBar(this);
+         mHeadsUpManager.addListener(this);
+         mHeadsUpManager.addListener(mNotificationPanel);
+         mHeadsUpManager.addListener(mGroupManager);
+         mHeadsUpManager.addListener(mVisualStabilityManager);
+         mNotificationPanel.setHeadsUpManager(mHeadsUpManager);
+         mGroupManager.setHeadsUpManager(mHeadsUpManager);
++        mHeadsUpManager.setVisualStabilityManager(mVisualStabilityManager);
+         putComponent(HeadsUpManager.class, mHeadsUpManager);
+ 
+         mEntryManager.setUpWithPresenter(this, mStackScroller, this, mHeadsUpManager);
+@@ -1349,8 +1348,7 @@ public class StatusBar extends SystemUI implements DemoMode,
+ 
+     @Override
+     public void onPerformRemoveNotification(StatusBarNotification n) {
+-        if (mStackScroller.hasPulsingNotifications() &&
+-                    !mHeadsUpManager.hasHeadsUpNotifications()) {
++        if (mStackScroller.hasPulsingNotifications() && mHeadsUpManager.getAllEntries().isEmpty()) {
+             // We were showing a pulse for a notification, but no notifications are pulsing anymore.
+             // Finish the pulse.
+             mDozeScrimController.pulseOutNow();
+@@ -2099,8 +2097,9 @@ public class StatusBar extends SystemUI implements DemoMode,
+     }
+ 
+     public void maybeEscalateHeadsUp() {
+-        mHeadsUpManager.getAllEntries().forEach(entry -> {
+-            final StatusBarNotification sbn = entry.notification;
++        Collection<HeadsUpManager.HeadsUpEntry> entries = mHeadsUpManager.getAllEntries();
++        for (HeadsUpManager.HeadsUpEntry entry : entries) {
++            final StatusBarNotification sbn = entry.entry.notification;
+             final Notification notification = sbn.getNotification();
+             if (notification.fullScreenIntent != null) {
+                 if (DEBUG) {
+@@ -2110,11 +2109,11 @@ public class StatusBar extends SystemUI implements DemoMode,
+                     EventLog.writeEvent(EventLogTags.SYSUI_HEADS_UP_ESCALATION,
+                             sbn.getKey());
+                     notification.fullScreenIntent.send();
+-                    entry.notifyFullScreenIntentLaunched();
++                    entry.entry.notifyFullScreenIntentLaunched();
+                 } catch (PendingIntent.CanceledException e) {
+                 }
+             }
+-        });
++        }
+         mHeadsUpManager.releaseAllImmediately();
+     }
+ 
+@@ -4659,22 +4658,24 @@ public class StatusBar extends SystemUI implements DemoMode,
+                 @Override
+                 public void onPulseStarted() {
+                     callback.onPulseStarted();
+-                    if (mHeadsUpManager.hasHeadsUpNotifications()) {
++                    Collection<HeadsUpManager.HeadsUpEntry> pulsingEntries =
++                            mHeadsUpManager.getAllEntries();
++                    if (!pulsingEntries.isEmpty()) {
+                         // Only pulse the stack scroller if there's actually something to show.
+                         // Otherwise just show the always-on screen.
+-                        setPulsing(true);
++                        setPulsing(pulsingEntries);
+                     }
+                 }
+ 
+                 @Override
+                 public void onPulseFinished() {
+                     callback.onPulseFinished();
+-                    setPulsing(false);
++                    setPulsing(null);
+                 }
+ 
+-                private void setPulsing(boolean pulsing) {
++                private void setPulsing(Collection<HeadsUpManager.HeadsUpEntry> pulsing) {
+                     mNotificationPanel.setPulsing(pulsing);
+-                    mVisualStabilityManager.setPulsing(pulsing);
++                    mVisualStabilityManager.setPulsing(pulsing != null);
+                     mIgnoreTouchWhilePulsing = false;
+                 }
+             }, reason);
+@@ -4822,7 +4823,7 @@ public class StatusBar extends SystemUI implements DemoMode,
+ 
+ 
+     // for heads up notifications
+-    protected HeadsUpManagerPhone mHeadsUpManager;
++    protected HeadsUpManager mHeadsUpManager;
+ 
+     private AboveShelfObserver mAboveShelfObserver;
+ 
+@@ -4925,7 +4926,7 @@ public class StatusBar extends SystemUI implements DemoMode,
+                 // Release the HUN notification to the shade.
+ 
+                 if (isPresenterFullyCollapsed()) {
+-                    HeadsUpUtil.setIsClickedHeadsUpNotification(row, true);
++                    HeadsUpManager.setIsClickedNotification(row, true);
+                 }
+                 //
+                 // In most cases, when FLAG_AUTO_CANCEL is set, the notification will
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpManager.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpManager.java
+index a2b896dc015..53dfb244c77 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpManager.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpManager.java
+@@ -16,68 +16,118 @@
+ 
+ package com.android.systemui.statusbar.policy;
+ 
+-import android.annotation.NonNull;
+-import android.annotation.Nullable;
+ import android.content.Context;
+ import android.content.res.Resources;
+ import android.database.ContentObserver;
+-import android.os.SystemClock;
+ import android.os.Handler;
+ import android.os.Looper;
+-import android.util.ArrayMap;
++import android.os.SystemClock;
+ import android.provider.Settings;
++import android.support.v4.util.ArraySet;
++import android.util.ArrayMap;
+ import android.util.Log;
++import android.util.Pools;
++import android.view.View;
++import android.view.ViewTreeObserver;
+ import android.view.accessibility.AccessibilityEvent;
+ 
+ import com.android.internal.logging.MetricsLogger;
+ import com.android.systemui.R;
+ import com.android.systemui.statusbar.ExpandableNotificationRow;
+ import com.android.systemui.statusbar.NotificationData;
++import com.android.systemui.statusbar.StatusBarState;
++import com.android.systemui.statusbar.notification.VisualStabilityManager;
++import com.android.systemui.statusbar.phone.NotificationGroupManager;
++import com.android.systemui.statusbar.phone.StatusBar;
+ 
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+-import java.util.Iterator;
+-import java.util.stream.Stream;
++import java.util.ArrayList;
++import java.util.Collection;
+ import java.util.HashMap;
+ import java.util.HashSet;
++import java.util.Stack;
+ 
+ /**
+  * A manager which handles heads up notifications which is a special mode where
+  * they simply peek from the top of the screen.
+  */
+-public class HeadsUpManager {
++public class HeadsUpManager implements ViewTreeObserver.OnComputeInternalInsetsListener,
++        VisualStabilityManager.Callback {
+     private static final String TAG = "HeadsUpManager";
+     private static final boolean DEBUG = false;
+     private static final String SETTING_HEADS_UP_SNOOZE_LENGTH_MS = "heads_up_snooze_length_ms";
++    private static final int TAG_CLICKED_NOTIFICATION = R.id.is_clicked_heads_up_tag;
+ 
+-    protected final Clock mClock = new Clock();
+-    protected final Context mContext;
+-    protected final HashSet<OnHeadsUpChangedListener> mListeners = new HashSet<>();
+-    protected final Handler mHandler = new Handler(Looper.getMainLooper());
+-
+-    protected int mHeadsUpNotificationDecay;
+-    protected int mMinimumDisplayTime;
+-    protected int mTouchAcceptanceDelay;
+-    protected int mSnoozeLengthMs;
+-    protected boolean mHasPinnedNotification;
+-    protected int mUser;
++    private final int mHeadsUpNotificationDecay;
++    private final int mMinimumDisplayTime;
+ 
+-    private final HashMap<String, HeadsUpEntry> mHeadsUpEntries = new HashMap<>();
++    private final int mTouchAcceptanceDelay;
+     private final ArrayMap<String, Long> mSnoozedPackages;
+-    private final ContentObserver mSettingsObserver;
++    private final HashSet<OnHeadsUpChangedListener> mListeners = new HashSet<>();
++    private final int mDefaultSnoozeLengthMs;
++    private final Handler mHandler = new Handler(Looper.getMainLooper());
++    private final Pools.Pool<HeadsUpEntry> mEntryPool = new Pools.Pool<HeadsUpEntry>() {
++
++        private Stack<HeadsUpEntry> mPoolObjects = new Stack<>();
+ 
+-    public HeadsUpManager(@NonNull final Context context) {
++        @Override
++        public HeadsUpEntry acquire() {
++            if (!mPoolObjects.isEmpty()) {
++                return mPoolObjects.pop();
++            }
++            return new HeadsUpEntry();
++        }
++
++        @Override
++        public boolean release(HeadsUpEntry instance) {
++            instance.reset();
++            mPoolObjects.push(instance);
++            return true;
++        }
++    };
++
++    private final View mStatusBarWindowView;
++    private final int mStatusBarHeight;
++    private final Context mContext;
++    private final NotificationGroupManager mGroupManager;
++    private StatusBar mBar;
++    private int mSnoozeLengthMs;
++    private ContentObserver mSettingsObserver;
++    private HashMap<String, HeadsUpEntry> mHeadsUpEntries = new HashMap<>();
++    private HashSet<String> mSwipedOutKeys = new HashSet<>();
++    private int mUser;
++    private Clock mClock;
++    private boolean mReleaseOnExpandFinish;
++    private boolean mTrackingHeadsUp;
++    private HashSet<NotificationData.Entry> mEntriesToRemoveAfterExpand = new HashSet<>();
++    private ArraySet<NotificationData.Entry> mEntriesToRemoveWhenReorderingAllowed
++            = new ArraySet<>();
++    private boolean mIsExpanded;
++    private boolean mHasPinnedNotification;
++    private int[] mTmpTwoArray = new int[2];
++    private boolean mHeadsUpGoingAway;
++    private boolean mWaitingOnCollapseWhenGoingAway;
++    private boolean mIsObserving;
++    private boolean mRemoteInputActive;
++    private float mExpandedHeight;
++    private VisualStabilityManager mVisualStabilityManager;
++    private int mStatusBarState;
++
++    public HeadsUpManager(final Context context, View statusBarWindowView,
++                          NotificationGroupManager groupManager) {
+         mContext = context;
+-        Resources resources = context.getResources();
+-        mMinimumDisplayTime = resources.getInteger(R.integer.heads_up_notification_minimum_time);
+-        mHeadsUpNotificationDecay = resources.getInteger(R.integer.heads_up_notification_decay);
++        Resources resources = mContext.getResources();
+         mTouchAcceptanceDelay = resources.getInteger(R.integer.touch_acceptance_delay);
+         mSnoozedPackages = new ArrayMap<>();
+-        int defaultSnoozeLengthMs =
+-                resources.getInteger(R.integer.heads_up_default_snooze_length_ms);
++        mDefaultSnoozeLengthMs = resources.getInteger(R.integer.heads_up_default_snooze_length_ms);
++        mSnoozeLengthMs = mDefaultSnoozeLengthMs;
++        mMinimumDisplayTime = resources.getInteger(R.integer.heads_up_notification_minimum_time);
++        mHeadsUpNotificationDecay = resources.getInteger(R.integer.heads_up_notification_decay);
++        mClock = new Clock();
+ 
+         mSnoozeLengthMs = Settings.Global.getInt(context.getContentResolver(),
+-                SETTING_HEADS_UP_SNOOZE_LENGTH_MS, defaultSnoozeLengthMs);
++                SETTING_HEADS_UP_SNOOZE_LENGTH_MS, mDefaultSnoozeLengthMs);
+         mSettingsObserver = new ContentObserver(mHandler) {
+             @Override
+             public void onChange(boolean selfChange) {
+@@ -92,26 +142,47 @@ public class HeadsUpManager {
+         context.getContentResolver().registerContentObserver(
+                 Settings.Global.getUriFor(SETTING_HEADS_UP_SNOOZE_LENGTH_MS), false,
+                 mSettingsObserver);
++        mStatusBarWindowView = statusBarWindowView;
++        mGroupManager = groupManager;
++        mStatusBarHeight = resources.getDimensionPixelSize(
++                com.android.internal.R.dimen.status_bar_height);
+     }
+ 
+-    /**
+-     * Adds an OnHeadUpChangedListener to observe events.
+-     */
+-    public void addListener(@NonNull OnHeadsUpChangedListener listener) {
++    private void updateTouchableRegionListener() {
++        boolean shouldObserve = mHasPinnedNotification || mHeadsUpGoingAway
++                || mWaitingOnCollapseWhenGoingAway;
++        if (shouldObserve == mIsObserving) {
++            return;
++        }
++        if (shouldObserve) {
++            mStatusBarWindowView.getViewTreeObserver().addOnComputeInternalInsetsListener(this);
++            mStatusBarWindowView.requestLayout();
++        } else {
++            mStatusBarWindowView.getViewTreeObserver().removeOnComputeInternalInsetsListener(this);
++        }
++        mIsObserving = shouldObserve;
++    }
++
++    public void setBar(StatusBar bar) {
++        mBar = bar;
++    }
++
++    public void addListener(OnHeadsUpChangedListener listener) {
+         mListeners.add(listener);
+     }
+ 
+-    /**
+-     * Removes the OnHeadUpChangedListener from the observer list.
+-     */
+-    public void removeListener(@NonNull OnHeadsUpChangedListener listener) {
++    public void removeListener(OnHeadsUpChangedListener listener) {
+         mListeners.remove(listener);
+     }
+ 
++    public StatusBar getBar() {
++        return mBar;
++    }
++
+     /**
+      * Called when posting a new notification to the heads up.
+      */
+-    public void showNotification(@NonNull NotificationData.Entry headsUp) {
++    public void showNotification(NotificationData.Entry headsUp) {
+         if (DEBUG) Log.v(TAG, "showNotification");
+         addHeadsUpEntry(headsUp);
+         updateNotification(headsUp, true);
+@@ -121,7 +192,7 @@ public class HeadsUpManager {
+     /**
+      * Called when updating or posting a notification to the heads up.
+      */
+-    public void updateNotification(@NonNull NotificationData.Entry headsUp, boolean alert) {
++    public void updateNotification(NotificationData.Entry headsUp, boolean alert) {
+         if (DEBUG) Log.v(TAG, "updateNotification");
+ 
+         headsUp.row.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+@@ -133,13 +204,14 @@ public class HeadsUpManager {
+                 // with the groupmanager
+                 return;
+             }
+-            headsUpEntry.updateEntry(true /* updatePostTime */);
++            headsUpEntry.updateEntry();
+             setEntryPinned(headsUpEntry, shouldHeadsUpBecomePinned(headsUp));
+         }
+     }
+ 
+-    private void addHeadsUpEntry(@NonNull NotificationData.Entry entry) {
+-        HeadsUpEntry headsUpEntry = createHeadsUpEntry();
++    private void addHeadsUpEntry(NotificationData.Entry entry) {
++        HeadsUpEntry headsUpEntry = mEntryPool.acquire();
++
+         // This will also add the entry to the sortedList
+         headsUpEntry.setEntry(entry);
+         mHeadsUpEntries.put(entry.key, headsUpEntry);
+@@ -151,17 +223,16 @@ public class HeadsUpManager {
+         entry.row.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+     }
+ 
+-    protected boolean shouldHeadsUpBecomePinned(@NonNull NotificationData.Entry entry) {
+-        return hasFullScreenIntent(entry);
++    private boolean shouldHeadsUpBecomePinned(NotificationData.Entry entry) {
++        return mStatusBarState != StatusBarState.KEYGUARD
++                && !mIsExpanded || hasFullScreenIntent(entry);
+     }
+ 
+-    protected boolean hasFullScreenIntent(@NonNull NotificationData.Entry entry) {
++    private boolean hasFullScreenIntent(NotificationData.Entry entry) {
+         return entry.notification.getNotification().fullScreenIntent != null;
+     }
+ 
+-    protected void setEntryPinned(
+-            @NonNull HeadsUpManager.HeadsUpEntry headsUpEntry, boolean isPinned) {
+-        if (DEBUG) Log.v(TAG, "setEntryPinned: " + isPinned);
++    private void setEntryPinned(HeadsUpEntry headsUpEntry, boolean isPinned) {
+         ExpandableNotificationRow row = headsUpEntry.entry.row;
+         if (row.isPinned() != isPinned) {
+             row.setPinned(isPinned);
+@@ -176,35 +247,33 @@ public class HeadsUpManager {
+         }
+     }
+ 
+-    protected void removeHeadsUpEntry(NotificationData.Entry entry) {
++    private void removeHeadsUpEntry(NotificationData.Entry entry) {
+         HeadsUpEntry remove = mHeadsUpEntries.remove(entry.key);
+-        onHeadsUpEntryRemoved(remove);
+-        releaseHeadsUpEntry(remove);
+-    }
+-
+-    protected void onHeadsUpEntryRemoved(HeadsUpEntry remove) {
+-        NotificationData.Entry entry = remove.entry;
+         entry.row.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+         entry.row.setHeadsUp(false);
+         setEntryPinned(remove, false /* isPinned */);
+         for (OnHeadsUpChangedListener listener : mListeners) {
+             listener.onHeadsUpStateChanged(entry, false);
+         }
++        mEntryPool.release(remove);
++    }
++
++    public void removeAllHeadsUpEntries() {
++        for (String key : mHeadsUpEntries.keySet()) {
++            removeHeadsUpEntry(mHeadsUpEntries.get(key).entry);
++        }
+     }
+ 
+-    protected void updatePinnedMode() {
++    private void updatePinnedMode() {
+         boolean hasPinnedNotification = hasPinnedNotificationInternal();
+         if (hasPinnedNotification == mHasPinnedNotification) {
+             return;
+         }
+-        if (DEBUG) {
+-            Log.v(TAG, "Pinned mode changed: " + mHasPinnedNotification + " -> " +
+-                       hasPinnedNotification);
+-        }
+         mHasPinnedNotification = hasPinnedNotification;
+         if (mHasPinnedNotification) {
+             MetricsLogger.count(mContext, "note_peek", 1);
+         }
++        updateTouchableRegionListener();
+         for (OnHeadsUpChangedListener listener : mListeners) {
+             listener.onHeadsUpPinnedModeChanged(hasPinnedNotification);
+         }
+@@ -216,36 +285,47 @@ public class HeadsUpManager {
+      * @return true if the notification was removed and false if it still needs to be kept around
+      * for a bit since it wasn't shown long enough
+      */
+-    public boolean removeNotification(@NonNull String key, boolean ignoreEarliestRemovalTime) {
+-        if (DEBUG) Log.v(TAG, "removeNotification");
+-        releaseImmediately(key);
+-        return true;
++    public boolean removeNotification(String key, boolean ignoreEarliestRemovalTime) {
++        if (DEBUG) Log.v(TAG, "remove");
++        if (wasShownLongEnough(key) || ignoreEarliestRemovalTime) {
++            releaseImmediately(key);
++            return true;
++        } else {
++            getHeadsUpEntry(key).removeAsSoonAsPossible();
++            return false;
++        }
++    }
++
++    private boolean wasShownLongEnough(String key) {
++        HeadsUpEntry headsUpEntry = getHeadsUpEntry(key);
++        HeadsUpEntry topEntry = getTopEntry();
++        if (mSwipedOutKeys.contains(key)) {
++            // We always instantly dismiss views being manually swiped out.
++            mSwipedOutKeys.remove(key);
++            return true;
++        }
++        if (headsUpEntry != topEntry) {
++            return true;
++        }
++        return headsUpEntry.wasShownLongEnough();
+     }
+ 
+-    /**
+-     * Returns if the given notification is in the Heads Up Notification list or not.
+-     */
+     public boolean isHeadsUp(String key) {
+         return mHeadsUpEntries.containsKey(key);
+     }
+ 
+     /**
+-     * Pushes any current Heads Up notification down into the shade.
++     * Push any current Heads Up notification down into the shade.
+      */
+     public void releaseAllImmediately() {
+         if (DEBUG) Log.v(TAG, "releaseAllImmediately");
+-        Iterator<HeadsUpEntry> iterator = mHeadsUpEntries.values().iterator();
+-        while (iterator.hasNext()) {
+-            HeadsUpEntry entry = iterator.next();
+-            iterator.remove();
+-            onHeadsUpEntryRemoved(entry);
++        ArrayList<String> keys = new ArrayList<>(mHeadsUpEntries.keySet());
++        for (String key : keys) {
++            releaseImmediately(key);
+         }
+     }
+ 
+-    /**
+-     * Pushes the given Heads Up notification down into the shade.
+-     */
+-    public void releaseImmediately(@NonNull String key) {
++    public void releaseImmediately(String key) {
+         HeadsUpEntry headsUpEntry = getHeadsUpEntry(key);
+         if (headsUpEntry == null) {
+             return;
+@@ -254,14 +334,11 @@ public class HeadsUpManager {
+         removeHeadsUpEntry(shadeEntry);
+     }
+ 
+-    /**
+-     * Returns if the given notification is snoozed or not.
+-     */
+-    public boolean isSnoozed(@NonNull String packageName) {
++    public boolean isSnoozed(String packageName) {
+         final String key = snoozeKey(packageName, mUser);
+         Long snoozedUntil = mSnoozedPackages.get(key);
+         if (snoozedUntil != null) {
+-            if (snoozedUntil > mClock.currentTimeMillis()) {
++            if (snoozedUntil > SystemClock.elapsedRealtime()) {
+                 if (DEBUG) Log.v(TAG, key + " snoozed");
+                 return true;
+             }
+@@ -270,61 +347,33 @@ public class HeadsUpManager {
+         return false;
+     }
+ 
+-    /**
+-     * Snoozes all current Heads Up Notifications.
+-     */
+     public void snooze() {
+         for (String key : mHeadsUpEntries.keySet()) {
+             HeadsUpEntry entry = mHeadsUpEntries.get(key);
+             String packageName = entry.entry.notification.getPackageName();
+             mSnoozedPackages.put(snoozeKey(packageName, mUser),
+-                    mClock.currentTimeMillis() + mSnoozeLengthMs);
++                    SystemClock.elapsedRealtime() + mSnoozeLengthMs);
+         }
++        mReleaseOnExpandFinish = true;
+     }
+ 
+-    private static String snoozeKey(@NonNull String packageName, int user) {
++    private static String snoozeKey(String packageName, int user) {
+         return user + "," + packageName;
+     }
+ 
+-    protected HeadsUpEntry getHeadsUpEntry(@NonNull String key) {
++    private HeadsUpEntry getHeadsUpEntry(String key) {
+         return mHeadsUpEntries.get(key);
+     }
+ 
+-    /**
+-     * Returns the entry of given Heads Up Notification.
+-     *
+-     * @param key Key of heads up notification
+-     */
+-    public NotificationData.Entry getEntry(@NonNull String key) {
+-        HeadsUpEntry entry = mHeadsUpEntries.get(key);
+-        return entry != null ? entry.entry : null;
+-    }
+-
+-    /**
+-     * Returns the stream of all current Heads Up Notifications.
+-     */
+-    @NonNull
+-    public Stream<NotificationData.Entry> getAllEntries() {
+-        return mHeadsUpEntries.values().stream().map(headsUpEntry -> headsUpEntry.entry);
+-    }
+-
+-    /**
+-     * Returns the top Heads Up Notification, which appeares to show at first.
+-     */
+-    @Nullable
+-    public NotificationData.Entry getTopEntry() {
+-        HeadsUpEntry topEntry = getTopHeadsUpEntry();
+-        return (topEntry != null) ? topEntry.entry : null;
++    public NotificationData.Entry getEntry(String key) {
++        return mHeadsUpEntries.get(key).entry;
+     }
+ 
+-    /**
+-     * Returns if any heads up notification is available or not.
+-     */
+-    public boolean hasHeadsUpNotifications() {
+-        return !mHeadsUpEntries.isEmpty();
++    public Collection<HeadsUpEntry> getAllEntries() {
++        return mHeadsUpEntries.values();
+     }
+ 
+-    protected HeadsUpEntry getTopHeadsUpEntry() {
++    public HeadsUpEntry getTopEntry() {
+         if (mHeadsUpEntries.isEmpty()) {
+             return null;
+         }
+@@ -338,21 +387,56 @@ public class HeadsUpManager {
+     }
+ 
+     /**
+-     * Sets the current user.
++     * Decides whether a click is invalid for a notification, i.e it has not been shown long enough
++     * that a user might have consciously clicked on it.
++     *
++     * @param key the key of the touched notification
++     * @return whether the touch is invalid and should be discarded
+      */
++    public boolean shouldSwallowClick(String key) {
++        HeadsUpEntry entry = mHeadsUpEntries.get(key);
++        if (entry != null && mClock.currentTimeMillis() < entry.postTime) {
++            return true;
++        }
++        return false;
++    }
++
++    public void onComputeInternalInsets(ViewTreeObserver.InternalInsetsInfo info) {
++        if (mIsExpanded || mBar.isBouncerShowing()) {
++            // The touchable region is always the full area when expanded
++            return;
++        }
++        if (mHasPinnedNotification) {
++            ExpandableNotificationRow topEntry = getTopEntry().entry.row;
++            if (topEntry.isChildInGroup()) {
++                final ExpandableNotificationRow groupSummary
++                        = mGroupManager.getGroupSummary(topEntry.getStatusBarNotification());
++                if (groupSummary != null) {
++                    topEntry = groupSummary;
++                }
++            }
++            topEntry.getLocationOnScreen(mTmpTwoArray);
++            int minX = mTmpTwoArray[0];
++            int maxX = mTmpTwoArray[0] + topEntry.getWidth();
++            int maxY = topEntry.getIntrinsicHeight();
++
++            info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
++            info.touchableRegion.set(minX, 0, maxX, maxY);
++        } else if (mHeadsUpGoingAway || mWaitingOnCollapseWhenGoingAway) {
++            info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
++            info.touchableRegion.set(0, 0, mStatusBarWindowView.getWidth(), mStatusBarHeight);
++        }
++    }
++
+     public void setUser(int user) {
+         mUser = user;
+     }
+ 
+     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+         pw.println("HeadsUpManager state:");
+-        dumpInternal(fd, pw, args);
+-    }
+-
+-    protected void dumpInternal(FileDescriptor fd, PrintWriter pw, String[] args) {
+         pw.print("  mTouchAcceptanceDelay="); pw.println(mTouchAcceptanceDelay);
+         pw.print("  mSnoozeLengthMs="); pw.println(mSnoozeLengthMs);
+-        pw.print("  now="); pw.println(mClock.currentTimeMillis());
++        pw.print("  now="); pw.println(SystemClock.elapsedRealtime());
+         pw.print("  mUser="); pw.println(mUser);
+         for (HeadsUpEntry entry: mHeadsUpEntries.values()) {
+             pw.print("  HeadsUpEntry="); pw.println(entry.entry);
+@@ -365,9 +449,6 @@ public class HeadsUpManager {
+         }
+     }
+ 
+-    /**
+-     * Returns if there are any pinned Heads Up Notifications or not.
+-     */
+     public boolean hasPinnedHeadsUp() {
+         return mHasPinnedNotification;
+     }
+@@ -383,8 +464,14 @@ public class HeadsUpManager {
+     }
+ 
+     /**
+-     * Unpins all pinned Heads Up Notifications.
++     * Notifies that a notification was swiped out and will be removed.
++     *
++     * @param key the notification key
+      */
++    public void addSwipedOutNotification(String key) {
++        mSwipedOutKeys.add(key);
++    }
++
+     public void unpinAll() {
+         for (String key : mHeadsUpEntries.keySet()) {
+             HeadsUpEntry entry = mHeadsUpEntries.get(key);
+@@ -394,13 +481,60 @@ public class HeadsUpManager {
+         }
+     }
+ 
++    public void onExpandingFinished() {
++        if (mReleaseOnExpandFinish) {
++            releaseAllImmediately();
++            mReleaseOnExpandFinish = false;
++        } else {
++            for (NotificationData.Entry entry : mEntriesToRemoveAfterExpand) {
++                if (isHeadsUp(entry.key)) {
++                    // Maybe the heads-up was removed already
++                    removeHeadsUpEntry(entry);
++                }
++            }
++        }
++        mEntriesToRemoveAfterExpand.clear();
++    }
++
++    public void setTrackingHeadsUp(boolean trackingHeadsUp) {
++        mTrackingHeadsUp = trackingHeadsUp;
++    }
++
++    public boolean isTrackingHeadsUp() {
++        return mTrackingHeadsUp;
++    }
++
++    public void setIsExpanded(boolean isExpanded) {
++        if (isExpanded != mIsExpanded) {
++            mIsExpanded = isExpanded;
++            if (isExpanded) {
++                // make sure our state is sane
++                mWaitingOnCollapseWhenGoingAway = false;
++                mHeadsUpGoingAway = false;
++                updateTouchableRegionListener();
++            }
++        }
++    }
++
+     /**
+-     * Returns the value of the tracking-heads-up flag. See the doc of {@code setTrackingHeadsUp} as
+-     * well.
++     * @return the height of the top heads up notification when pinned. This is different from the
++     *         intrinsic height, which also includes whether the notification is system expanded and
++     *         is mainly used when dragging down from a heads up notification.
+      */
+-    public boolean isTrackingHeadsUp() {
+-        // Might be implemented in subclass.
+-        return false;
++    public int getTopHeadsUpPinnedHeight() {
++        HeadsUpEntry topEntry = getTopEntry();
++        if (topEntry == null || topEntry.entry == null) {
++            return 0;
++        }
++        ExpandableNotificationRow row = topEntry.entry.row;
++        if (row.isChildInGroup()) {
++            final ExpandableNotificationRow groupSummary
++                    = mGroupManager.getGroupSummary(row.getStatusBarNotification());
++            if (groupSummary != null) {
++                row = groupSummary;
++            }
++        }
++        return row.getPinnedHeadsUpHeight();
+     }
+ 
+     /**
+@@ -419,67 +553,147 @@ public class HeadsUpManager {
+     }
+ 
+     /**
+-     * Sets an entry to be expanded and therefore stick in the heads up area if it's pinned
+-     * until it's collapsed again.
++     * Set that we are exiting the headsUp pinned mode, but some notifications might still be
++     * animating out. This is used to keep the touchable regions in a sane state.
+      */
++    public void setHeadsUpGoingAway(boolean headsUpGoingAway) {
++        if (headsUpGoingAway != mHeadsUpGoingAway) {
++            mHeadsUpGoingAway = headsUpGoingAway;
++            if (!headsUpGoingAway) {
++                waitForStatusBarLayout();
++            }
++            updateTouchableRegionListener();
++        }
++    }
++
++    /**
++     * We need to wait on the whole panel to collapse, before we can remove the touchable region
++     * listener.
++     */
++    private void waitForStatusBarLayout() {
++        mWaitingOnCollapseWhenGoingAway = true;
++        mStatusBarWindowView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
++            @Override
++            public void onLayoutChange(View v, int left, int top, int right, int bottom,
++                    int oldLeft,
++                    int oldTop, int oldRight, int oldBottom) {
++                if (mStatusBarWindowView.getHeight() <= mStatusBarHeight) {
++                    mStatusBarWindowView.removeOnLayoutChangeListener(this);
++                    mWaitingOnCollapseWhenGoingAway = false;
++                    updateTouchableRegionListener();
++                }
++            }
++        });
++    }
++
++    public static void setIsClickedNotification(View child, boolean clicked) {
++        child.setTag(TAG_CLICKED_NOTIFICATION, clicked ? true : null);
++    }
++
++    public static boolean isClickedHeadsUpNotification(View child) {
++        Boolean clicked = (Boolean) child.getTag(TAG_CLICKED_NOTIFICATION);
++        return clicked != null && clicked;
++    }
++
++    public void setRemoteInputActive(NotificationData.Entry entry, boolean remoteInputActive) {
++        HeadsUpEntry headsUpEntry = mHeadsUpEntries.get(entry.key);
++        if (headsUpEntry != null && headsUpEntry.remoteInputActive != remoteInputActive) {
++            headsUpEntry.remoteInputActive = remoteInputActive;
++            if (remoteInputActive) {
++                headsUpEntry.removeAutoRemovalCallbacks();
++            } else {
++                headsUpEntry.updateEntry(false /* updatePostTime */);
++            }
++        }
++    }
+ 
+     /**
+      * Set an entry to be expanded and therefore stick in the heads up area if it's pinned
+      * until it's collapsed again.
+      */
+-    public void setExpanded(@NonNull NotificationData.Entry entry, boolean expanded) {
+-        HeadsUpManager.HeadsUpEntry headsUpEntry = mHeadsUpEntries.get(entry.key);
+-        if (headsUpEntry != null && entry.row.isPinned()) {
+-            headsUpEntry.expanded(expanded);
++    public void setExpanded(NotificationData.Entry entry, boolean expanded) {
++        HeadsUpEntry headsUpEntry = mHeadsUpEntries.get(entry.key);
++        if (headsUpEntry != null && headsUpEntry.expanded != expanded && entry.row.isPinned()) {
++            headsUpEntry.expanded = expanded;
++            if (expanded) {
++                headsUpEntry.removeAutoRemovalCallbacks();
++            } else {
++                headsUpEntry.updateEntry(false /* updatePostTime */);
++            }
++        }
++    }
++
++    @Override
++    public void onReorderingAllowed() {
++        mBar.getNotificationScrollLayout().setHeadsUpGoingAwayAnimationsAllowed(false);
++        for (NotificationData.Entry entry : mEntriesToRemoveWhenReorderingAllowed) {
++            if (isHeadsUp(entry.key)) {
++                // Maybe the heads-up was removed already
++                removeHeadsUpEntry(entry);
++            }
+         }
++        mEntriesToRemoveWhenReorderingAllowed.clear();
++        mBar.getNotificationScrollLayout().setHeadsUpGoingAwayAnimationsAllowed(true);
+     }
+ 
+-    @NonNull
+-    protected HeadsUpEntry createHeadsUpEntry() {
+-        return new HeadsUpEntry();
++    public void setVisualStabilityManager(VisualStabilityManager visualStabilityManager) {
++        mVisualStabilityManager = visualStabilityManager;
+     }
+ 
+-    protected void releaseHeadsUpEntry(@NonNull HeadsUpEntry entry) {
+-        // Do nothing for HeadsUpEntry.
++    public void setStatusBarState(int statusBarState) {
++        mStatusBarState = statusBarState;
+     }
+ 
+     /**
+      * This represents a notification and how long it is in a heads up mode. It also manages its
+      * lifecycle automatically when created.
+      */
+-    protected class HeadsUpEntry implements Comparable<HeadsUpEntry> {
+-        @Nullable public NotificationData.Entry entry;
++    public class HeadsUpEntry implements Comparable<HeadsUpEntry> {
++        public NotificationData.Entry entry;
+         public long postTime;
+-        public boolean remoteInputActive;
+         public long earliestRemovaltime;
+-        public boolean expanded;
+-
+         private Runnable mRemoveHeadsUpRunnable;
++        public boolean remoteInputActive;
++        public boolean expanded;
+ 
+-        public void setEntry(@Nullable final NotificationData.Entry entry) {
+-            setEntry(entry, null);
+-        }
+-
+-        public void setEntry(@Nullable final NotificationData.Entry entry,
+-                @Nullable Runnable removeHeadsUpRunnable) {
++        public void setEntry(final NotificationData.Entry entry) {
+             this.entry = entry;
+-            this.mRemoveHeadsUpRunnable = removeHeadsUpRunnable;
+ 
+             // The actual post time will be just after the heads-up really slided in
+             postTime = mClock.currentTimeMillis() + mTouchAcceptanceDelay;
+-            updateEntry(true /* updatePostTime */);
++            mRemoveHeadsUpRunnable = new Runnable() {
++                @Override
++                public void run() {
++                    if (!mVisualStabilityManager.isReorderingAllowed()) {
++                        mEntriesToRemoveWhenReorderingAllowed.add(entry);
++                        mVisualStabilityManager.addReorderingAllowedCallback(HeadsUpManager.this);
++                    } else if (!mTrackingHeadsUp) {
++                        removeHeadsUpEntry(entry);
++                    } else {
++                        mEntriesToRemoveAfterExpand.add(entry);
++                    }
++                }
++            };
++            updateEntry();
+         }
+ 
+-        public void updateEntry(boolean updatePostTime) {
+-            if (DEBUG) Log.v(TAG, "updateEntry");
++        public void updateEntry() {
++            updateEntry(true);
++        }
+ 
++        public void updateEntry(boolean updatePostTime) {
+             long currentTime = mClock.currentTimeMillis();
+             earliestRemovaltime = currentTime + mMinimumDisplayTime;
+             if (updatePostTime) {
+                 postTime = Math.max(postTime, currentTime);
+             }
+             removeAutoRemovalCallbacks();
+-
++            if (mEntriesToRemoveAfterExpand.contains(entry)) {
++                mEntriesToRemoveAfterExpand.remove(entry);
++            }
++            if (mEntriesToRemoveWhenReorderingAllowed.contains(entry)) {
++                mEntriesToRemoveWhenReorderingAllowed.remove(entry);
++            }
+             if (!isSticky()) {
+                 long finishTime = postTime + mHeadsUpNotificationDecay;
+                 long removeDelay = Math.max(finishTime - currentTime, mMinimumDisplayTime);
+@@ -493,7 +707,7 @@ public class HeadsUpManager {
+         }
+ 
+         @Override
+-        public int compareTo(@NonNull HeadsUpEntry o) {
++        public int compareTo(HeadsUpEntry o) {
+             boolean isPinned = entry.row.isPinned();
+             boolean otherPinned = o.entry.row.isPinned();
+             if (isPinned && !otherPinned) {
+@@ -520,29 +734,26 @@ public class HeadsUpManager {
+                             : -1;
+         }
+ 
+-        public void expanded(boolean expanded) {
+-            this.expanded = expanded;
++        public void removeAutoRemovalCallbacks() {
++            mHandler.removeCallbacks(mRemoveHeadsUpRunnable);
+         }
+ 
+-        public void reset() {
+-            entry = null;
+-            expanded = false;
+-            remoteInputActive = false;
+-            removeAutoRemovalCallbacks();
+-            mRemoveHeadsUpRunnable = null;
++        public boolean wasShownLongEnough() {
++            return earliestRemovaltime < mClock.currentTimeMillis();
+         }
+ 
+-        public void removeAutoRemovalCallbacks() {
+-            if (mRemoveHeadsUpRunnable != null)
+-                mHandler.removeCallbacks(mRemoveHeadsUpRunnable);
++        public void removeAsSoonAsPossible() {
++            removeAutoRemovalCallbacks();
++            mHandler.postDelayed(mRemoveHeadsUpRunnable,
++                    earliestRemovaltime - mClock.currentTimeMillis());
+         }
+ 
+-        public void removeAsSoonAsPossible() {
+-            if (mRemoveHeadsUpRunnable != null) {
+-                removeAutoRemovalCallbacks();
+-                mHandler.postDelayed(mRemoveHeadsUpRunnable,
+-                        earliestRemovaltime - mClock.currentTimeMillis());
+-            }
++        public void reset() {
++            removeAutoRemovalCallbacks();
++            entry = null;
++            mRemoveHeadsUpRunnable = null;
++            expanded = false;
++            remoteInputActive = false;
+         }
+     }
+ 
+@@ -551,4 +762,5 @@ public class HeadsUpManager {
+             return SystemClock.elapsedRealtime();
+         }
+     }
++
+ }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpUtil.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpUtil.java
+deleted file mode 100644
+index 1e3c123cfbc..00000000000
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/HeadsUpUtil.java
++++ /dev/null
+@@ -1,47 +0,0 @@
+-/*
+- * Copyright (C) 2017 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.statusbar.policy;
+-
+-import android.view.View;
+-
+-import com.android.systemui.R;
+-
+-/**
+- * A class of utility static methods for heads up notifications.
+- */
+-public final class HeadsUpUtil {
+-    private static final int TAG_CLICKED_NOTIFICATION = R.id.is_clicked_heads_up_tag;
+-
+-    /**
+-     * Set the given view as clicked or not-clicked.
+-     * @param view The view to be set the flag to.
+-     * @param clicked True to set as clicked. False to not-clicked.
+-     */
+-    public static void setIsClickedHeadsUpNotification(View view, boolean clicked) {
+-        view.setTag(TAG_CLICKED_NOTIFICATION, clicked ? true : null);
+-    }
+-
+-    /**
+-     * Check if the given view has the flag of "clicked notification"
+-     * @param view The view to be checked.
+-     * @return True if the view has clicked. False othrewise.
+-     */
+-    public static boolean isClickedHeadsUpNotification(View view) {
+-        Boolean clicked = (Boolean) view.getTag(TAG_CLICKED_NOTIFICATION);
+-        return clicked != null && clicked;
+-    }
+-}
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/stack/AmbientState.java b/packages/SystemUI/src/com/android/systemui/statusbar/stack/AmbientState.java
+index d7a810eca02..424858a86e5 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/stack/AmbientState.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/stack/AmbientState.java
+@@ -64,7 +64,7 @@ public class AmbientState {
+     private boolean mPanelTracking;
+     private boolean mExpansionChanging;
+     private boolean mPanelFullWidth;
+-    private boolean mPulsing;
++    private Collection<HeadsUpManager.HeadsUpEntry> mPulsing;
+     private boolean mUnlockHintRunning;
+     private boolean mQsCustomizerShowing;
+     private int mIntrinsicPadding;
+@@ -315,18 +315,23 @@ public class AmbientState {
+     }
+ 
+     public boolean hasPulsingNotifications() {
+-        return mPulsing;
++        return mPulsing != null;
+     }
+ 
+-    public void setPulsing(boolean hasPulsing) {
++    public void setPulsing(Collection<HeadsUpManager.HeadsUpEntry> hasPulsing) {
+         mPulsing = hasPulsing;
+     }
+ 
+     public boolean isPulsing(NotificationData.Entry entry) {
+-        if (!mPulsing || mHeadsUpManager == null) {
++        if (mPulsing == null) {
+             return false;
+         }
+-        return mHeadsUpManager.getAllEntries().anyMatch(e -> (e == entry));
++        for (HeadsUpManager.HeadsUpEntry e : mPulsing) {
++            if (e.entry == entry) {
++                return true;
++            }
++        }
++        return false;
+     }
+ 
+     public boolean isPanelTracking() {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java b/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java
+index 1b55a5b0325..c114a6f5a6d 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java
+@@ -92,11 +92,10 @@ import com.android.systemui.statusbar.StatusBarState;
+ import com.android.systemui.statusbar.notification.FakeShadowView;
+ import com.android.systemui.statusbar.notification.NotificationUtils;
+ import com.android.systemui.statusbar.notification.VisibilityLocationProvider;
+-import com.android.systemui.statusbar.phone.HeadsUpManagerPhone;
+ import com.android.systemui.statusbar.phone.NotificationGroupManager;
+ import com.android.systemui.statusbar.phone.StatusBar;
+ import com.android.systemui.statusbar.phone.ScrimController;
+-import com.android.systemui.statusbar.policy.HeadsUpUtil;
++import com.android.systemui.statusbar.policy.HeadsUpManager;
+ import com.android.systemui.statusbar.policy.ScrollAdapter;
+ 
+ import android.support.v4.graphics.ColorUtils;
+@@ -289,7 +288,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+     private HashSet<View> mClearOverlayViewsWhenFinished = new HashSet<>();
+     private HashSet<Pair<ExpandableNotificationRow, Boolean>> mHeadsUpChangeAnimations
+             = new HashSet<>();
+-    private HeadsUpManagerPhone mHeadsUpManager;
++    private HeadsUpManager mHeadsUpManager;
+     private boolean mTrackingHeadsUp;
+     private ScrimController mScrimController;
+     private boolean mForceNoOverlappingRendering;
+@@ -359,7 +358,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+         }
+     };
+     private PorterDuffXfermode mSrcMode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
+-    private boolean mPulsing;
++    private Collection<HeadsUpManager.HeadsUpEntry> mPulsing;
+     private boolean mDrawBackgroundAsSrc;
+     private boolean mFadingOut;
+     private boolean mParentNotFullyVisible;
+@@ -691,7 +690,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+     }
+ 
+     private void updateAlgorithmHeightAndPadding() {
+-        if (mPulsing) {
++        if (mPulsing != null) {
+             mTopPadding = mClockBottom;
+         } else {
+             mTopPadding = mAmbientState.isDark() ? mDarkTopPadding : mRegularTopPadding;
+@@ -920,27 +919,6 @@ public class NotificationStackScrollLayout extends ViewGroup
+         return getMinExpansionHeight();
+     }
+ 
+-    /**
+-     * @return the height of the top heads up notification when pinned. This is different from the
+-     *         intrinsic height, which also includes whether the notification is system expanded and
+-     *         is mainly used when dragging down from a heads up notification.
+-     */
+-    private int getTopHeadsUpPinnedHeight() {
+-        NotificationData.Entry topEntry = mHeadsUpManager.getTopEntry();
+-        if (topEntry == null) {
+-            return 0;
+-        }
+-        ExpandableNotificationRow row = topEntry.row;
+-        if (row.isChildInGroup()) {
+-            final ExpandableNotificationRow groupSummary
+-                    = mGroupManager.getGroupSummary(row.getStatusBarNotification());
+-            if (groupSummary != null) {
+-                row = groupSummary;
+-            }
+-        }
+-        return row.getPinnedHeadsUpHeight();
+-    }
+-
+     /**
+      * @return the position from where the appear transition ends when expanding.
+      *         Measured in absolute height.
+@@ -952,7 +930,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+             int minNotificationsForShelf = 1;
+             if (mTrackingHeadsUp
+                     || (mHeadsUpManager.hasPinnedHeadsUp() && !mAmbientState.isDark())) {
+-                appearPosition = getTopHeadsUpPinnedHeight();
++                appearPosition = mHeadsUpManager.getTopHeadsUpPinnedHeight();
+                 minNotificationsForShelf = 2;
+             } else {
+                 appearPosition = 0;
+@@ -1220,9 +1198,9 @@ public class NotificationStackScrollLayout extends ViewGroup
+                 if (slidingChild instanceof ExpandableNotificationRow) {
+                     ExpandableNotificationRow row = (ExpandableNotificationRow) slidingChild;
+                     if (!mIsExpanded && row.isHeadsUp() && row.isPinned()
+-                            && mHeadsUpManager.getTopEntry().row != row
++                            && mHeadsUpManager.getTopEntry().entry.row != row
+                             && mGroupManager.getGroupSummary(
+-                                mHeadsUpManager.getTopEntry().row.getStatusBarNotification())
++                                mHeadsUpManager.getTopEntry().entry.row.getStatusBarNotification())
+                                 != row) {
+                         continue;
+                     }
+@@ -2142,7 +2120,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+ 
+     @Override
+     public boolean hasPulsingNotifications() {
+-        return mPulsing;
++        return mPulsing != null;
+     }
+ 
+     private void updateScrollability() {
+@@ -2775,7 +2753,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+     }
+ 
+     private boolean isClickedHeadsUp(View child) {
+-        return HeadsUpUtil.isClickedHeadsUpNotification(child);
++        return HeadsUpManager.isClickedHeadsUpNotification(child);
+     }
+ 
+     /**
+@@ -4280,7 +4258,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+         mAnimationFinishedRunnables.add(runnable);
+     }
+ 
+-    public void setHeadsUpManager(HeadsUpManagerPhone headsUpManager) {
++    public void setHeadsUpManager(HeadsUpManager headsUpManager) {
+         mHeadsUpManager = headsUpManager;
+         mAmbientState.setHeadsUpManager(headsUpManager);
+     }
+@@ -4348,8 +4326,8 @@ public class NotificationStackScrollLayout extends ViewGroup
+         return mIsExpanded;
+     }
+ 
+-    public void setPulsing(boolean pulsing, int clockBottom) {
+-        if (!mPulsing && !pulsing) {
++    public void setPulsing(Collection<HeadsUpManager.HeadsUpEntry> pulsing, int clockBottom) {
++        if (mPulsing == null && pulsing == null) {
+             return;
+         }
+         mPulsing = pulsing;
+@@ -4488,7 +4466,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+         pw.println(String.format("[%s: pulsing=%s qsCustomizerShowing=%s visibility=%s"
+                         + " alpha:%f scrollY:%d]",
+                 this.getClass().getSimpleName(),
+-                mPulsing ? "T":"f",
++                mPulsing != null ?"T":"f",
+                 mAmbientState.isQsCustomizerShowing() ? "T":"f",
+                 getVisibility() == View.VISIBLE ? "visible"
+                         : getVisibility() == View.GONE ? "gone"
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/stack/ViewState.java b/packages/SystemUI/src/com/android/systemui/statusbar/stack/ViewState.java
+index 04a7bd79c6c..682b8493e91 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/stack/ViewState.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/stack/ViewState.java
+@@ -30,7 +30,7 @@ import com.android.systemui.R;
+ import com.android.systemui.statusbar.ExpandableView;
+ import com.android.systemui.statusbar.notification.AnimatableProperty;
+ import com.android.systemui.statusbar.notification.PropertyAnimator;
+-import com.android.systemui.statusbar.policy.HeadsUpUtil;
++import com.android.systemui.statusbar.policy.HeadsUpManager;
+ 
+ /**
+  * A state of a view. This can be used to apply a set of view properties to a view with
+@@ -582,7 +582,7 @@ public class ViewState {
+         animator.addListener(new AnimatorListenerAdapter() {
+             @Override
+             public void onAnimationEnd(Animator animation) {
+-                HeadsUpUtil.setIsClickedHeadsUpNotification(child, false);
++                HeadsUpManager.setIsClickedNotification(child, false);
+                 child.setTag(TAG_ANIMATOR_TRANSLATION_Y, null);
+                 child.setTag(TAG_START_TRANSLATION_Y, null);
+                 child.setTag(TAG_END_TRANSLATION_Y, null);
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/NotificationTestHelper.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/NotificationTestHelper.java
+index f3c1171f650..6e7477fbac3 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/NotificationTestHelper.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/NotificationTestHelper.java
+@@ -32,7 +32,6 @@ import com.android.systemui.statusbar.notification.AboveShelfChangedListener;
+ import com.android.systemui.statusbar.notification.AboveShelfObserver;
+ import com.android.systemui.statusbar.notification.InflationException;
+ import com.android.systemui.statusbar.notification.NotificationInflaterTest;
+-import com.android.systemui.statusbar.phone.HeadsUpManagerPhone;
+ import com.android.systemui.statusbar.phone.NotificationGroupManager;
+ import com.android.systemui.statusbar.policy.HeadsUpManager;
+ 
+@@ -52,7 +51,7 @@ public class NotificationTestHelper {
+     public NotificationTestHelper(Context context) {
+         mContext = context;
+         mInstrumentation = InstrumentationRegistry.getInstrumentation();
+-        mHeadsUpManager = new HeadsUpManagerPhone(mContext, null, mGroupManager, null, null);
++        mHeadsUpManager = new HeadsUpManager(mContext, null, mGroupManager);
+     }
+ 
+     public ExpandableNotificationRow createRow() throws Exception {
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhoneTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhoneTest.java
+deleted file mode 100644
+index 28f94177904..00000000000
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/HeadsUpManagerPhoneTest.java
++++ /dev/null
+@@ -1,126 +0,0 @@
+-/*
+- * Copyright (C) 2018 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.systemui.statusbar.phone;
+-
+-import android.app.ActivityManager;
+-import android.app.Notification;
+-import android.content.Context;
+-import android.os.Handler;
+-import android.os.Looper;
+-import android.os.UserHandle;
+-import android.view.View;
+-import android.service.notification.StatusBarNotification;
+-import android.support.test.filters.SmallTest;
+-import android.testing.AndroidTestingRunner;
+-import android.testing.TestableLooper;
+-
+-import com.android.systemui.R;
+-import com.android.systemui.SysuiTestCase;
+-import com.android.systemui.statusbar.ExpandableNotificationRow;
+-import com.android.systemui.statusbar.NotificationData;
+-import com.android.systemui.statusbar.StatusBarIconView;
+-import com.android.systemui.statusbar.notification.VisualStabilityManager;
+-
+-import org.junit.Before;
+-import org.junit.Rule;
+-import org.junit.Test;
+-import org.junit.runner.RunWith;
+-import org.mockito.Mock;
+-import org.mockito.junit.MockitoJUnit;
+-import org.mockito.junit.MockitoRule;
+-
+-import static junit.framework.Assert.assertNull;
+-import static junit.framework.Assert.assertTrue;
+-import static junit.framework.Assert.assertFalse;
+-
+-import static org.junit.Assert.assertEquals;
+-import static org.mockito.Mockito.mock;
+-import static org.mockito.Mockito.when;
+-
+-@SmallTest
+-@RunWith(AndroidTestingRunner.class)
+-@TestableLooper.RunWithLooper
+-public class HeadsUpManagerPhoneTest extends SysuiTestCase {
+-    @Rule public MockitoRule rule = MockitoJUnit.rule();
+-
+-    private static final String TEST_PACKAGE_NAME = "test";
+-    private static final int TEST_UID = 0;
+-
+-    private HeadsUpManagerPhone mHeadsUpManager;
+-
+-    private NotificationData.Entry mEntry;
+-    private StatusBarNotification mSbn;
+-
+-    private final Handler mHandler = new Handler(Looper.getMainLooper());
+-
+-    @Mock private NotificationGroupManager mGroupManager;
+-    @Mock private View mStatusBarWindowView;
+-    @Mock private StatusBar mBar;
+-    @Mock private ExpandableNotificationRow mRow;
+-    @Mock private VisualStabilityManager mVSManager;
+-
+-    @Before
+-    public void setUp() {
+-        when(mVSManager.isReorderingAllowed()).thenReturn(true);
+-
+-        mHeadsUpManager = new HeadsUpManagerPhone(mContext, mStatusBarWindowView, mGroupManager, mBar, mVSManager);
+-
+-        Notification.Builder n = new Notification.Builder(mContext, "")
+-                .setSmallIcon(R.drawable.ic_person)
+-                .setContentTitle("Title")
+-                .setContentText("Text");
+-        mSbn = new StatusBarNotification(TEST_PACKAGE_NAME, TEST_PACKAGE_NAME, 0, null, TEST_UID,
+-             0, n.build(), new UserHandle(ActivityManager.getCurrentUser()), null, 0);
+-
+-        mEntry = new NotificationData.Entry(mSbn);
+-        mEntry.row = mRow;
+-        mEntry.expandedIcon = mock(StatusBarIconView.class);
+-    }
+-
+-    @Test
+-    public void testBasicOperations() {
+-        // Check the initial state.
+-        assertNull(mHeadsUpManager.getEntry(mEntry.key));
+-        assertNull(mHeadsUpManager.getTopEntry());
+-        assertEquals(0, mHeadsUpManager.getAllEntries().count());
+-        assertFalse(mHeadsUpManager.hasHeadsUpNotifications());
+-
+-        // Add a notification.
+-        mHeadsUpManager.showNotification(mEntry);
+-
+-        assertEquals(mEntry, mHeadsUpManager.getEntry(mEntry.key));
+-        assertEquals(mEntry, mHeadsUpManager.getTopEntry());
+-        assertEquals(1, mHeadsUpManager.getAllEntries().count());
+-        assertTrue(mHeadsUpManager.hasHeadsUpNotifications());
+-
+-        // Update the notification.
+-        mHeadsUpManager.updateNotification(mEntry, false);
+-
+-        assertEquals(mEntry, mHeadsUpManager.getEntry(mEntry.key));
+-        assertEquals(mEntry, mHeadsUpManager.getTopEntry());
+-        assertEquals(1, mHeadsUpManager.getAllEntries().count());
+-        assertTrue(mHeadsUpManager.hasHeadsUpNotifications());
+-
+-        // Remove but defer, since the notification is visible on display.
+-        mHeadsUpManager.removeNotification(mEntry.key, false);
+-
+-        assertEquals(mEntry, mHeadsUpManager.getEntry(mEntry.key));
+-        assertEquals(mEntry, mHeadsUpManager.getTopEntry());
+-        assertEquals(1, mHeadsUpManager.getAllEntries().count());
+-        assertTrue(mHeadsUpManager.hasHeadsUpNotifications());
+-    }
+-}
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
+index 31442af5a04..bdf9b1f6da9 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
+@@ -86,8 +86,8 @@ import com.android.systemui.statusbar.NotificationViewHierarchyManager;
+ import com.android.systemui.statusbar.StatusBarState;
+ import com.android.systemui.statusbar.notification.ActivityLaunchAnimator;
+ import com.android.systemui.statusbar.notification.VisualStabilityManager;
+-import com.android.systemui.statusbar.phone.HeadsUpManagerPhone;
+ import com.android.systemui.statusbar.policy.DeviceProvisionedController;
++import com.android.systemui.statusbar.policy.HeadsUpManager;
+ import com.android.systemui.statusbar.policy.KeyguardMonitor;
+ import com.android.systemui.statusbar.policy.KeyguardMonitorImpl;
+ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
+@@ -110,7 +110,7 @@ public class StatusBarTest extends SysuiTestCase {
+     @Mock private UnlockMethodCache mUnlockMethodCache;
+     @Mock private KeyguardIndicationController mKeyguardIndicationController;
+     @Mock private NotificationStackScrollLayout mStackScroller;
+-    @Mock private HeadsUpManagerPhone mHeadsUpManager;
++    @Mock private HeadsUpManager mHeadsUpManager;
+     @Mock private SystemServicesProxy mSystemServicesProxy;
+     @Mock private NotificationPanelView mNotificationPanelView;
+     @Mock private IStatusBarService mBarService;
+@@ -588,7 +588,7 @@ public class StatusBarTest extends SysuiTestCase {
+     static class TestableStatusBar extends StatusBar {
+         public TestableStatusBar(StatusBarKeyguardViewManager man,
+                 UnlockMethodCache unlock, KeyguardIndicationController key,
+-                NotificationStackScrollLayout stack, HeadsUpManagerPhone hum,
++                NotificationStackScrollLayout stack, HeadsUpManager hum,
+                 PowerManager pm, NotificationPanelView panelView,
+                 IStatusBarService barService, NotificationListener notificationListener,
+                 NotificationLogger notificationLogger,
+@@ -650,7 +650,7 @@ public class StatusBarTest extends SysuiTestCase {
+         public void setUpForTest(NotificationPresenter presenter,
+                 NotificationListContainer listContainer,
+                 Callback callback,
+-                HeadsUpManagerPhone headsUpManager,
++                HeadsUpManager headsUpManager,
+                 NotificationData notificationData) {
+             super.setUpWithPresenter(presenter, listContainer, callback, headsUpManager);
+             mNotificationData = notificationData;
+-- 
+2.17.1
+

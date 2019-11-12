@@ -1,0 +1,31 @@
+From 9ad73bc2967d6d97d359cbad16996fcd7b83d30f Mon Sep 17 00:00:00 2001
+From: Yiwei Zhang <zzyiwei@google.com>
+Date: Tue, 21 Aug 2018 22:11:37 -0700
+Subject: [PATCH 21/48] Get screencap working correctly in landscape mode
+
+Bug: b/112869712
+Test: adb shell screencap in all screen rotations
+Change-Id: I62b38775f8253bea85a1870ad63cd27715754656
+Merged-In: I62b38775f8253bea85a1870ad63cd27715754656
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index f0c35d163..6ebff31a7 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -4833,8 +4833,8 @@ status_t SurfaceFlinger::captureScreen(const sp<IBinder>& display, sp<GraphicBuf
+         sourceCrop.set(dispScissor);
+         // adb shell screencap will default reqWidth and reqHeight to zeros.
+         if (reqWidth == 0 || reqHeight == 0) {
+-            reqWidth = uint32_t(dispScissor.width());
+-            reqHeight = uint32_t(dispScissor.height());
++            reqWidth = uint32_t(device->getViewport().width());
++            reqHeight = uint32_t(device->getViewport().height());
+         }
+     }
+ 
+-- 
+2.17.1
+

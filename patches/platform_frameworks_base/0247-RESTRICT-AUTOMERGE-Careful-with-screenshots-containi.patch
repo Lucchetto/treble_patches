@@ -1,0 +1,153 @@
+From 244676a4ad10888551a939cca3fe049e8dcd68b0 Mon Sep 17 00:00:00 2001
+From: Robert Carr <racarr@google.com>
+Date: Tue, 2 Apr 2019 14:18:56 -0700
+Subject: [PATCH 247/306] [RESTRICT AUTOMERGE] Careful with screenshots
+ containing secure layers!
+
+For purposes of	the screen rotation animation the system server	is allowed
+to capture secure (not protected) layers and trusted not to persist screenshots
+which may contain secure layers. However when displaying the screen rotation animation,
+the layer the screenshot is placed on will itself not be secure, so if we record
+the animation the recording will contain persisted versions of the secure content. Make sure
+we use the new API from SurfaceFlinger to set FLAG_SECURE if our screenshot contains secure
+content.
+
+Bug: 69703445
+Test: Transaction_test#SetFlagsSecureEUidSystem
+Change-Id: I0dd36462867da52e6b1451f65f56c2c5d37538f3
+(cherry picked from commit bab740f10e0812ba47d19931fdfe2fa7e02bbd0c)
+---
+ core/jni/android_view_SurfaceControl.cpp      |  8 ++--
+ .../java/android/graphics/GraphicBuffer.java  | 37 +++++++++++++++++--
+ .../server/wm/ScreenRotationAnimation.java    |  6 +++
+ 3 files changed, 44 insertions(+), 7 deletions(-)
+
+diff --git a/core/jni/android_view_SurfaceControl.cpp b/core/jni/android_view_SurfaceControl.cpp
+index 1529a6bcf24..614a8ff124e 100644
+--- a/core/jni/android_view_SurfaceControl.cpp
++++ b/core/jni/android_view_SurfaceControl.cpp
+@@ -171,9 +171,10 @@ static jobject nativeScreenshotToBuffer(JNIEnv* env, jclass clazz,
+         maxLayer = INT32_MAX;
+     }
+     sp<GraphicBuffer> buffer;
++    bool capturedSecureLayers = false;
+     status_t res = ScreenshotClient::capture(displayToken,
+             sourceCrop, width, height, minLayer, maxLayer, useIdentityTransform,
+-            rotation, captureSecureLayers, &buffer);
++            rotation, captureSecureLayers, &buffer, capturedSecureLayers);
+     if (res != NO_ERROR) {
+         return NULL;
+     }
+@@ -184,7 +185,8 @@ static jobject nativeScreenshotToBuffer(JNIEnv* env, jclass clazz,
+             buffer->getHeight(),
+             buffer->getPixelFormat(),
+             (jint)buffer->getUsage(),
+-            (jlong)buffer.get());
++            (jlong)buffer.get(),
++            capturedSecureLayers);
+ }
+ 
+ static jobject nativeScreenshotBitmap(JNIEnv* env, jclass clazz,
+@@ -1082,7 +1084,7 @@ int register_android_view_SurfaceControl(JNIEnv* env)
+     jclass graphicsBufferClazz = FindClassOrDie(env, "android/graphics/GraphicBuffer");
+     gGraphicBufferClassInfo.clazz = MakeGlobalRefOrDie(env, graphicsBufferClazz);
+     gGraphicBufferClassInfo.builder = GetStaticMethodIDOrDie(env, graphicsBufferClazz,
+-            "createFromExisting", "(IIIIJ)Landroid/graphics/GraphicBuffer;");
++            "createFromExisting", "(IIIIJZ)Landroid/graphics/GraphicBuffer;");
+ 
+     return err;
+ }
+diff --git a/graphics/java/android/graphics/GraphicBuffer.java b/graphics/java/android/graphics/GraphicBuffer.java
+index 53d21776eed..61dd37fb058 100644
+--- a/graphics/java/android/graphics/GraphicBuffer.java
++++ b/graphics/java/android/graphics/GraphicBuffer.java
+@@ -52,6 +52,7 @@ public class GraphicBuffer implements Parcelable {
+     private final int mHeight;
+     private final int mFormat;
+     private final int mUsage;
++    private final boolean mCapturedSecureLayers;
+     // Note: do not rename, this field is used by native code
+     private final long mNativeObject;
+ 
+@@ -82,14 +83,23 @@ public class GraphicBuffer implements Parcelable {
+     }
+ 
+     /**
+-     * Private use only. See {@link #create(int, int, int, int)}.
++     * Private use only. See {@link #create(int, int, int, int, boolean)}.
+      */
+-    private GraphicBuffer(int width, int height, int format, int usage, long nativeObject) {
++    private GraphicBuffer(int width, int height, int format, int usage, long nativeObject,
++                          boolean capturedSecureLayers) {
+         mWidth = width;
+         mHeight = height;
+         mFormat = format;
+         mUsage = usage;
+         mNativeObject = nativeObject;
++        mCapturedSecureLayers = capturedSecureLayers;
++    }
++
++    /**
++     * Private use only. See {@link #create(int, int, int, int)}.
++     */
++    private GraphicBuffer(int width, int height, int format, int usage, long nativeObject) {
++        this(width, height, format, usage, nativeObject, false);
+     }
+ 
+     /**
+@@ -97,14 +107,33 @@ public class GraphicBuffer implements Parcelable {
+      * @hide
+      */
+     public static GraphicBuffer createFromExisting(int width, int height,
+-            int format, int usage, long unwrappedNativeObject) {
++            int format, int usage, long unwrappedNativeObject,
++            boolean capturedSecureLayers) {
+         long nativeObject = nWrapGraphicBuffer(unwrappedNativeObject);
+         if (nativeObject != 0) {
+-            return new GraphicBuffer(width, height, format, usage, nativeObject);
++            return new GraphicBuffer(width, height, format, usage, nativeObject,
++                                     capturedSecureLayers);
+         }
+         return null;
+     }
+ 
++    /**
++     * For SurfaceControl JNI. Provides and ignored value for capturedSecureLayers for backwards
++     * compatibility
++     * @hide
++     */
++    public static GraphicBuffer createFromExisting(int width, int height,
++            int format, int usage, long unwrappedNativeObject) {
++        return createFromExisting(width, height, format, usage, unwrappedNativeObject, false);
++    }
++
++    /**
++      * Returns true if the buffer contains visible secure layers.
++      */
++    public boolean doesContainSecureLayers() {
++        return mCapturedSecureLayers;
++    }
++
+     /**
+      * Returns the width of this buffer in pixels.
+      */
+diff --git a/services/core/java/com/android/server/wm/ScreenRotationAnimation.java b/services/core/java/com/android/server/wm/ScreenRotationAnimation.java
+index e33070371e3..1ff8ab5d0c8 100644
+--- a/services/core/java/com/android/server/wm/ScreenRotationAnimation.java
++++ b/services/core/java/com/android/server/wm/ScreenRotationAnimation.java
+@@ -288,6 +288,12 @@ class ScreenRotationAnimation {
+                     } catch (RuntimeException e) {
+                         Slog.w(TAG, "Failed to attach screenshot - " + e.getMessage());
+                     }
++                    // If the screenshot contains secure layers, we have to make sure the
++                    // screenshot surface we display it in also has FLAG_SECURE so that
++                    // the user can not screenshot secure layers via the screenshot surface.
++                    if (gb.doesContainSecureLayers()) {
++                        t.setSecure(mSurfaceControl, true);
++                    }
+                     t.setLayer(mSurfaceControl, SCREEN_FREEZE_LAYER_SCREENSHOT);
+                     t.setAlpha(mSurfaceControl, 0);
+                     t.show(mSurfaceControl);
+-- 
+2.17.1
+

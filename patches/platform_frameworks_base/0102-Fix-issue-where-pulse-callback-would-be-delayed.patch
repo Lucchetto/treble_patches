@@ -1,0 +1,44 @@
+From ee76f6a2e9061178e57e202dc6e2acce4d0b46e7 Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Mon, 5 Feb 2018 21:16:39 -0800
+Subject: [PATCH 102/306] Fix issue where pulse callback would be delayed
+
+Test: double tap device with LCD display, press power, repeat
+Test: double tap device with OLED display, press power, repeat
+Fixes: 69935953
+Fixes: 72959137
+Change-Id: I12f53bfc4646f6a247c66771d2a4a24675430057
+(cherry picked from commit ff307d59822009f65bbe5b755edff1aa74176aa1)
+---
+ .../systemui/statusbar/phone/ScrimController.java     | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+index 44e0c257ef2..59c44ed6635 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+@@ -276,13 +276,18 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+             mWallpaperVisibilityTimedOut = false;
+         }
+ 
+-        if (!mKeyguardUpdateMonitor.needsSlowUnlockTransition()) {
+-            scheduleUpdate();
+-        } else {
++        if (mKeyguardUpdateMonitor.needsSlowUnlockTransition() && mState == ScrimState.UNLOCKED) {
+             // In case the user isn't unlocked, make sure to delay a bit because the system is hosed
+             // with too many things at this case, in order to not skip the initial frames.
+             mScrimInFront.postOnAnimationDelayed(this::scheduleUpdate, 16);
+             mAnimationDelay = StatusBar.FADE_KEYGUARD_START_DELAY;
++        } else if (!mDozeParameters.getAlwaysOn() && oldState == ScrimState.AOD) {
++            // Execute first frame immediately when display was completely off.
++            // Scheduling a frame isn't enough because the system may aggressively enter doze,
++            // delaying callbacks or never triggering them until the power button is pressed.
++            onPreDraw();
++        } else {
++            scheduleUpdate();
+         }
+     }
+ 
+-- 
+2.17.1
+

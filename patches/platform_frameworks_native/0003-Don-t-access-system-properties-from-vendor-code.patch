@@ -1,0 +1,42 @@
+From 06f10cccab3856244d5d09b84f9ce5fc1da2ffac Mon Sep 17 00:00:00 2001
+From: Martijn Coenen <maco@google.com>
+Date: Mon, 25 Jun 2018 09:40:14 +0200
+Subject: [PATCH 03/48] Don't access system properties from vendor code.
+
+A recently introduced optimization reduces the service polling
+interval to 100ms during boot. For this it uses the boot completed
+system property. However, vendor code isn't allowed to access
+system properties. This change keeps the behavior as it was,
+while not accessing the system prop. We can investigate later
+if we can do something similar for vendor code.
+
+Bug: 80153956
+Test: builds, sailfish boots
+Change-Id: Ic52039516ae3e912ff2ec7c8dced4951696678df
+---
+ libs/binder/IServiceManager.cpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/libs/binder/IServiceManager.cpp b/libs/binder/IServiceManager.cpp
+index be3bbf749..4896f68f0 100644
+--- a/libs/binder/IServiceManager.cpp
++++ b/libs/binder/IServiceManager.cpp
+@@ -149,12 +149,13 @@ public:
+         const bool isVendorService =
+             strcmp(ProcessState::self()->getDriverName().c_str(), "/dev/vndbinder") == 0;
+         const long timeout = uptimeMillis() + 5000;
+-        if (!gSystemBootCompleted) {
++        if (!gSystemBootCompleted && !isVendorService) {
++            // Vendor code can't access system properties
+             char bootCompleted[PROPERTY_VALUE_MAX];
+             property_get("sys.boot_completed", bootCompleted, "0");
+             gSystemBootCompleted = strcmp(bootCompleted, "1") == 0 ? true : false;
+         }
+-        // retry interval in millisecond.
++        // retry interval in millisecond; note that vendor services stay at 100ms
+         const long sleepTime = gSystemBootCompleted ? 1000 : 100;
+ 
+         int n = 0;
+-- 
+2.17.1
+

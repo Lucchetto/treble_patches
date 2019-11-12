@@ -1,0 +1,74 @@
+From b526560cb688ad038a079267aea49a06049b63c9 Mon Sep 17 00:00:00 2001
+From: Brad Ebinger <breadley@google.com>
+Date: Wed, 12 Sep 2018 12:43:39 -0700
+Subject: [PATCH 21/70] Disable "Preferred Network Type" setting in call
+
+When we are in a call and the user tries to change
+the "Preferred Network Type", the modem may throw
+an error. To prevent this, disable the UI option while
+in a call.
+
+Bug: 70937729
+Test: Manual - incoming call in menu, enable world mode
+Merged-In: I2d08473d739a9e2c9c652e67760db38f9a7b4b10
+Change-Id: I3f872c343986a6495d379ae8439938906ba3daab
+---
+ .../android/phone/MobileNetworkSettings.java  | 21 ++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/src/com/android/phone/MobileNetworkSettings.java b/src/com/android/phone/MobileNetworkSettings.java
+index 75e3bfc9b..6e0d4f824 100644
+--- a/src/com/android/phone/MobileNetworkSettings.java
++++ b/src/com/android/phone/MobileNetworkSettings.java
+@@ -345,6 +345,7 @@ public class MobileNetworkSettings extends Activity  {
+                 updateEnhanced4gLteState();
+                 updateWiFiCallState();
+                 updateVideoCallState();
++                updatePreferredNetworkType();
+             }
+ 
+             /*
+@@ -1128,6 +1129,7 @@ public class MobileNetworkSettings extends Activity  {
+             }
+ 
+             updateEnhanced4gLteState();
++            updatePreferredNetworkType();
+             updateCallingCategory();
+ 
+             // Enable link to CMAS app settings depending on the value in config.xml.
+@@ -1182,9 +1184,6 @@ public class MobileNetworkSettings extends Activity  {
+             if (variant4glteTitleIndex >= 0 && variant4glteTitleIndex < variantTitles.length) {
+                 enhanced4glteModeTitle = variantTitles[variant4glteTitleIndex];
+             }
+-
+-            mButtonPreferredNetworkMode.setEnabled(hasActiveSubscriptions);
+-            mButtonEnabledNetworks.setEnabled(hasActiveSubscriptions);
+             mButton4glte.setTitle(enhanced4glteModeTitle);
+             mLteDataServicePref.setEnabled(hasActiveSubscriptions);
+             Preference ps;
+@@ -1862,6 +1861,22 @@ public class MobileNetworkSettings extends Activity  {
+             }
+         }
+ 
++        private void updatePreferredNetworkType() {
++            boolean enabled = mTelephonyManager.getCallState(
++                    mPhone.getSubId()) == TelephonyManager.CALL_STATE_IDLE
++                    && hasActiveSubscriptions();
++            Log.i(LOG_TAG, "updatePreferredNetworkType: " + enabled);
++            // TODO: Disentangle enabled networks vs preferred network mode, it looks like
++            // both buttons are shown to the user as "Preferred network type" and the options change
++            // based on what looks like World mode.
++            if (mButtonEnabledNetworks != null) {
++                mButtonEnabledNetworks.setEnabled(enabled);
++            }
++            if (mButtonPreferredNetworkMode != null) {
++                mButtonPreferredNetworkMode.setEnabled(enabled);
++            }
++        }
++
+         private void updateCallingCategory() {
+             if (mCallingCategory == null) {
+                 return;
+-- 
+2.17.1
+

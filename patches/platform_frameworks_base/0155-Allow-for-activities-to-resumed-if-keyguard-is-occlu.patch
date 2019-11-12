@@ -1,0 +1,40 @@
+From 4c522b3eba15fe1de20f2ca8a3cddb7ee217e852 Mon Sep 17 00:00:00 2001
+From: Bryce Lee <brycelee@google.com>
+Date: Tue, 13 Mar 2018 10:06:21 -0700
+Subject: [PATCH 155/306] Allow for activities to resumed if keyguard is
+ occluded.
+
+A previous changelist enforced that activities would not be resumed
+if the keyguard is locked. However, this prevents activities that
+show above the keyguard from resuming.
+
+This changelist adjusts this check to account for occlusion.
+
+Fixes: 74585178
+Test: Lock screen, fingerprint unlock, verify activity is resumed.
+Test: Set alarm, lock screen, verify alarm shows above lock screen
+      resumed.
+
+Change-Id: I9d26d6b667bb1679c373f36188a610a66d2f5b2d
+(cherry picked from commit b3b73f2f842d659f2d4dcf9cbd84fb8fa1e07aaa)
+---
+ .../java/com/android/server/am/ActivityStackSupervisor.java    | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityStackSupervisor.java b/services/core/java/com/android/server/am/ActivityStackSupervisor.java
+index 185897a9338..abd24e140c0 100644
+--- a/services/core/java/com/android/server/am/ActivityStackSupervisor.java
++++ b/services/core/java/com/android/server/am/ActivityStackSupervisor.java
+@@ -3375,7 +3375,8 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
+                     stack.goToSleepIfPossible(false /* shuttingDown */);
+                 } else {
+                     stack.awakeFromSleepingLocked();
+-                    if (isFocusedStack(stack) && !mKeyguardController.isKeyguardLocked()) {
++                    if (isFocusedStack(stack)
++                            && !mKeyguardController.isKeyguardShowing(display.mDisplayId)) {
+                         // If the keyguard is unlocked - resume immediately.
+                         // It is possible that the display will not be awake at the time we
+                         // process the keyguard going away, which can happen before the sleep token
+-- 
+2.17.1
+

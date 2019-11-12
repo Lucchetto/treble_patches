@@ -1,0 +1,225 @@
+From 1be3fdb76daba1226748881f2a5ced94934b29b1 Mon Sep 17 00:00:00 2001
+From: Brad Ebinger <breadley@google.com>
+Date: Thu, 6 Dec 2018 10:56:22 -0800
+Subject: [PATCH 28/39] Amend SMS over IMS proto and metrics collection
+
+Uses the correct proto defintion and modifies
+SMS over IMS metrics collection to conform to changes.
+
+Bug: 119434950
+Test: Manual
+Merged-In: I963bb31d12ea02fdaf36a6aa693f8956a0fb1580
+Change-Id: I963bb31d12ea02fdaf36a6aa693f8956a0fb1580
+---
+ proto/src/telephony.proto                     | 23 +++-----
+ .../internal/telephony/ImsSmsDispatcher.java  | 11 ++--
+ .../telephony/metrics/TelephonyMetrics.java   | 52 ++++++++++++++++---
+ 3 files changed, 61 insertions(+), 25 deletions(-)
+
+diff --git a/proto/src/telephony.proto b/proto/src/telephony.proto
+index 62ddd660d..6f26b07cb 100644
+--- a/proto/src/telephony.proto
++++ b/proto/src/telephony.proto
+@@ -578,11 +578,11 @@ enum ImsServiceErrno {
+   IMS_E_UNKNOWN = 0;
+   // The operation has succeeded
+   IMS_E_SUCCESS = 1;
+-  // Sending an SMS over IMS has failed. Do not retry over IMS again or fallback to CS.
++  // Sending SMS over IMS failed. Do not retry over IMS again or fallback to CS.
+   IMS_E_SMS_SEND_STATUS_ERROR = 2;
+-  // Sending an SMS over IMS has failed. Retry over IMS again.
++  // Sending SMS over IMS failed. Retry over IMS again.
+   IMS_E_SMS_SEND_STATUS_ERROR_RETRY = 3;
+-  // Sending an SMS over IMS has failed. Fallback to sending the SMS over CS.
++  // Sending SMS over IMS failed. Fallback to sending the SMS over CS.
+   IMS_E_SMS_SEND_STATUS_ERROR_FALLBACK = 4;
+ }
+ 
+@@ -1389,16 +1389,6 @@ message SmsSession {
+ 
+       // CB message received
+       CB_SMS_RECEIVED = 9;
+-
+-      // Send an SMS message over ImsService
+-      SMS_SEND_IMS_SERVICE = 10;
+-
+-      // Receive an SMS message result over ImsService
+-      SMS_SEND_RESULT_IMS_SERVICE = 11;
+-
+-      // Receive an SMS message over ImsService
+-      SMS_RECEIVED_IMS_SERVICE = 12;
+-
+     }
+ 
+     // Formats used to encode SMS messages
+@@ -1504,8 +1494,9 @@ message SmsSession {
+ 
+     // See 3GPP 27.005, 3.2.5 for GSM/UMTS,
+     // 3GPP2 N.S0005 (IS-41C) Table 171 for CDMA,
+-    // or ImsService for IMS specific error codes (using ImsService specific Event.Type)
+-    // -1 if unknown or not applicable
++    // Will map to a SmsManager.RESULT_* code if ims_error is populated
++    // SmsManager can be accessed from
++    // frameworks/base/telephony/java/android/telephony/SmsManager.java
+     optional int32 error_code = 10;
+ 
+     // RIL error code
+@@ -1518,7 +1509,7 @@ message SmsSession {
+     optional CBMessage cell_broadcast_message = 13;
+ 
+     // ImsService error code.
+-    optional ImsServiceErrno imsError = 14;
++    optional ImsServiceErrno ims_error = 14;
+   }
+ 
+   // Time when session has started, in minutes since epoch,
+diff --git a/src/java/com/android/internal/telephony/ImsSmsDispatcher.java b/src/java/com/android/internal/telephony/ImsSmsDispatcher.java
+index daba9efcb..56cceb0a4 100644
+--- a/src/java/com/android/internal/telephony/ImsSmsDispatcher.java
++++ b/src/java/com/android/internal/telephony/ImsSmsDispatcher.java
+@@ -173,7 +173,7 @@ public class ImsSmsDispatcher extends SMSDispatcher {
+                 int mappedResult;
+                 switch (result) {
+                     case Intents.RESULT_SMS_HANDLED:
+-                        mappedResult = ImsSmsImplBase.STATUS_REPORT_STATUS_OK;
++                        mappedResult = ImsSmsImplBase.DELIVER_STATUS_OK;
+                         break;
+                     case Intents.RESULT_SMS_OUT_OF_MEMORY:
+                         mappedResult = ImsSmsImplBase.DELIVER_STATUS_ERROR_NO_MEMORY;
+@@ -193,11 +193,13 @@ public class ImsSmsDispatcher extends SMSDispatcher {
+                         Rlog.w(TAG, "SMS Received with a PDU that could not be parsed.");
+                         getImsManager().acknowledgeSms(token, 0, mappedResult);
+                     }
++                    mMetrics.writeImsServiceNewSms(mPhone.getPhoneId(), format, mappedResult);
+                 } catch (ImsException e) {
+                     Rlog.e(TAG, "Failed to acknowledgeSms(). Error: " + e.getMessage());
++                    mMetrics.writeImsServiceNewSms(mPhone.getPhoneId(), format,
++                            ImsSmsImplBase.DELIVER_STATUS_ERROR_GENERIC);
+                 }
+             }, true);
+-            mMetrics.writeImsServiceNewSms(mPhone.getPhoneId(), format);
+         }
+     };
+ 
+@@ -316,10 +318,13 @@ public class ImsSmsDispatcher extends SMSDispatcher {
+                     smsc != null ? new String(smsc) : null,
+                     isRetry,
+                     pdu);
+-            mMetrics.writeImsServiceSendSms(mPhone.getPhoneId(), format);
++            mMetrics.writeImsServiceSendSms(mPhone.getPhoneId(), format,
++                    ImsSmsImplBase.SEND_STATUS_OK);
+         } catch (ImsException e) {
+             Rlog.e(TAG, "sendSms failed. Falling back to PSTN. Error: " + e.getMessage());
+             fallbackToPstn(token, tracker);
++            mMetrics.writeImsServiceSendSms(mPhone.getPhoneId(), format,
++                    ImsSmsImplBase.SEND_STATUS_ERROR_FALLBACK);
+         }
+     }
+ 
+diff --git a/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java b/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java
+index 502bb0cd6..c4b0e7375 100644
+--- a/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java
++++ b/src/java/com/android/internal/telephony/metrics/TelephonyMetrics.java
+@@ -423,6 +423,19 @@ public class TelephonyMetrics {
+                 pw.print(event.delay);
+                 pw.print(" T=");
+                 pw.println(smsSessionEventToString(event.type));
++                // Only show more info for tx/rx sms
++                if (event.type == SmsSession.Event.Type.SMS_SEND
++                        || event.type == SmsSession.Event.Type.SMS_RECEIVED
++                        || event.type == SmsSession.Event.Type.SMS_SEND_RESULT) {
++                    pw.print(" ReqId=");
++                    pw.println(event.rilRequestId);
++                    pw.print(" E=");
++                    pw.println(event.errorCode);
++                    pw.print(" RilE=");
++                    pw.println(event.error);
++                    pw.print(" ImsE=");
++                    pw.println(event.imsError);
++                }
+             }
+             pw.decreaseIndent();
+         }
+@@ -1481,7 +1494,7 @@ public class TelephonyMetrics {
+         } else {
+ 
+             smsSession.addEvent(new SmsSessionEventBuilder(
+-                    SmsSession.Event.Type.SMS_SEND_RESULT_IMS_SERVICE)
++                    SmsSession.Event.Type.SMS_SEND_RESULT)
+                     .setImsServiceErrno(resultCode)
+                     .setErrorCode(errorReason)
+             );
+@@ -1781,9 +1794,12 @@ public class TelephonyMetrics {
+      *
+      * @param phoneId Phone id
+      * @param format SMS format. Either {@link SmsMessage#FORMAT_3GPP} or
+-     * {@link SmsMessage#FORMAT_3GPP2}.
++     *         {@link SmsMessage#FORMAT_3GPP2}.
++     * @param resultCode The result of sending the new SMS to the vendor layer to be sent to the
++     *         carrier network.
+      */
+-    public synchronized void writeImsServiceSendSms(int phoneId, String format) {
++    public synchronized void writeImsServiceSendSms(int phoneId, String format,
++            @ImsSmsImplBase.SendStatusResult int resultCode) {
+         InProgressSmsSession smsSession = startNewSmsSessionIfNeeded(phoneId);
+         int formatCode = SmsSession.Event.Format.SMS_FORMAT_UNKNOWN;
+         switch (format) {
+@@ -1796,8 +1812,9 @@ public class TelephonyMetrics {
+                 break;
+             }
+         }
+-        smsSession.addEvent(new SmsSessionEventBuilder(SmsSession.Event.Type.SMS_SEND_IMS_SERVICE)
++        smsSession.addEvent(new SmsSessionEventBuilder(SmsSession.Event.Type.SMS_SEND)
+                 .setTech(SmsSession.Event.Tech.SMS_IMS)
++                .setImsServiceErrno(resultCode)
+                 .setFormat(formatCode)
+         );
+ 
+@@ -1828,8 +1845,10 @@ public class TelephonyMetrics {
+      * @param phoneId Phone id
+      * @param format SMS format. Either {@link SmsMessage#FORMAT_3GPP} or
+      * {@link SmsMessage#FORMAT_3GPP2}.
++     * @param result The result of processing the the newly received SMS message.
+      */
+-    public synchronized void writeImsServiceNewSms(int phoneId, String format) {
++    public synchronized void writeImsServiceNewSms(int phoneId, String format,
++            @ImsSmsImplBase.DeliverStatusResult int result) {
+         InProgressSmsSession smsSession = startNewSmsSessionIfNeeded(phoneId);
+         int formatCode = SmsSession.Event.Format.SMS_FORMAT_UNKNOWN;
+         switch (format) {
+@@ -1842,10 +1861,31 @@ public class TelephonyMetrics {
+                 break;
+             }
+         }
++        int smsError = SmsManager.RESULT_ERROR_GENERIC_FAILURE;
++        switch (result) {
++            case ImsSmsImplBase.DELIVER_STATUS_OK: {
++                smsError = SmsManager.RESULT_ERROR_NONE;
++                break;
++            }
++            case ImsSmsImplBase.DELIVER_STATUS_ERROR_NO_MEMORY: {
++                smsError = SmsManager.RESULT_NO_MEMORY;
++                break;
++            }
++            case ImsSmsImplBase.DELIVER_STATUS_ERROR_REQUEST_NOT_SUPPORTED: {
++                smsError = SmsManager.RESULT_REQUEST_NOT_SUPPORTED;
++                break;
++            }
++            case ImsSmsImplBase.DELIVER_STATUS_ERROR_GENERIC: {
++                smsError = SmsManager.RESULT_ERROR_GENERIC_FAILURE;
++                break;
++            }
++        }
+         smsSession.addEvent(new SmsSessionEventBuilder(
+-                SmsSession.Event.Type.SMS_RECEIVED_IMS_SERVICE)
++                SmsSession.Event.Type.SMS_RECEIVED)
+                 .setTech(SmsSession.Event.Tech.SMS_IMS)
+                 .setFormat(formatCode)
++                .setErrorCode(smsError)
++                .setImsServiceErrno(TelephonyProto.ImsServiceErrno.IMS_E_SUCCESS)
+         );
+ 
+         finishSmsSessionIfNeeded(smsSession);
+-- 
+2.17.1
+

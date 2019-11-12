@@ -1,0 +1,49 @@
+From a7fefd1814bba0e290183fdcfa37ca0486ff8db3 Mon Sep 17 00:00:00 2001
+From: Felipe Leme <felipeal@google.com>
+Date: Mon, 11 Dec 2017 10:45:59 -0800
+Subject: [PATCH 032/306] Temporaly ignoring UID check when caller is a system
+ app.
+
+The Settings app runs some of its activities in another process, which would
+crash it in some cases due to a recent security fix on Autofill.
+
+This CL temporarily fixes the problem by skipping the security check when the
+caller is a system app.
+
+Test: manual verification using System.out statements, as it cannot be
+      reproduced by CTS because the CTS app is an user app.
+Bug: 70506888
+
+Change-Id: I08e8a370d93d3473ec5e025afaf3bc6f456e0ab9
+(cherry picked from commit 70668582a8e2afae38a976819ec692ec0f8edf16)
+---
+ .../android/server/autofill/AutofillManagerServiceImpl.java | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/services/autofill/java/com/android/server/autofill/AutofillManagerServiceImpl.java b/services/autofill/java/com/android/server/autofill/AutofillManagerServiceImpl.java
+index 7bc63f057f4..fcb93d25245 100644
+--- a/services/autofill/java/com/android/server/autofill/AutofillManagerServiceImpl.java
++++ b/services/autofill/java/com/android/server/autofill/AutofillManagerServiceImpl.java
+@@ -42,6 +42,7 @@ import android.os.Binder;
+ import android.os.Bundle;
+ import android.os.IBinder;
+ import android.os.Looper;
++import android.os.Process;
+ import android.os.RemoteCallbackList;
+ import android.os.RemoteException;
+ import android.os.SystemClock;
+@@ -491,7 +492,10 @@ final class AutofillManagerServiceImpl {
+         } catch (NameNotFoundException e) {
+             throw new SecurityException("Could not verify UID for " + componentName);
+         }
+-        if (callingUid != packageUid) {
++        // TODO(b/70506888): allow all system UIDs to call it is too broad, we should call
++        // something like am.isActivityRunningInProcess(componentName, callingPid), but there is
++        // no such API yet.
++        if (callingUid != packageUid && Process.isApplicationUid(callingUid)) {
+             final String[] packages = pm.getPackagesForUid(callingUid);
+             final String callingPackage = packages != null ? packages[0] : "uid-" + callingUid;
+             Slog.w(TAG, "App (package=" + callingPackage + ", UID=" + callingUid
+-- 
+2.17.1
+

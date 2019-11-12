@@ -1,0 +1,32 @@
+From ad883b9b99bb472c25bbd83c98724fbc4969744e Mon Sep 17 00:00:00 2001
+From: Bernie Innocenti <codewiz@google.com>
+Date: Thu, 19 Jul 2018 18:06:52 +0900
+Subject: [PATCH 06/12] Fix use-after-free in
+ NetworkController::removeInterfaceAddress()
+
+Test: system/netd/tests/runtests.sh
+Bug: 119496789
+Change-Id: I0ebb9ac758b55f10536fef75f0eb7b69e2feccbc
+(cherry picked from commit dd5a4f0ef32dbb30575a68b6869a68fc30c57dc4)
+---
+ server/NetworkController.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/server/NetworkController.cpp b/server/NetworkController.cpp
+index 5bbfe3f2..a2600561 100644
+--- a/server/NetworkController.cpp
++++ b/server/NetworkController.cpp
+@@ -629,7 +629,9 @@ bool NetworkController::removeInterfaceAddress(unsigned ifindex, const char* add
+     std::unordered_set<unsigned>& ifindices = ifindicesIter->second;
+     if (ifindices.erase(ifindex) > 0) {
+         if (ifindices.size() == 0) {
+-            mAddressToIfindices.erase(ifindicesIter);
++            mAddressToIfindices.erase(ifindicesIter);  // Invalidates ifindices
++            // The address is no longer configured on any interface.
++            return true;
+         }
+     } else {
+         ALOGE("No record of address %s on interface %u", address, ifindex);
+-- 
+2.17.1
+

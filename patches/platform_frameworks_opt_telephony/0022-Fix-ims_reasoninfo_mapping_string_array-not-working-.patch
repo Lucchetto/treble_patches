@@ -1,0 +1,40 @@
+From 861362da39e8154eaf2be3acf3122ab276248386 Mon Sep 17 00:00:00 2001
+From: andychou <andychou@google.com>
+Date: Thu, 13 Dec 2018 16:15:25 +0800
+Subject: [PATCH 22/39] Fix ims_reasoninfo_mapping_string_array not working
+ problem
+
+If config ims_reasoninfo_mapping_string_array like "332||510", extra
+message will map to "" instead of null.
+But if there is no extra message reported, it will be null instead of "".
+It causes compare fail.
+
+Bug: 119804849
+Test: Field test pass
+Change-Id: Ie05f6cc55367a60e7c997a8d6e1337c0eeb16aa2
+Merged-In: I042a433940d6a07d48576431445b9357ecb48ff3
+---
+ .../internal/telephony/imsphone/ImsPhoneCallTracker.java    | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+index a55d8745c..0beac129d 100644
+--- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
++++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+@@ -1937,9 +1937,11 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+     @VisibleForTesting
+     public int maybeRemapReasonCode(ImsReasonInfo reasonInfo) {
+         int code = reasonInfo.getCode();
++        String extraMessage =
++                reasonInfo.getExtraMessage() == null ? "" : reasonInfo.getExtraMessage();
+ 
+-        Pair<Integer, String> toCheck = new Pair<>(code, reasonInfo.getExtraMessage());
+-        Pair<Integer, String> wildcardToCheck = new Pair<>(null, reasonInfo.getExtraMessage());
++        Pair<Integer, String> toCheck = new Pair<>(code, extraMessage);
++        Pair<Integer, String> wildcardToCheck = new Pair<>(null, extraMessage);
+         if (mImsReasonCodeMap.containsKey(toCheck)) {
+             int toCode = mImsReasonCodeMap.get(toCheck);
+ 
+-- 
+2.17.1
+

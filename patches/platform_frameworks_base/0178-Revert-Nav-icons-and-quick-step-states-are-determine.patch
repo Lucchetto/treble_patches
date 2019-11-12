@@ -1,0 +1,262 @@
+From 0c9ee31a199cfeca3aea372a1f52a5e4909f98fe Mon Sep 17 00:00:00 2001
+From: Winson Chung <winsonc@google.com>
+Date: Wed, 4 Apr 2018 15:16:00 +0000
+Subject: [PATCH 178/306] Revert "Nav icons and quick step states are
+ determined by service enabled"
+
+This reverts commit 8a7c97a16d7cfa7bcc602dfa969370bce9dfb686.
+
+Reason for revert: b/77566214
+
+Bug: 77566214
+
+Change-Id: Iba3ef20a304e3a47f1affe0b38598c7d7f0daef7
+(cherry picked from commit 317ee507c2ea69044dc91f7c6d019deeab1ebeae)
+---
+ .../systemui/OverviewProxyService.java        | 35 +++----------------
+ .../src/com/android/systemui/Prefs.java       |  4 +--
+ .../android/systemui/recents/RecentsImpl.java |  4 +--
+ .../statusbar/phone/NavigationBarView.java    |  4 +--
+ .../statusbar/phone/QuickStepController.java  |  4 +--
+ .../statusbar/policy/KeyButtonView.java       |  6 ++--
+ 6 files changed, 14 insertions(+), 43 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/OverviewProxyService.java b/packages/SystemUI/src/com/android/systemui/OverviewProxyService.java
+index 8e598424447..8cff56df173 100644
+--- a/packages/SystemUI/src/com/android/systemui/OverviewProxyService.java
++++ b/packages/SystemUI/src/com/android/systemui/OverviewProxyService.java
+@@ -22,7 +22,6 @@ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+ import android.content.ServiceConnection;
+-import android.content.pm.PackageManager;
+ import android.graphics.Rect;
+ import android.os.Binder;
+ import android.os.Handler;
+@@ -40,7 +39,6 @@ import com.android.systemui.recents.events.activity.DockedFirstAnimationFrameEve
+ import com.android.systemui.recents.misc.SystemServicesProxy;
+ import com.android.systemui.shared.recents.IOverviewProxy;
+ import com.android.systemui.shared.recents.ISystemUiProxy;
+-import com.android.systemui.shared.system.ActivityManagerWrapper;
+ import com.android.systemui.shared.system.GraphicBufferCompat;
+ import com.android.systemui.statusbar.phone.StatusBar;
+ import com.android.systemui.statusbar.policy.CallbackController;
+@@ -73,13 +71,11 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+     private final DeviceProvisionedController mDeviceProvisionedController
+             = Dependency.get(DeviceProvisionedController.class);
+     private final List<OverviewProxyListener> mConnectionCallbacks = new ArrayList<>();
+-    private final Intent mQuickStepIntent;
+ 
+     private IOverviewProxy mOverviewProxy;
+     private int mConnectionBackoffAttempts;
+     private CharSequence mOnboardingText;
+     private @InteractionType int mInteractionFlags;
+-    private boolean mIsEnabled;
+ 
+     private ISystemUiProxy mSysUiProxy = new ISystemUiProxy.Stub() {
+ 
+@@ -134,23 +130,14 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+                     });
+                 }
+             } finally {
+-                Prefs.putInt(mContext, Prefs.Key.QUICK_STEP_INTERACTION_FLAGS, mInteractionFlags);
+                 Binder.restoreCallingIdentity(token);
+             }
+         }
+     };
+ 
+-    private final BroadcastReceiver mLauncherStateChangedReceiver = new BroadcastReceiver() {
++    private final BroadcastReceiver mLauncherAddedReceiver = new BroadcastReceiver() {
+         @Override
+         public void onReceive(Context context, Intent intent) {
+-            updateEnabledState();
+-
+-            // When launcher service is disabled, reset interaction flags because it is inactive
+-            if (!isEnabled()) {
+-                mInteractionFlags = 0;
+-                Prefs.remove(mContext, Prefs.Key.QUICK_STEP_INTERACTION_FLAGS);
+-            }
+-
+             // Reconnect immediately, instead of waiting for resume to arrive.
+             startConnectionToCurrentUser();
+         }
+@@ -209,21 +196,17 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+         mConnectionBackoffAttempts = 0;
+         mRecentsComponentName = ComponentName.unflattenFromString(context.getString(
+                 com.android.internal.R.string.config_recentsComponentName));
+-        mQuickStepIntent = new Intent(ACTION_QUICKSTEP)
+-                .setPackage(mRecentsComponentName.getPackageName());
+-        mInteractionFlags = Prefs.getInt(mContext, Prefs.Key.QUICK_STEP_INTERACTION_FLAGS, 0);
+ 
+         // Listen for the package update changes.
+         if (SystemServicesProxy.getInstance(context)
+                 .isSystemUser(mDeviceProvisionedController.getCurrentUser())) {
+-            updateEnabledState();
+             mDeviceProvisionedController.addCallback(mDeviceProvisionedCallback);
+             IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
+             filter.addDataScheme("package");
+             filter.addDataSchemeSpecificPart(mRecentsComponentName.getPackageName(),
+                     PatternMatcher.PATTERN_LITERAL);
+             filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+-            mContext.registerReceiver(mLauncherStateChangedReceiver, filter);
++            mContext.registerReceiver(mLauncherAddedReceiver, filter);
+         }
+     }
+ 
+@@ -239,7 +222,7 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+         disconnectFromLauncherService();
+ 
+         // If user has not setup yet or already connected, do not try to connect
+-        if (!mDeviceProvisionedController.isCurrentUserSetup() || !isEnabled()) {
++        if (!mDeviceProvisionedController.isCurrentUserSetup()) {
+             return;
+         }
+         mHandler.removeCallbacks(mConnectionRunnable);
+@@ -265,7 +248,6 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+     public void addCallback(OverviewProxyListener listener) {
+         mConnectionCallbacks.add(listener);
+         listener.onConnectionChanged(mOverviewProxy != null);
+-        listener.onInteractionFlagsChanged(mInteractionFlags);
+     }
+ 
+     @Override
+@@ -274,11 +256,7 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+     }
+ 
+     public boolean shouldShowSwipeUpUI() {
+-        return isEnabled() && ((mInteractionFlags & FLAG_DISABLE_SWIPE_UP) == 0);
+-    }
+-
+-    public boolean isEnabled() {
+-        return mIsEnabled;
++        return getProxy() != null && ((mInteractionFlags & FLAG_DISABLE_SWIPE_UP) == 0);
+     }
+ 
+     public IOverviewProxy getProxy() {
+@@ -314,11 +292,6 @@ public class OverviewProxyService implements CallbackController<OverviewProxyLis
+         }
+     }
+ 
+-    private void updateEnabledState() {
+-        mIsEnabled = mContext.getPackageManager().resolveServiceAsUser(mQuickStepIntent, 0,
+-                ActivityManagerWrapper.getInstance().getCurrentUserId()) != null;
+-    }
+-
+     @Override
+     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+         pw.println(TAG_OPS + " state:");
+diff --git a/packages/SystemUI/src/com/android/systemui/Prefs.java b/packages/SystemUI/src/com/android/systemui/Prefs.java
+index 7f7a7692d98..2a271473595 100644
+--- a/packages/SystemUI/src/com/android/systemui/Prefs.java
++++ b/packages/SystemUI/src/com/android/systemui/Prefs.java
+@@ -54,8 +54,7 @@ public final class Prefs {
+             Key.HAS_SEEN_RECENTS_ONBOARDING,
+             Key.SEEN_RINGER_GUIDANCE_COUNT,
+             Key.QS_HAS_TURNED_OFF_MOBILE_DATA,
+-            Key.TOUCHED_RINGER_TOGGLE,
+-            Key.QUICK_STEP_INTERACTION_FLAGS
++            Key.TOUCHED_RINGER_TOGGLE
+     })
+     public @interface Key {
+         @Deprecated
+@@ -94,7 +93,6 @@ public final class Prefs {
+         String QS_TILE_SPECS_REVEALED = "QsTileSpecsRevealed";
+         String QS_HAS_TURNED_OFF_MOBILE_DATA = "QsHasTurnedOffMobileData";
+         String TOUCHED_RINGER_TOGGLE = "TouchedRingerToggle";
+-        String QUICK_STEP_INTERACTION_FLAGS = "QuickStepInteractionFlags";
+     }
+ 
+     public static boolean getBoolean(Context context, @Key String key, boolean defaultValue) {
+diff --git a/packages/SystemUI/src/com/android/systemui/recents/RecentsImpl.java b/packages/SystemUI/src/com/android/systemui/recents/RecentsImpl.java
+index 6fcb1c1152d..19da3dba17e 100644
+--- a/packages/SystemUI/src/com/android/systemui/recents/RecentsImpl.java
++++ b/packages/SystemUI/src/com/android/systemui/recents/RecentsImpl.java
+@@ -126,7 +126,7 @@ public class RecentsImpl implements ActivityOptions.OnAnimationFinishedListener
+         @Override
+         public void onTaskStackChangedBackground() {
+             // Skip background preloading recents in SystemUI if the overview services is bound
+-            if (Dependency.get(OverviewProxyService.class).isEnabled()) {
++            if (Dependency.get(OverviewProxyService.class).getProxy() != null) {
+                 return;
+             }
+ 
+@@ -300,7 +300,7 @@ public class RecentsImpl implements ActivityOptions.OnAnimationFinishedListener
+ 
+     public void onBootCompleted() {
+         // Skip preloading tasks if we are already bound to the service
+-        if (Dependency.get(OverviewProxyService.class).isEnabled()) {
++        if (Dependency.get(OverviewProxyService.class).getProxy() != null) {
+             return;
+         }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index 4c4eb60e441..9f757720b77 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -398,7 +398,7 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+ 
+     public boolean isQuickScrubEnabled() {
+         return SystemProperties.getBoolean("persist.quickstep.scrub.enabled", true)
+-                && mOverviewProxyService.isEnabled() && isOverviewEnabled()
++                && mOverviewProxyService.getProxy() != null && isOverviewEnabled()
+                 && ((mOverviewProxyService.getInteractionFlags() & FLAG_DISABLE_QUICK_SCRUB) == 0);
+     }
+ 
+@@ -596,7 +596,7 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         // recents buttons when disconnected from launcher service in screen pinning mode,
+         // as they are used for exiting.
+         final boolean pinningActive = ActivityManagerWrapper.getInstance().isScreenPinningActive();
+-        if (mOverviewProxyService.isEnabled()) {
++        if (mOverviewProxyService.getProxy() != null) {
+             // Use interaction flags to show/hide navigation buttons but will be shown if required
+             // to exit screen pinning.
+             final int flags = mOverviewProxyService.getInteractionFlags();
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickStepController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickStepController.java
+index d3790d44068..678d9d62403 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickStepController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/QuickStepController.java
+@@ -172,8 +172,8 @@ public class QuickStepController implements GestureHelper {
+     }
+ 
+     private boolean handleTouchEvent(MotionEvent event) {
+-        if (mOverviewEventSender.getProxy() == null || (!mNavigationBarView.isQuickScrubEnabled()
+-                && !mNavigationBarView.isQuickStepSwipeUpEnabled())) {
++        if (!mNavigationBarView.isQuickScrubEnabled()
++                && !mNavigationBarView.isQuickStepSwipeUpEnabled()) {
+             mNavigationBarView.getHomeButton().setDelayTouchFeedback(false /* delay */);
+             return false;
+         }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+index 2fed3fca24e..c7c18fa526e 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/KeyButtonView.java
+@@ -202,7 +202,7 @@ public class KeyButtonView extends ImageView implements ButtonInterface {
+     }
+ 
+     public boolean onTouchEvent(MotionEvent ev) {
+-        final boolean showSwipeUI = mOverviewProxyService.shouldShowSwipeUpUI();
++        final boolean isProxyConnected = mOverviewProxyService.getProxy() != null;
+         final int action = ev.getAction();
+         int x, y;
+         if (action == MotionEvent.ACTION_DOWN) {
+@@ -228,7 +228,7 @@ public class KeyButtonView extends ImageView implements ButtonInterface {
+                     // Provide the same haptic feedback that the system offers for virtual keys.
+                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                 }
+-                if (!showSwipeUI) {
++                if (!isProxyConnected) {
+                     playSoundEffect(SoundEffectConstants.CLICK);
+                 }
+                 removeCallbacks(mCheckLongPress);
+@@ -260,7 +260,7 @@ public class KeyButtonView extends ImageView implements ButtonInterface {
+                 final boolean doIt = isPressed() && !mLongClicked;
+                 setPressed(false);
+                 final boolean doHapticFeedback = (SystemClock.uptimeMillis() - mDownTime) > 150;
+-                if (showSwipeUI) {
++                if (isProxyConnected) {
+                     if (doIt) {
+                         if (doHapticFeedback) {
+                             mVibratorHelper.vibrate(VibrationEffect.EFFECT_TICK);
+-- 
+2.17.1
+

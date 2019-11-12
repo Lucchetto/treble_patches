@@ -1,0 +1,95 @@
+From 8dbcddf4b8e450d45cb58338223da73169160dd0 Mon Sep 17 00:00:00 2001
+From: Wale Ogunwale <ogunwale@google.com>
+Date: Tue, 6 Feb 2018 13:03:34 +0000
+Subject: [PATCH 100/306] Revert "Fix flicker with remote animations"
+
+This reverts commit ab09e6472fc175077561cd55f2c1aa1d57683c9e as it causes crash.
+
+Change-Id: I2878cebca7d63a95545cc50e775a183527d7c2c2
+bug: 72953020
+(cherry picked from commit da10c37b6d8497338dcab82550ee37b374c3c9e2)
+---
+ .../server/wm/RemoteAnimationController.java   | 18 +++++++-----------
+ .../android/server/wm/RootWindowContainer.java |  2 --
+ .../com/android/server/wm/WindowAnimator.java  | 10 +---------
+ 3 files changed, 8 insertions(+), 22 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/RemoteAnimationController.java b/services/core/java/com/android/server/wm/RemoteAnimationController.java
+index 5bc739ee33b..925199358b4 100644
+--- a/services/core/java/com/android/server/wm/RemoteAnimationController.java
++++ b/services/core/java/com/android/server/wm/RemoteAnimationController.java
+@@ -96,17 +96,13 @@ class RemoteAnimationController {
+         // Scale the timeout with the animator scale the controlling app is using.
+         mHandler.postDelayed(mTimeoutRunnable,
+                 (long) (TIMEOUT_MS * mService.getCurrentAnimatorScale()));
+-
+-        final RemoteAnimationTarget[] animations = createAnimations();
+-        mService.mAnimator.addAfterPrepareSurfacesRunnable(() -> {
+-            try {
+-                mRemoteAnimationAdapter.getRunner().onAnimationStart(animations,
+-                        mFinishedCallback);
+-            } catch (RemoteException e) {
+-                Slog.e(TAG, "Failed to start remote animation", e);
+-                onAnimationFinished();
+-            }
+-        });
++        try {
++            mRemoteAnimationAdapter.getRunner().onAnimationStart(createAnimations(),
++                    mFinishedCallback);
++        } catch (RemoteException e) {
++            Slog.e(TAG, "Failed to start remote animation", e);
++            onAnimationFinished();
++        }
+     }
+ 
+     private RemoteAnimationTarget[] createAnimations() {
+diff --git a/services/core/java/com/android/server/wm/RootWindowContainer.java b/services/core/java/com/android/server/wm/RootWindowContainer.java
+index 8d1a8225020..c535fe5f7dd 100644
+--- a/services/core/java/com/android/server/wm/RootWindowContainer.java
++++ b/services/core/java/com/android/server/wm/RootWindowContainer.java
+@@ -612,8 +612,6 @@ class RootWindowContainer extends WindowContainer<DisplayContent> {
+                     "<<< CLOSE TRANSACTION performLayoutAndPlaceSurfaces");
+         }
+ 
+-        mService.mAnimator.executeAfterPrepareSurfacesRunnables();
+-
+         final WindowSurfacePlacer surfacePlacer = mService.mWindowPlacerLocked;
+ 
+         // If we are ready to perform an app transition, check through all of the app tokens to be
+diff --git a/services/core/java/com/android/server/wm/WindowAnimator.java b/services/core/java/com/android/server/wm/WindowAnimator.java
+index b0d42f21fac..cec13abd823 100644
+--- a/services/core/java/com/android/server/wm/WindowAnimator.java
++++ b/services/core/java/com/android/server/wm/WindowAnimator.java
+@@ -92,7 +92,6 @@ public class WindowAnimator {
+      * executed and the corresponding transaction is closed and applied.
+      */
+     private final ArrayList<Runnable> mAfterPrepareSurfacesRunnables = new ArrayList<>();
+-    private boolean mInExecuteAfterPrepareSurfacesRunnables;
+ 
+     WindowAnimator(final WindowManagerService service) {
+         mService = service;
+@@ -439,13 +438,7 @@ public class WindowAnimator {
+         scheduleAnimation();
+     }
+ 
+-    void executeAfterPrepareSurfacesRunnables() {
+-
+-        // Don't even think about to start recursing!
+-        if (mInExecuteAfterPrepareSurfacesRunnables) {
+-            return;
+-        }
+-        mInExecuteAfterPrepareSurfacesRunnables = true;
++    private void executeAfterPrepareSurfacesRunnables() {
+ 
+         // Traverse in order they were added.
+         final int size = mAfterPrepareSurfacesRunnables.size();
+@@ -453,6 +446,5 @@ public class WindowAnimator {
+             mAfterPrepareSurfacesRunnables.get(i).run();
+         }
+         mAfterPrepareSurfacesRunnables.clear();
+-        mInExecuteAfterPrepareSurfacesRunnables = false;
+     }
+ }
+-- 
+2.17.1
+

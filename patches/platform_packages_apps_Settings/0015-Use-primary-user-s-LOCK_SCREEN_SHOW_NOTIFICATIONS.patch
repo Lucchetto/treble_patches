@@ -1,0 +1,78 @@
+From f9429262d2350f7538277b88260219081a52aeb8 Mon Sep 17 00:00:00 2001
+From: Pavel Grafov <pgrafov@google.com>
+Date: Tue, 3 Jul 2018 20:31:42 +0100
+Subject: [PATCH 15/71] Use primary user's LOCK_SCREEN_SHOW_NOTIFICATIONS.
+
+Only primary user can set LOCK_SCREEN_SHOW_NOTIFICATIONS,
+profile can only set notifications to be redacted. When the
+user changes notification settings for a work app, this class
+is invoked from the profile, meaning it attempts to read
+LOCK_SCREEN_SHOW_NOTIFICATIONS for the profile, which is not
+there. As a result the function always returs 0 for work apps.
+
+Bug: 111112011
+Test: atest packages/apps/Settings/tests/robotests/src/com/android/settings/notification/VisibilityPreferenceControllerTest.java
+Change-Id: Ifb50209ea8ea8fb6639f00ca8b7cf8a4295890ad
+Merged-In: Ifb50209ea8ea8fb6639f00ca8b7cf8a4295890ad
+(cherry picked from commit f14de789f4cc7d145e6011e5a5562876e25c3f31)
+---
+ .../VisibilityPreferenceController.java       |  6 +++--
+ .../VisibilityPreferenceControllerTest.java   | 25 +++++++++++++++++++
+ 2 files changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/settings/notification/VisibilityPreferenceController.java b/src/com/android/settings/notification/VisibilityPreferenceController.java
+index dac90ef7be..8dc802ccdd 100644
+--- a/src/com/android/settings/notification/VisibilityPreferenceController.java
++++ b/src/com/android/settings/notification/VisibilityPreferenceController.java
+@@ -147,8 +147,10 @@ public class VisibilityPreferenceController extends NotificationPreferenceContro
+     }
+ 
+     private boolean getLockscreenNotificationsEnabled() {
+-        return Settings.Secure.getInt(mContext.getContentResolver(),
+-                Settings.Secure.LOCK_SCREEN_SHOW_NOTIFICATIONS, 0) != 0;
++        final UserInfo parentUser = mUm.getProfileParent(UserHandle.myUserId());
++        final int primaryUserId = parentUser != null ? parentUser.id : UserHandle.myUserId();
++        return Settings.Secure.getIntForUser(mContext.getContentResolver(),
++                Settings.Secure.LOCK_SCREEN_SHOW_NOTIFICATIONS, 0, primaryUserId) != 0;
+     }
+ 
+     private boolean getLockscreenAllowPrivateNotifications() {
+diff --git a/tests/robotests/src/com/android/settings/notification/VisibilityPreferenceControllerTest.java b/tests/robotests/src/com/android/settings/notification/VisibilityPreferenceControllerTest.java
+index e37c852277..fbc251206d 100644
+--- a/tests/robotests/src/com/android/settings/notification/VisibilityPreferenceControllerTest.java
++++ b/tests/robotests/src/com/android/settings/notification/VisibilityPreferenceControllerTest.java
+@@ -208,6 +208,31 @@ public class VisibilityPreferenceControllerTest {
+                 .contains(String.valueOf(VISIBILITY_PRIVATE)));
+     }
+ 
++    @Test
++    public void testUpdateState_noLockScreenNotificationsGloballyInProfile() {
++        final int primaryUserId = 2;
++        final UserInfo primaryUserInfo = new UserInfo(primaryUserId, "user 2", 0);
++        when(mUm.getProfileParent(anyInt())).thenReturn(primaryUserInfo);
++
++        Settings.Secure.putIntForUser(mContext.getContentResolver(),
++                Settings.Secure.LOCK_SCREEN_SHOW_NOTIFICATIONS, 0, primaryUserId);
++
++        NotificationBackend.AppRow appRow = new NotificationBackend.AppRow();
++        NotificationChannel channel = mock(NotificationChannel.class);
++        mController.onResume(appRow, channel, null, null);
++
++        RestrictedListPreference pref = mock(RestrictedListPreference.class);
++        mController.updateState(pref);
++
++        ArgumentCaptor<CharSequence[]> argumentCaptor =
++                ArgumentCaptor.forClass(CharSequence[].class);
++        verify(pref, times(1)).setEntryValues(argumentCaptor.capture());
++        assertFalse(toStringList(argumentCaptor.getValue())
++                .contains(String.valueOf(VISIBILITY_NO_OVERRIDE)));
++        assertFalse(toStringList(argumentCaptor.getValue())
++                .contains(String.valueOf(VISIBILITY_PRIVATE)));
++    }
++
+     @Test
+     public void testUpdateState_noPrivateLockScreenNotificationsGlobally() {
+         Settings.Secure.putInt(mContext.getContentResolver(),
+-- 
+2.17.1
+

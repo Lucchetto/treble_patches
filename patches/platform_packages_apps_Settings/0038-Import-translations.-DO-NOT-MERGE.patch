@@ -1,0 +1,133 @@
+From 85c82c5681d441eef5a8c133e20140dcf7bfca9a Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Wed, 12 Sep 2018 12:07:42 -0700
+Subject: [PATCH 38/71] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: I6f84ca21470e0f9224b2c038b25757f70ff25c8a
+---
+ res/values-b+sr+Latn/strings.xml |  2 +-
+ res/values-es-rUS/strings.xml    |  2 +-
+ res/values-fr/strings.xml        | 20 ++++++++++----------
+ res/values-hi/strings.xml        |  2 +-
+ res/values-ko/strings.xml        |  6 +++---
+ res/values-sr/strings.xml        |  2 +-
+ 6 files changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/res/values-b+sr+Latn/strings.xml b/res/values-b+sr+Latn/strings.xml
+index 3fee572e71..3629a33de0 100644
+--- a/res/values-b+sr+Latn/strings.xml
++++ b/res/values-b+sr+Latn/strings.xml
+@@ -3537,7 +3537,7 @@
+     <string name="filter_notif_low_channels" msgid="4128487387390004604">"Kategorije: nizak prioritet"</string>
+     <string name="filter_notif_blocked_channels" msgid="5880190882221644289">"Kategorije: isključeno"</string>
+     <string name="filter_notif_dnd_channels" msgid="1817930848881696728">"Kategorije: menja režim „Ne uznemiravaj“"</string>
+-    <string name="advanced_apps" msgid="4812975097124803873">"Napredna"</string>
++    <string name="advanced_apps" msgid="4812975097124803873">"Napredno"</string>
+     <string name="configure_apps" msgid="6685680790825882528">"Konfigurišite aplikacije"</string>
+     <string name="unknown_app" msgid="5275921288718717656">"Nepoznata aplikacija"</string>
+     <string name="app_permissions" msgid="4148222031991883874">"Dozvole za aplikacije"</string>
+diff --git a/res/values-es-rUS/strings.xml b/res/values-es-rUS/strings.xml
+index 743cef4a2a..9a1da1777a 100644
+--- a/res/values-es-rUS/strings.xml
++++ b/res/values-es-rUS/strings.xml
+@@ -3527,7 +3527,7 @@
+     <string name="permit_usage_access" msgid="4012876269445832300">"Apps con acceso de uso"</string>
+     <string name="app_usage_preference" msgid="7065701732733134991">"Preferencias de uso de la aplicación"</string>
+     <string name="time_spent_in_app_pref_title" msgid="649419747540933845">"Tiempo que se usó la app"</string>
+-    <string name="usage_access_description" msgid="1352111094596416795">"El acceso a los datos de uso permite que una aplicación realice un seguimiento de qué otras aplicaciones usas y de la frecuencia con que las usas, además de conocer tu proveedor, configuración de idioma y otros detalles."</string>
++    <string name="usage_access_description" msgid="1352111094596416795">"El acceso a los datos de uso permite que una aplicación controle qué otras aplicaciones utilizas y con qué frecuencia, así como el operador, la configuración de idioma y otros detalles."</string>
+     <string name="memory_settings_title" msgid="7490541005204254222">"Memoria"</string>
+     <string name="memory_details_title" msgid="8542565326053693320">"Detalles de la memoria"</string>
+     <string name="always_running" msgid="6042448320077429656">"Siempre en ejecución (<xliff:g id="PERCENTAGE">%s</xliff:g>)"</string>
+diff --git a/res/values-fr/strings.xml b/res/values-fr/strings.xml
+index 37ada79c39..bd235ed5a2 100644
+--- a/res/values-fr/strings.xml
++++ b/res/values-fr/strings.xml
+@@ -114,7 +114,7 @@
+     <string name="bluetooth_disconnect_all_profiles" product="device" msgid="3995834526315103965">"Votre appareil va se déconnecter de \"<xliff:g id="DEVICE_NAME">%1$s</xliff:g>\"."</string>
+     <string name="bluetooth_disconnect_dialog_ok" msgid="3308586619539119106">"Déconnecter"</string>
+     <string name="bluetooth_empty_list_user_restricted" msgid="603521233563983689">"Vous n\'êtes pas autorisé à modifier les paramètres Bluetooth."</string>
+-    <string name="bluetooth_pairing_pref_title" msgid="7429413067477968637">"Associer nouvel app."</string>
++    <string name="bluetooth_pairing_pref_title" msgid="7429413067477968637">"Associer un appareil"</string>
+     <string name="bluetooth_is_visible_message" msgid="6222396240776971862">"Lorsque le Bluetooth est activé, votre <xliff:g id="DEVICE_NAME">%1$s</xliff:g> est visible par les appareils à proximité."</string>
+     <string name="bluetooth_footer_mac_message" product="default" msgid="1109366350000220283">"Adresse Bluetooth du téléphone : <xliff:g id="BLUETOOTH_MAC_ADDRESS">%1$s</xliff:g>"</string>
+     <string name="bluetooth_footer_mac_message" product="tablet" msgid="6807634484499166486">"Adresse Bluetooth de la tablette : <xliff:g id="BLUETOOTH_MAC_ADDRESS">%1$s</xliff:g>"</string>
+@@ -1372,20 +1372,20 @@
+     <string name="storage_wizard_move_progress_body" msgid="7802577486578105609">"Ne retirez pas la mémoire de stockage \"<xliff:g id="NAME">^1</xliff:g>\" pendant le déplacement. \n\nL\'application \"<xliff:g id="APP">^2</xliff:g>\" ne sera pas disponible jusqu\'à la fin de l\'opération."</string>
+     <string name="storage_wizard_move_progress_cancel" msgid="542047237524588792">"Annuler le déplacement"</string>
+     <string name="storage_wizard_slow_body" msgid="8010127667184768025">"Ce <xliff:g id="NAME_0">^1</xliff:g> ne semble pas rapide. \n\nVous pouvez continuer, mais les applis déplacées vers cet emplacement risquent de se bloquer et les transferts de données pourront prendre du temps. \n\nVeuillez utiliser un <xliff:g id="NAME_1">^1</xliff:g> plus rapide pour de meilleures performances."</string>
+-    <string name="storage_wizard_init_v2_title" msgid="8858395869710288372">"Comment utiliserez-vous <xliff:g id="NAME">^1</xliff:g> ?"</string>
++    <string name="storage_wizard_init_v2_title" msgid="8858395869710288372">"Comment utiliserez-vous ce support (<xliff:g id="NAME">^1</xliff:g>) ?"</string>
+     <string name="storage_wizard_init_v2_internal_title" product="tablet" msgid="4315585580670552654">"Utiliser en stockage tabl. supp."</string>
+-    <string name="storage_wizard_init_v2_internal_summary" product="tablet" msgid="570443086512059390">"Pour applis/fichiers/contenus multimédias sur cette tabl. uniq."</string>
++    <string name="storage_wizard_init_v2_internal_summary" product="tablet" msgid="570443086512059390">"Pour les applis, fichiers, contenus multimédias sur cette tablette uniquement"</string>
+     <string name="storage_wizard_init_v2_internal_action" product="tablet" msgid="7760758592993284143">"Stockage sur la tablette"</string>
+-    <string name="storage_wizard_init_v2_internal_title" product="default" msgid="8373070138732653456">"Utiliser en stockage tél. supp."</string>
+-    <string name="storage_wizard_init_v2_internal_summary" product="default" msgid="685194340141573218">"Pour applis/fichiers/contenus multimédias sur ce tél. uniquement"</string>
++    <string name="storage_wizard_init_v2_internal_title" product="default" msgid="8373070138732653456">"Stockage supplémentaire sur le téléphone"</string>
++    <string name="storage_wizard_init_v2_internal_summary" product="default" msgid="685194340141573218">"Pour les applis, fichiers, contenus multimédias sur ce téléphone uniquement"</string>
+     <string name="storage_wizard_init_v2_internal_action" product="default" msgid="904425171564310150">"Stockage sur le téléphone"</string>
+     <string name="storage_wizard_init_v2_or" msgid="1958295749349454436">"Ou"</string>
+-    <string name="storage_wizard_init_v2_external_title" msgid="3565348221712759463">"Utiliser comme mémoire externe"</string>
+-    <string name="storage_wizard_init_v2_external_summary" msgid="801198071793584445">"Pour transférer fichiers/contenus multimédias entre appareils"</string>
+-    <string name="storage_wizard_init_v2_external_action" msgid="8662451480642784031">"Périphérique de stockage externe"</string>
++    <string name="storage_wizard_init_v2_external_title" msgid="3565348221712759463">"Stockage externe"</string>
++    <string name="storage_wizard_init_v2_external_summary" msgid="801198071793584445">"Pour transférer des fichiers et contenus multimédias entre des appareils"</string>
++    <string name="storage_wizard_init_v2_external_action" msgid="8662451480642784031">"Stockage externe"</string>
+     <string name="storage_wizard_init_v2_later" msgid="1080613420170749130">"Configurer plus tard"</string>
+-    <string name="storage_wizard_format_confirm_v2_title" msgid="5744790239994621663">"Formater le périphérique <xliff:g id="NAME">^1</xliff:g> ?"</string>
+-    <string name="storage_wizard_format_confirm_v2_body" msgid="4614199613500900975">"Le périphérique <xliff:g id="NAME_0">^1</xliff:g> doit être formaté pour stocker des applications, des fichiers et des contenus multimédias. \n\nNotez que le formatage effacera le contenu actuel de \"<xliff:g id="NAME_1">^2</xliff:g>\". Pour éviter toute perte de contenu, sauvegardez-le sur un autre périphérique <xliff:g id="NAME_2">^3</xliff:g> ou sur un autre appareil."</string>
++    <string name="storage_wizard_format_confirm_v2_title" msgid="5744790239994621663">"Formater le support (<xliff:g id="NAME">^1</xliff:g>) ?"</string>
++    <string name="storage_wizard_format_confirm_v2_body" msgid="4614199613500900975">"Le support (<xliff:g id="NAME_0">^1</xliff:g>) doit être formaté pour stocker des applications, des fichiers et des contenus multimédias. \n\nNotez que le formatage effacera le contenu actuel du support (<xliff:g id="NAME_1">^2</xliff:g>). Pour éviter toute perte de contenu, sauvegardez-le sur un autre support (<xliff:g id="NAME_2">^3</xliff:g>) ou sur un autre appareil."</string>
+     <string name="storage_wizard_format_confirm_v2_action" msgid="8258363472135537500">"Formater <xliff:g id="NAME">^1</xliff:g>"</string>
+     <string name="storage_wizard_migrate_v2_title" msgid="31406330052996898">"Déplacer le contenu vers <xliff:g id="NAME">^1</xliff:g> ?"</string>
+     <string name="storage_wizard_migrate_v2_body" product="tablet" msgid="4476553430145054781">"Vous pouvez déplacer des fichiers, des contenus multimédias et certains applications vers le périphérique <xliff:g id="NAME">^1</xliff:g>. \n\nCette opération permet de libérer jusqu\'à <xliff:g id="SIZE">^2</xliff:g> sur votre tablette et dure environ <xliff:g id="DURATION">^3</xliff:g>."</string>
+diff --git a/res/values-hi/strings.xml b/res/values-hi/strings.xml
+index 5fa02baa0c..26c5c115b5 100644
+--- a/res/values-hi/strings.xml
++++ b/res/values-hi/strings.xml
+@@ -968,7 +968,7 @@
+     <string name="wifi_calling_settings_title" msgid="4102921303993404577">"वाई-फ़ाई कॉलिंग"</string>
+     <string name="wifi_calling_suggestion_title" msgid="5702964371483390024">"वाई-फ़ाई के ज़रिए कॉल करने की सुविधा चालू करें"</string>
+     <string name="wifi_calling_suggestion_summary" msgid="1331793267608673739">"वाई-फ़ाई कॉलिंग चालू करके कॉल करने का एक और विकल्प पाएं"</string>
+-    <string name="wifi_calling_mode_title" msgid="2164073796253284289">"कॉल को प्राथमिकता"</string>
++    <string name="wifi_calling_mode_title" msgid="2164073796253284289">"कॉल करने का प्राथमिक तरीका"</string>
+     <string name="wifi_calling_mode_dialog_title" msgid="8149690312199253909">"वाई-फ़ाई कॉलिंग मोड"</string>
+     <string name="wifi_calling_roaming_mode_title" msgid="1565039047187685115">"रोमिंग की प्राथमिकताएं"</string>
+     <!-- no translation found for wifi_calling_roaming_mode_summary (8642014873060687717) -->
+diff --git a/res/values-ko/strings.xml b/res/values-ko/strings.xml
+index 1994311aaf..038995dc39 100644
+--- a/res/values-ko/strings.xml
++++ b/res/values-ko/strings.xml
+@@ -2814,9 +2814,9 @@
+     <string name="user_adding_new_user" msgid="1521674650874241407">"새 사용자 추가 중..."</string>
+     <string name="user_delete_user_description" msgid="3158592592118767056">"사용자 삭제"</string>
+     <string name="user_delete_button" msgid="5131259553799403201">"홈 화면에서 삭제"</string>
+-    <string name="user_guest" msgid="8475274842845401871">"손님"</string>
+-    <string name="user_exit_guest_title" msgid="5613997155527410675">"손님 삭제"</string>
+-    <string name="user_exit_guest_confirm_title" msgid="3405527634738147409">"손님을 삭제하시겠습니까?"</string>
++    <string name="user_guest" msgid="8475274842845401871">"게스트"</string>
++    <string name="user_exit_guest_title" msgid="5613997155527410675">"게스트 삭제"</string>
++    <string name="user_exit_guest_confirm_title" msgid="3405527634738147409">"게스트를 삭제하시겠습니까?"</string>
+     <string name="user_exit_guest_confirm_message" msgid="2194459201944413257">"이 세션에 있는 모든 앱과 데이터가 삭제됩니다."</string>
+     <string name="user_exit_guest_dialog_remove" msgid="6351370829952745350">"삭제"</string>
+     <string name="user_enable_calling" msgid="5128605672081602348">"통화 기능 사용"</string>
+diff --git a/res/values-sr/strings.xml b/res/values-sr/strings.xml
+index 0b1d6241f9..70c8c0d37f 100644
+--- a/res/values-sr/strings.xml
++++ b/res/values-sr/strings.xml
+@@ -3537,7 +3537,7 @@
+     <string name="filter_notif_low_channels" msgid="4128487387390004604">"Категорије: низак приоритет"</string>
+     <string name="filter_notif_blocked_channels" msgid="5880190882221644289">"Категорије: искључено"</string>
+     <string name="filter_notif_dnd_channels" msgid="1817930848881696728">"Категорије: мења режим „Не узнемиравај“"</string>
+-    <string name="advanced_apps" msgid="4812975097124803873">"Напредна"</string>
++    <string name="advanced_apps" msgid="4812975097124803873">"Напредно"</string>
+     <string name="configure_apps" msgid="6685680790825882528">"Конфигуришите апликације"</string>
+     <string name="unknown_app" msgid="5275921288718717656">"Непозната апликација"</string>
+     <string name="app_permissions" msgid="4148222031991883874">"Дозволе за апликације"</string>
+-- 
+2.17.1
+

@@ -1,0 +1,879 @@
+From 0210310169b9219b9e2d7acf75c6e85be67bd240 Mon Sep 17 00:00:00 2001
+From: Adam Lesinski <adamlesinski@google.com>
+Date: Tue, 23 Jan 2018 03:17:01 -0800
+Subject: [PATCH 069/306] Revert "Make idiomatic use of ApkAssets and
+ AssetManager"
+
+This reverts commit c857766ca5aa37df0833c816922e6b3b85a742f9.
+(cherry picked from commit 68d10d00a52be904766d69acda98bc934e768e7f)
+
+Change-Id: Ib817de28884adceb4357f3d93d55d7421d155fae
+---
+ core/java/android/app/Activity.java           |   2 -
+ core/java/android/app/ResourcesManager.java   | 198 +++---------------
+ .../android/content/pm/PackageParser.java     |  45 ++--
+ .../pm/split/DefaultSplitAssetLoader.java     |  75 ++++---
+ .../pm/split/SplitAssetDependencyLoader.java  |  88 ++++----
+ core/java/android/content/res/ApkAssets.java  |  37 +++-
+ .../android/content/res/AssetManager.java     |  42 +---
+ 7 files changed, 175 insertions(+), 312 deletions(-)
+
+diff --git a/core/java/android/app/Activity.java b/core/java/android/app/Activity.java
+index a6a1f434c41..0a5b848e622 100644
+--- a/core/java/android/app/Activity.java
++++ b/core/java/android/app/Activity.java
+@@ -6303,8 +6303,6 @@ public class Activity extends ContextThemeWrapper
+         } else {
+             writer.print(prefix); writer.println("No AutofillManager");
+         }
+-
+-        ResourcesManager.getInstance().dump(prefix, writer);
+     }
+ 
+     /**
+diff --git a/core/java/android/app/ResourcesManager.java b/core/java/android/app/ResourcesManager.java
+index b96e028076e..fb11272d7e6 100644
+--- a/core/java/android/app/ResourcesManager.java
++++ b/core/java/android/app/ResourcesManager.java
+@@ -21,7 +21,6 @@ import static android.app.ActivityThread.DEBUG_CONFIGURATION;
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
+ import android.content.pm.ActivityInfo;
+-import android.content.res.ApkAssets;
+ import android.content.res.AssetManager;
+ import android.content.res.CompatResources;
+ import android.content.res.CompatibilityInfo;
+@@ -35,7 +34,6 @@ import android.os.Trace;
+ import android.util.ArrayMap;
+ import android.util.DisplayMetrics;
+ import android.util.Log;
+-import android.util.LruCache;
+ import android.util.Pair;
+ import android.util.Slog;
+ import android.view.Display;
+@@ -43,13 +41,9 @@ import android.view.DisplayAdjustments;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+ import com.android.internal.util.ArrayUtils;
+-import com.android.internal.util.IndentingPrintWriter;
+ 
+-import java.io.IOException;
+-import java.io.PrintWriter;
+ import java.lang.ref.WeakReference;
+ import java.util.ArrayList;
+-import java.util.Collection;
+ import java.util.Objects;
+ import java.util.WeakHashMap;
+ import java.util.function.Predicate;
+@@ -65,7 +59,12 @@ public class ResourcesManager {
+      * Predicate that returns true if a WeakReference is gc'ed.
+      */
+     private static final Predicate<WeakReference<Resources>> sEmptyReferencePredicate =
+-            weakRef -> weakRef == null || weakRef.get() == null;
++            new Predicate<WeakReference<Resources>>() {
++                @Override
++                public boolean test(WeakReference<Resources> weakRef) {
++                    return weakRef == null || weakRef.get() == null;
++                }
++            };
+ 
+     /**
+      * The global compatibility settings.
+@@ -90,48 +89,6 @@ public class ResourcesManager {
+      */
+     private final ArrayList<WeakReference<Resources>> mResourceReferences = new ArrayList<>();
+ 
+-    private static class ApkKey {
+-        public final String path;
+-        public final boolean sharedLib;
+-        public final boolean overlay;
+-
+-        ApkKey(String path, boolean sharedLib, boolean overlay) {
+-            this.path = path;
+-            this.sharedLib = sharedLib;
+-            this.overlay = overlay;
+-        }
+-
+-        @Override
+-        public int hashCode() {
+-            int result = 1;
+-            result = 31 * result + this.path.hashCode();
+-            result = 31 * result + Boolean.hashCode(this.sharedLib);
+-            result = 31 * result + Boolean.hashCode(this.overlay);
+-            return result;
+-        }
+-
+-        @Override
+-        public boolean equals(Object obj) {
+-            if (!(obj instanceof ApkKey)) {
+-                return false;
+-            }
+-            ApkKey other = (ApkKey) obj;
+-            return this.path.equals(other.path) && this.sharedLib == other.sharedLib
+-                    && this.overlay == other.overlay;
+-        }
+-    }
+-
+-    /**
+-     * The ApkAssets we are caching and intend to hold strong references to.
+-     */
+-    private final LruCache<ApkKey, ApkAssets> mLoadedApkAssets = new LruCache<>(15);
+-
+-    /**
+-     * The ApkAssets that are being referenced in the wild that we can reuse, even if they aren't
+-     * in our LRU cache. Bonus resources :)
+-     */
+-    private final ArrayMap<ApkKey, WeakReference<ApkAssets>> mCachedApkAssets = new ArrayMap<>();
+-
+     /**
+      * Resources and base configuration override associated with an Activity.
+      */
+@@ -303,41 +260,6 @@ public class ResourcesManager {
+         }
+     }
+ 
+-    private @NonNull ApkAssets loadApkAssets(String path, boolean sharedLib, boolean overlay)
+-            throws IOException {
+-        final ApkKey newKey = new ApkKey(path, sharedLib, overlay);
+-        ApkAssets apkAssets = mLoadedApkAssets.get(newKey);
+-        if (apkAssets != null) {
+-            return apkAssets;
+-        }
+-
+-        // Optimistically check if this ApkAssets exists somewhere else.
+-        final WeakReference<ApkAssets> apkAssetsRef = mCachedApkAssets.get(newKey);
+-        if (apkAssetsRef != null) {
+-            apkAssets = apkAssetsRef.get();
+-            if (apkAssets != null) {
+-                mLoadedApkAssets.put(newKey, apkAssets);
+-                return apkAssets;
+-            } else {
+-                // Clean up the reference.
+-                mCachedApkAssets.remove(newKey);
+-            }
+-        }
+-
+-        // We must load this from disk.
+-        if (overlay) {
+-            final String idmapPath = "/data/resource-cache/"
+-                    + path.substring(1).replace('/', '@')
+-                    + "@idmap";
+-            apkAssets = ApkAssets.loadOverlayFromPath(idmapPath, false /*system*/);
+-        } else {
+-            apkAssets = ApkAssets.loadFromPath(path, false /*system*/, sharedLib);
+-        }
+-        mLoadedApkAssets.put(newKey, apkAssets);
+-        mCachedApkAssets.put(newKey, new WeakReference<>(apkAssets));
+-        return apkAssets;
+-    }
+-
+     /**
+      * Creates an AssetManager from the paths within the ResourcesKey.
+      *
+@@ -348,15 +270,13 @@ public class ResourcesManager {
+     */
+     @VisibleForTesting
+     protected @Nullable AssetManager createAssetManager(@NonNull final ResourcesKey key) {
+-        final ArrayList<ApkAssets> apkAssets = new ArrayList<>();
++        AssetManager assets = new AssetManager();
+ 
+         // resDir can be null if the 'android' package is creating a new Resources object.
+         // This is fine, since each AssetManager automatically loads the 'android' package
+         // already.
+         if (key.mResDir != null) {
+-            try {
+-                apkAssets.add(loadApkAssets(key.mResDir, false /*sharedLib*/, false /*overlay*/));
+-            } catch (IOException e) {
++            if (assets.addAssetPath(key.mResDir) == 0) {
+                 Log.e(TAG, "failed to add asset path " + key.mResDir);
+                 return null;
+             }
+@@ -364,10 +284,7 @@ public class ResourcesManager {
+ 
+         if (key.mSplitResDirs != null) {
+             for (final String splitResDir : key.mSplitResDirs) {
+-                try {
+-                    apkAssets.add(loadApkAssets(splitResDir, false /*sharedLib*/,
+-                            false /*overlay*/));
+-                } catch (IOException e) {
++                if (assets.addAssetPath(splitResDir) == 0) {
+                     Log.e(TAG, "failed to add split asset path " + splitResDir);
+                     return null;
+                 }
+@@ -376,13 +293,7 @@ public class ResourcesManager {
+ 
+         if (key.mOverlayDirs != null) {
+             for (final String idmapPath : key.mOverlayDirs) {
+-                try {
+-                    apkAssets.add(loadApkAssets(idmapPath, false /*sharedLib*/, true /*overlay*/));
+-                } catch (IOException e) {
+-                    Log.w(TAG, "failed to add overlay path " + idmapPath);
+-
+-                    // continue.
+-                }
++                assets.addOverlayPath(idmapPath);
+             }
+         }
+ 
+@@ -391,77 +302,16 @@ public class ResourcesManager {
+                 if (libDir.endsWith(".apk")) {
+                     // Avoid opening files we know do not have resources,
+                     // like code-only .jar files.
+-                    try {
+-                        apkAssets.add(loadApkAssets(libDir, true /*sharedLib*/, false /*overlay*/));
+-                    } catch (IOException e) {
++                    if (assets.addAssetPathAsSharedLibrary(libDir) == 0) {
+                         Log.w(TAG, "Asset path '" + libDir +
+                                 "' does not exist or contains no resources.");
+-
+-                        // continue.
+                     }
+                 }
+             }
+         }
+-
+-        AssetManager assets = new AssetManager();
+-        assets.setApkAssets(apkAssets.toArray(new ApkAssets[apkAssets.size()]),
+-                false /*invalidateCaches*/);
+         return assets;
+     }
+ 
+-    private static <T> int countLiveReferences(Collection<WeakReference<T>> collection) {
+-        int count = 0;
+-        for (WeakReference<T> ref : collection) {
+-            final T value = ref != null ? ref.get() : null;
+-            if (value != null) {
+-                count++;
+-            }
+-        }
+-        return count;
+-    }
+-
+-    /**
+-     * @hide
+-     */
+-    public void dump(String prefix, PrintWriter printWriter) {
+-        synchronized (this) {
+-            IndentingPrintWriter pw = new IndentingPrintWriter(printWriter, "  ");
+-            for (int i = 0; i < prefix.length() / 2; i++) {
+-                pw.increaseIndent();
+-            }
+-
+-            pw.println("ResourcesManager:");
+-            pw.increaseIndent();
+-            pw.print("cached apks: total=");
+-            pw.print(mLoadedApkAssets.size());
+-            pw.print(" created=");
+-            pw.print(mLoadedApkAssets.createCount());
+-            pw.print(" evicted=");
+-            pw.print(mLoadedApkAssets.evictionCount());
+-            pw.print(" hit=");
+-            pw.print(mLoadedApkAssets.hitCount());
+-            pw.print(" miss=");
+-            pw.print(mLoadedApkAssets.missCount());
+-            pw.print(" max=");
+-            pw.print(mLoadedApkAssets.maxSize());
+-            pw.println();
+-
+-            pw.print("total apks: ");
+-            pw.println(countLiveReferences(mCachedApkAssets.values()));
+-
+-            pw.print("resources: ");
+-
+-            int references = countLiveReferences(mResourceReferences);
+-            for (ActivityResources activityResources : mActivityResourceReferences.values()) {
+-                references += countLiveReferences(activityResources.activityResources);
+-            }
+-            pw.println(references);
+-
+-            pw.print("resource impls: ");
+-            pw.println(countLiveReferences(mResourceImpls.values()));
+-        }
+-    }
+-
+     private Configuration generateConfig(@NonNull ResourcesKey key, @NonNull DisplayMetrics dm) {
+         Configuration config;
+         final boolean isDefaultDisplay = (key.mDisplayId == Display.DEFAULT_DISPLAY);
+@@ -780,15 +630,27 @@ public class ResourcesManager {
+ 
+                 // We will create the ResourcesImpl object outside of holding this lock.
+             }
++        }
+ 
+-            // If we're here, we didn't find a suitable ResourcesImpl to use, so create one now.
+-            ResourcesImpl resourcesImpl = createResourcesImpl(key);
+-            if (resourcesImpl == null) {
+-                return null;
+-            }
++        // If we're here, we didn't find a suitable ResourcesImpl to use, so create one now.
++        ResourcesImpl resourcesImpl = createResourcesImpl(key);
++        if (resourcesImpl == null) {
++            return null;
++        }
+ 
+-            // Add this ResourcesImpl to the cache.
+-            mResourceImpls.put(key, new WeakReference<>(resourcesImpl));
++        synchronized (this) {
++            ResourcesImpl existingResourcesImpl = findResourcesImplForKeyLocked(key);
++            if (existingResourcesImpl != null) {
++                if (DEBUG) {
++                    Slog.d(TAG, "- got beat! existing impl=" + existingResourcesImpl
++                            + " new impl=" + resourcesImpl);
++                }
++                resourcesImpl.getAssets().close();
++                resourcesImpl = existingResourcesImpl;
++            } else {
++                // Add this ResourcesImpl to the cache.
++                mResourceImpls.put(key, new WeakReference<>(resourcesImpl));
++            }
+ 
+             final Resources resources;
+             if (activityToken != null) {
+diff --git a/core/java/android/content/pm/PackageParser.java b/core/java/android/content/pm/PackageParser.java
+index 68aaaa339b0..850927400aa 100644
+--- a/core/java/android/content/pm/PackageParser.java
++++ b/core/java/android/content/pm/PackageParser.java
+@@ -1292,6 +1292,24 @@ public class PackageParser {
+         }
+     }
+ 
++    private static int loadApkIntoAssetManager(AssetManager assets, String apkPath, int flags)
++            throws PackageParserException {
++        if ((flags & PARSE_MUST_BE_APK) != 0 && !isApkPath(apkPath)) {
++            throw new PackageParserException(INSTALL_PARSE_FAILED_NOT_APK,
++                    "Invalid package file: " + apkPath);
++        }
++
++        // The AssetManager guarantees uniqueness for asset paths, so if this asset path
++        // already exists in the AssetManager, addAssetPath will only return the cookie
++        // assigned to it.
++        int cookie = assets.addAssetPath(apkPath);
++        if (cookie == 0) {
++            throw new PackageParserException(INSTALL_PARSE_FAILED_BAD_MANIFEST,
++                    "Failed adding asset path: " + apkPath);
++        }
++        return cookie;
++    }
++
+     private Package parseBaseApk(File apkFile, AssetManager assets, int flags)
+             throws PackageParserException {
+         final String apkPath = apkFile.getAbsolutePath();
+@@ -1307,15 +1325,13 @@ public class PackageParser {
+ 
+         if (DEBUG_JAR) Slog.d(TAG, "Scanning base APK: " + apkPath);
+ 
++        final int cookie = loadApkIntoAssetManager(assets, apkPath, flags);
++
++        Resources res = null;
+         XmlResourceParser parser = null;
+         try {
+-            final int cookie = assets.findCookieForPath(apkPath);
+-            if (cookie == 0) {
+-                throw new PackageParserException(INSTALL_PARSE_FAILED_BAD_MANIFEST,
+-                        "Failed adding asset path: " + apkPath);
+-            }
++            res = new Resources(assets, mMetrics, null);
+             parser = assets.openXmlResourceParser(cookie, ANDROID_MANIFEST_FILENAME);
+-            final Resources res = new Resources(assets, mMetrics, null);
+ 
+             final String[] outError = new String[1];
+             final Package pkg = parseBaseApk(apkPath, res, parser, flags, outError);
+@@ -1350,18 +1366,15 @@ public class PackageParser {
+ 
+         if (DEBUG_JAR) Slog.d(TAG, "Scanning split APK: " + apkPath);
+ 
++        final int cookie = loadApkIntoAssetManager(assets, apkPath, flags);
++
+         final Resources res;
+         XmlResourceParser parser = null;
+         try {
+-            // This must always succeed, as the path has been added to the AssetManager before.
+-            final int cookie = assets.findCookieForPath(apkPath);
+-            if (cookie == 0) {
+-                throw new PackageParserException(INSTALL_PARSE_FAILED_BAD_MANIFEST,
+-                        "Failed adding asset path: " + apkPath);
+-            }
+-
+-            parser = assets.openXmlResourceParser(cookie, ANDROID_MANIFEST_FILENAME);
+             res = new Resources(assets, mMetrics, null);
++            assets.setConfiguration(0, 0, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++                    Build.VERSION.RESOURCES_SDK_INT);
++            parser = assets.openXmlResourceParser(cookie, ANDROID_MANIFEST_FILENAME);
+ 
+             final String[] outError = new String[1];
+             pkg = parseSplitApk(pkg, res, parser, flags, splitIndex, outError);
+@@ -1563,9 +1576,9 @@ public class PackageParser {
+             int flags) throws PackageParserException {
+         final String apkPath = fd != null ? debugPathName : apkFile.getAbsolutePath();
+ 
++        ApkAssets apkAssets = null;
+         XmlResourceParser parser = null;
+         try {
+-            final ApkAssets apkAssets;
+             try {
+                 apkAssets = fd != null
+                         ? ApkAssets.loadFromFd(fd, debugPathName, false, false)
+@@ -1601,7 +1614,7 @@ public class PackageParser {
+                     "Failed to parse " + apkPath, e);
+         } finally {
+             IoUtils.closeQuietly(parser);
+-            // TODO(b/72056911): Implement and call close() on ApkAssets.
++            IoUtils.closeQuietly(apkAssets);
+         }
+     }
+ 
+diff --git a/core/java/android/content/pm/split/DefaultSplitAssetLoader.java b/core/java/android/content/pm/split/DefaultSplitAssetLoader.java
+index 9e3a8f48996..99eb4702d32 100644
+--- a/core/java/android/content/pm/split/DefaultSplitAssetLoader.java
++++ b/core/java/android/content/pm/split/DefaultSplitAssetLoader.java
+@@ -15,13 +15,10 @@
+  */
+ package android.content.pm.split;
+ 
+-import static android.content.pm.PackageManager.INSTALL_FAILED_INVALID_APK;
++import static android.content.pm.PackageManager.INSTALL_PARSE_FAILED_BAD_MANIFEST;
+ import static android.content.pm.PackageManager.INSTALL_PARSE_FAILED_NOT_APK;
+ 
+ import android.content.pm.PackageParser;
+-import android.content.pm.PackageParser.PackageParserException;
+-import android.content.pm.PackageParser.ParseFlags;
+-import android.content.res.ApkAssets;
+ import android.content.res.AssetManager;
+ import android.os.Build;
+ 
+@@ -29,8 +26,6 @@ import com.android.internal.util.ArrayUtils;
+ 
+ import libcore.io.IoUtils;
+ 
+-import java.io.IOException;
+-
+ /**
+  * Loads the base and split APKs into a single AssetManager.
+  * @hide
+@@ -38,66 +33,68 @@ import java.io.IOException;
+ public class DefaultSplitAssetLoader implements SplitAssetLoader {
+     private final String mBaseCodePath;
+     private final String[] mSplitCodePaths;
+-    private final @ParseFlags int mFlags;
++    private final int mFlags;
++
+     private AssetManager mCachedAssetManager;
+ 
+-    public DefaultSplitAssetLoader(PackageParser.PackageLite pkg, @ParseFlags int flags) {
++    public DefaultSplitAssetLoader(PackageParser.PackageLite pkg, int flags) {
+         mBaseCodePath = pkg.baseCodePath;
+         mSplitCodePaths = pkg.splitCodePaths;
+         mFlags = flags;
+     }
+ 
+-    private static ApkAssets loadApkAssets(String path, @ParseFlags int flags)
+-            throws PackageParserException {
+-        if ((flags & PackageParser.PARSE_MUST_BE_APK) != 0 && !PackageParser.isApkPath(path)) {
+-            throw new PackageParserException(INSTALL_PARSE_FAILED_NOT_APK,
+-                    "Invalid package file: " + path);
++    private static void loadApkIntoAssetManager(AssetManager assets, String apkPath, int flags)
++            throws PackageParser.PackageParserException {
++        if ((flags & PackageParser.PARSE_MUST_BE_APK) != 0 && !PackageParser.isApkPath(apkPath)) {
++            throw new PackageParser.PackageParserException(INSTALL_PARSE_FAILED_NOT_APK,
++                    "Invalid package file: " + apkPath);
+         }
+ 
+-        try {
+-            return ApkAssets.loadFromPath(path);
+-        } catch (IOException e) {
+-            throw new PackageParserException(INSTALL_FAILED_INVALID_APK,
+-                    "Failed to load APK at path " + path, e);
++        if (assets.addAssetPath(apkPath) == 0) {
++            throw new PackageParser.PackageParserException(
++                    INSTALL_PARSE_FAILED_BAD_MANIFEST,
++                    "Failed adding asset path: " + apkPath);
+         }
+     }
+ 
+     @Override
+-    public AssetManager getBaseAssetManager() throws PackageParserException {
++    public AssetManager getBaseAssetManager() throws PackageParser.PackageParserException {
+         if (mCachedAssetManager != null) {
+             return mCachedAssetManager;
+         }
+ 
+-        ApkAssets[] apkAssets = new ApkAssets[(mSplitCodePaths != null
+-                ? mSplitCodePaths.length : 0) + 1];
+-
+-        // Load the base.
+-        int splitIdx = 0;
+-        apkAssets[splitIdx++] = loadApkAssets(mBaseCodePath, mFlags);
++        AssetManager assets = new AssetManager();
++        try {
++            assets.setConfiguration(0, 0, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++                    Build.VERSION.RESOURCES_SDK_INT);
++            loadApkIntoAssetManager(assets, mBaseCodePath, mFlags);
++
++            if (!ArrayUtils.isEmpty(mSplitCodePaths)) {
++                for (String apkPath : mSplitCodePaths) {
++                    loadApkIntoAssetManager(assets, apkPath, mFlags);
++                }
++            }
+ 
+-        // Load any splits.
+-        if (!ArrayUtils.isEmpty(mSplitCodePaths)) {
+-            for (String apkPath : mSplitCodePaths) {
+-                apkAssets[splitIdx++] = loadApkAssets(apkPath, mFlags);
++            mCachedAssetManager = assets;
++            assets = null;
++            return mCachedAssetManager;
++        } finally {
++            if (assets != null) {
++                IoUtils.closeQuietly(assets);
+             }
+         }
+-
+-        AssetManager assets = new AssetManager();
+-        assets.setConfiguration(0, 0, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-                Build.VERSION.RESOURCES_SDK_INT);
+-        assets.setApkAssets(apkAssets, false /*invalidateCaches*/);
+-
+-        mCachedAssetManager = assets;
+-        return mCachedAssetManager;
+     }
+ 
+     @Override
+-    public AssetManager getSplitAssetManager(int splitIdx) throws PackageParserException {
++    public AssetManager getSplitAssetManager(int splitIdx)
++            throws PackageParser.PackageParserException {
+         return getBaseAssetManager();
+     }
+ 
+     @Override
+     public void close() throws Exception {
+-        IoUtils.closeQuietly(mCachedAssetManager);
++        if (mCachedAssetManager != null) {
++            IoUtils.closeQuietly(mCachedAssetManager);
++        }
+     }
+ }
+diff --git a/core/java/android/content/pm/split/SplitAssetDependencyLoader.java b/core/java/android/content/pm/split/SplitAssetDependencyLoader.java
+index 58eaabfa62f..16023f0d9d9 100644
+--- a/core/java/android/content/pm/split/SplitAssetDependencyLoader.java
++++ b/core/java/android/content/pm/split/SplitAssetDependencyLoader.java
+@@ -15,21 +15,17 @@
+  */
+ package android.content.pm.split;
+ 
++import static android.content.pm.PackageManager.INSTALL_PARSE_FAILED_BAD_MANIFEST;
+ import static android.content.pm.PackageManager.INSTALL_PARSE_FAILED_NOT_APK;
+ 
+ import android.annotation.NonNull;
+-import android.content.pm.PackageManager;
+ import android.content.pm.PackageParser;
+-import android.content.pm.PackageParser.PackageParserException;
+-import android.content.pm.PackageParser.ParseFlags;
+-import android.content.res.ApkAssets;
+ import android.content.res.AssetManager;
+ import android.os.Build;
+ import android.util.SparseArray;
+ 
+ import libcore.io.IoUtils;
+ 
+-import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ 
+@@ -38,15 +34,17 @@ import java.util.Collections;
+  * is to be used when an application opts-in to isolated split loading.
+  * @hide
+  */
+-public class SplitAssetDependencyLoader extends SplitDependencyLoader<PackageParserException>
++public class SplitAssetDependencyLoader
++        extends SplitDependencyLoader<PackageParser.PackageParserException>
+         implements SplitAssetLoader {
+     private final String[] mSplitPaths;
+-    private final @ParseFlags int mFlags;
+-    private final ApkAssets[][] mCachedSplitApks;
+-    private final AssetManager[] mCachedAssetManagers;
++    private final int mFlags;
++
++    private String[][] mCachedPaths;
++    private AssetManager[] mCachedAssetManagers;
+ 
+     public SplitAssetDependencyLoader(PackageParser.PackageLite pkg,
+-            SparseArray<int[]> dependencies, @ParseFlags int flags) {
++            SparseArray<int[]> dependencies, int flags) {
+         super(dependencies);
+ 
+         // The base is inserted into index 0, so we need to shift all the splits by 1.
+@@ -55,7 +53,7 @@ public class SplitAssetDependencyLoader extends SplitDependencyLoader<PackagePar
+         System.arraycopy(pkg.splitCodePaths, 0, mSplitPaths, 1, pkg.splitCodePaths.length);
+ 
+         mFlags = flags;
+-        mCachedSplitApks = new ApkAssets[mSplitPaths.length][];
++        mCachedPaths = new String[mSplitPaths.length][];
+         mCachedAssetManagers = new AssetManager[mSplitPaths.length];
+     }
+ 
+@@ -64,60 +62,58 @@ public class SplitAssetDependencyLoader extends SplitDependencyLoader<PackagePar
+         return mCachedAssetManagers[splitIdx] != null;
+     }
+ 
+-    private static ApkAssets loadApkAssets(String path, @ParseFlags int flags)
+-            throws PackageParserException {
+-        if ((flags & PackageParser.PARSE_MUST_BE_APK) != 0 && !PackageParser.isApkPath(path)) {
+-            throw new PackageParserException(INSTALL_PARSE_FAILED_NOT_APK,
+-                    "Invalid package file: " + path);
+-        }
+-
++    private static AssetManager createAssetManagerWithPaths(String[] assetPaths, int flags)
++            throws PackageParser.PackageParserException {
++        final AssetManager assets = new AssetManager();
+         try {
+-            return ApkAssets.loadFromPath(path);
+-        } catch (IOException e) {
+-            throw new PackageParserException(PackageManager.INSTALL_FAILED_INVALID_APK,
+-                    "Failed to load APK at path " + path, e);
++            assets.setConfiguration(0, 0, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++                    Build.VERSION.RESOURCES_SDK_INT);
++
++            for (String assetPath : assetPaths) {
++                if ((flags & PackageParser.PARSE_MUST_BE_APK) != 0 &&
++                        !PackageParser.isApkPath(assetPath)) {
++                    throw new PackageParser.PackageParserException(INSTALL_PARSE_FAILED_NOT_APK,
++                            "Invalid package file: " + assetPath);
++                }
++
++                if (assets.addAssetPath(assetPath) == 0) {
++                    throw new PackageParser.PackageParserException(
++                            INSTALL_PARSE_FAILED_BAD_MANIFEST,
++                            "Failed adding asset path: " + assetPath);
++                }
++            }
++            return assets;
++        } catch (Throwable e) {
++            IoUtils.closeQuietly(assets);
++            throw e;
+         }
+     }
+ 
+-    private static AssetManager createAssetManagerWithAssets(ApkAssets[] apkAssets) {
+-        final AssetManager assets = new AssetManager();
+-        assets.setConfiguration(0, 0, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-                Build.VERSION.RESOURCES_SDK_INT);
+-        assets.setApkAssets(apkAssets, false /*invalidateCaches*/);
+-        return assets;
+-    }
+-
+     @Override
+     protected void constructSplit(int splitIdx, @NonNull int[] configSplitIndices,
+-            int parentSplitIdx) throws PackageParserException {
+-        final ArrayList<ApkAssets> assets = new ArrayList<>();
+-
+-        // Include parent ApkAssets.
++            int parentSplitIdx) throws PackageParser.PackageParserException {
++        final ArrayList<String> assetPaths = new ArrayList<>();
+         if (parentSplitIdx >= 0) {
+-            Collections.addAll(assets, mCachedSplitApks[parentSplitIdx]);
++            Collections.addAll(assetPaths, mCachedPaths[parentSplitIdx]);
+         }
+ 
+-        // Include this ApkAssets.
+-        assets.add(loadApkAssets(mSplitPaths[splitIdx], mFlags));
+-
+-        // Load and include all config splits for this feature.
++        assetPaths.add(mSplitPaths[splitIdx]);
+         for (int configSplitIdx : configSplitIndices) {
+-            assets.add(loadApkAssets(mSplitPaths[configSplitIdx], mFlags));
++            assetPaths.add(mSplitPaths[configSplitIdx]);
+         }
+-
+-        // Cache the results.
+-        mCachedSplitApks[splitIdx] = assets.toArray(new ApkAssets[assets.size()]);
+-        mCachedAssetManagers[splitIdx] = createAssetManagerWithAssets(mCachedSplitApks[splitIdx]);
++        mCachedPaths[splitIdx] = assetPaths.toArray(new String[assetPaths.size()]);
++        mCachedAssetManagers[splitIdx] = createAssetManagerWithPaths(mCachedPaths[splitIdx],
++                mFlags);
+     }
+ 
+     @Override
+-    public AssetManager getBaseAssetManager() throws PackageParserException {
++    public AssetManager getBaseAssetManager() throws PackageParser.PackageParserException {
+         loadDependenciesForSplit(0);
+         return mCachedAssetManagers[0];
+     }
+ 
+     @Override
+-    public AssetManager getSplitAssetManager(int idx) throws PackageParserException {
++    public AssetManager getSplitAssetManager(int idx) throws PackageParser.PackageParserException {
+         // Since we insert the base at position 0, and PackageParser keeps splits separate from
+         // the base, we need to adjust the index.
+         loadDependenciesForSplit(idx + 1);
+diff --git a/core/java/android/content/res/ApkAssets.java b/core/java/android/content/res/ApkAssets.java
+index fd664bc731d..b087c48d8d4 100644
+--- a/core/java/android/content/res/ApkAssets.java
++++ b/core/java/android/content/res/ApkAssets.java
+@@ -33,8 +33,8 @@ import java.io.IOException;
+  * making the creation of AssetManagers very cheap.
+  * @hide
+  */
+-public final class ApkAssets {
+-    @GuardedBy("this") private final long mNativePtr;
++public final class ApkAssets implements AutoCloseable {
++    @GuardedBy("this") private long mNativePtr;
+     @GuardedBy("this") private StringBlock mStringBlock;
+ 
+     /**
+@@ -127,12 +127,14 @@ public final class ApkAssets {
+ 
+     @NonNull String getAssetPath() {
+         synchronized (this) {
++            ensureValidLocked();
+             return nativeGetAssetPath(mNativePtr);
+         }
+     }
+ 
+     CharSequence getStringFromPool(int idx) {
+         synchronized (this) {
++            ensureValidLocked();
+             return mStringBlock.get(idx);
+         }
+     }
+@@ -149,6 +151,7 @@ public final class ApkAssets {
+     public @NonNull XmlResourceParser openXml(@NonNull String fileName) throws IOException {
+         Preconditions.checkNotNull(fileName, "fileName");
+         synchronized (this) {
++            ensureValidLocked();
+             long nativeXmlPtr = nativeOpenXml(mNativePtr, fileName);
+             try (XmlBlock block = new XmlBlock(null, nativeXmlPtr)) {
+                 XmlResourceParser parser = block.newParser();
+@@ -167,13 +170,41 @@ public final class ApkAssets {
+      */
+     public boolean isUpToDate() {
+         synchronized (this) {
++            ensureValidLocked();
+             return nativeIsUpToDate(mNativePtr);
+         }
+     }
+ 
++    /**
++     * Closes the ApkAssets and destroys the underlying native implementation. Further use of the
++     * ApkAssets object will cause exceptions to be thrown.
++     *
++     * Calling close on an already closed ApkAssets does nothing.
++     */
++    @Override
++    public void close() {
++        synchronized (this) {
++            if (mNativePtr == 0) {
++                return;
++            }
++
++            mStringBlock = null;
++            nativeDestroy(mNativePtr);
++            mNativePtr = 0;
++        }
++    }
++
+     @Override
+     protected void finalize() throws Throwable {
+-        nativeDestroy(mNativePtr);
++        if (mNativePtr != 0) {
++            nativeDestroy(mNativePtr);
++        }
++    }
++
++    private void ensureValidLocked() {
++        if (mNativePtr == 0) {
++            throw new RuntimeException("ApkAssets is closed");
++        }
+     }
+ 
+     private static native long nativeLoad(
+diff --git a/core/java/android/content/res/AssetManager.java b/core/java/android/content/res/AssetManager.java
+index c59e6d2562b..4f614a73a52 100644
+--- a/core/java/android/content/res/AssetManager.java
++++ b/core/java/android/content/res/AssetManager.java
+@@ -59,8 +59,6 @@ public final class AssetManager implements AutoCloseable {
+ 
+     private static final Object sSync = new Object();
+ 
+-    private static final ApkAssets[] sEmptyApkAssets = new ApkAssets[0];
+-
+     // Not private for LayoutLib's BridgeAssetManager.
+     @GuardedBy("sSync") static AssetManager sSystem = null;
+ 
+@@ -216,16 +214,10 @@ public final class AssetManager implements AutoCloseable {
+      */
+     public void setApkAssets(@NonNull ApkAssets[] apkAssets, boolean invalidateCaches) {
+         Preconditions.checkNotNull(apkAssets, "apkAssets");
+-
+-        // Copy the apkAssets, but prepend the system assets (framework + overlays).
+-        final ApkAssets[] newApkAssets = new ApkAssets[apkAssets.length + sSystemApkAssets.length];
+-        System.arraycopy(sSystemApkAssets, 0, newApkAssets, 0, sSystemApkAssets.length);
+-        System.arraycopy(apkAssets, 0, newApkAssets, sSystemApkAssets.length, apkAssets.length);
+-
+         synchronized (this) {
+-            ensureOpenLocked();
+-            mApkAssets = newApkAssets;
+-            nativeSetApkAssets(mObject, mApkAssets, invalidateCaches);
++            ensureValidLocked();
++            mApkAssets = apkAssets;
++            nativeSetApkAssets(mObject, apkAssets, invalidateCaches);
+             if (invalidateCaches) {
+                 // Invalidate all caches.
+                 invalidateCachesLocked(-1);
+@@ -244,37 +236,13 @@ public final class AssetManager implements AutoCloseable {
+     }
+ 
+     /**
+-     * Returns the set of ApkAssets loaded by this AssetManager. If the AssetManager is closed, this
+-     * returns a 0-length array.
+      * @hide
+      */
+     public @NonNull ApkAssets[] getApkAssets() {
+-        synchronized (this) {
+-            if (mOpen) {
+-                return mApkAssets;
+-            }
+-        }
+-        return sEmptyApkAssets;
+-    }
+-
+-    /**
+-     * Returns a cookie for use with the other APIs of AssetManager.
+-     * @return 0 if the path was not found, otherwise a positive integer cookie representing
+-     * this path in the AssetManager.
+-     * @hide
+-     */
+-    public int findCookieForPath(@NonNull String path) {
+-        Preconditions.checkNotNull(path, "path");
+         synchronized (this) {
+             ensureValidLocked();
+-            final int count = mApkAssets.length;
+-            for (int i = 0; i < count; i++) {
+-                if (path.equals(mApkAssets[i].getAssetPath())) {
+-                    return i + 1;
+-                }
+-            }
++            return mApkAssets;
+         }
+-        return 0;
+     }
+ 
+     /**
+@@ -354,7 +322,6 @@ public final class AssetManager implements AutoCloseable {
+      * then this implies that ensureValidLocked() also passes.
+      */
+     private void ensureOpenLocked() {
+-        // If mOpen is true, this implies that mObject != 0.
+         if (!mOpen) {
+             throw new RuntimeException("AssetManager has been closed");
+         }
+@@ -1173,7 +1140,6 @@ public final class AssetManager implements AutoCloseable {
+         if (mNumRefs == 0 && mObject != 0) {
+             nativeDestroy(mObject);
+             mObject = 0;
+-            mApkAssets = sEmptyApkAssets;
+         }
+     }
+ 
+-- 
+2.17.1
+

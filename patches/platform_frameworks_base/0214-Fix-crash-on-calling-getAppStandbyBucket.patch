@@ -1,0 +1,33 @@
+From e1125aee3ee1a3a92d35fc9bf44de81b73df4d3e Mon Sep 17 00:00:00 2001
+From: Amith Yamasani <yamasani@google.com>
+Date: Wed, 11 Jul 2018 10:44:17 -0700
+Subject: [PATCH 214/306] Fix crash on calling getAppStandbyBucket()
+
+MATCH_ANY_USER, which was locked down recently, is not
+really needed in this context, so removed it.
+
+Bug: 111145886
+Test: cts CtsAppUsageHostTestCases
+Change-Id: I1bb9df0c7370015365bea414599b2b83084a1846
+(cherry picked from commit 99e1424e0aa9e7dc4a5ccbff011d7161201921d1)
+---
+ .../usage/java/com/android/server/usage/UsageStatsService.java | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/services/usage/java/com/android/server/usage/UsageStatsService.java b/services/usage/java/com/android/server/usage/UsageStatsService.java
+index e6584c51ebd..2547f16c535 100644
+--- a/services/usage/java/com/android/server/usage/UsageStatsService.java
++++ b/services/usage/java/com/android/server/usage/UsageStatsService.java
+@@ -924,8 +924,7 @@ public class UsageStatsService extends SystemService implements
+             } catch (RemoteException re) {
+                 throw re.rethrowFromSystemServer();
+             }
+-            final int packageUid = mPackageManagerInternal.getPackageUid(packageName,
+-                    PackageManager.MATCH_ANY_USER, userId);
++            final int packageUid = mPackageManagerInternal.getPackageUid(packageName, 0, userId);
+             // If the calling app is asking about itself, continue, else check for permission.
+             if (packageUid != callingUid) {
+                 if (!hasPermission(callingPackage)) {
+-- 
+2.17.1
+

@@ -1,0 +1,117 @@
+From 93d837f3a90acec007647f21ed4573f044fa6f1e Mon Sep 17 00:00:00 2001
+From: Doheon Lee <doheon1.lee@lge.com>
+Date: Tue, 19 Jun 2018 15:23:21 +0900
+Subject: [PATCH 06/29] Determine product partition path on build time
+
+Path of product partitoin can be set as /product or /system/product
+whether generate extra product partition or not.
+Substitute %PRODUCT% to relevant path to know linker which path should
+search and permit.
+
+Bug: 110286945
+Test: m -j # Check /system/etc/ld.config.$(PLATFORM_VNDK_VERSION).txt
+Change-Id: I6ca177d0c9c5af00ad821879fece40848331fc8d
+Merged-In: I6ca177d0c9c5af00ad821879fece40848331fc8d
+(cherry picked from commit cccad0bf8461ab575a5861f9bc68c9f8f69db582)
+---
+ rootdir/Android.mk        |  1 +
+ rootdir/etc/ld.config.txt | 32 ++++++++++++--------------------
+ 2 files changed, 13 insertions(+), 20 deletions(-)
+
+diff --git a/rootdir/Android.mk b/rootdir/Android.mk
+index 80e068af7..5f5c363a7 100644
+--- a/rootdir/Android.mk
++++ b/rootdir/Android.mk
+@@ -204,6 +204,7 @@ $(2): $(1)
+ 	$$(hide) sed -i -e 's?%VNDK_CORE_LIBRARIES%?$$(PRIVATE_VNDK_CORE_LIBRARIES)?g' $$@
+ 	$$(hide) sed -i -e 's?%SANITIZER_RUNTIME_LIBRARIES%?$$(PRIVATE_SANITIZER_RUNTIME_LIBRARIES)?g' $$@
+ 	$$(hide) sed -i -e 's?%VNDK_VER%?$$(PRIVATE_VNDK_VERSION)?g' $$@
++	$$(hide) sed -i -e 's?%PRODUCT%?$$(TARGET_COPY_OUT_PRODUCT)?g' $$@
+ 
+ llndk_libraries_list :=
+ vndksp_libraries_list :=
+diff --git a/rootdir/etc/ld.config.txt b/rootdir/etc/ld.config.txt
+index eebad2b3c..42dc7abe7 100644
+--- a/rootdir/etc/ld.config.txt
++++ b/rootdir/etc/ld.config.txt
+@@ -7,7 +7,7 @@
+ # absolute path of an executable is selected.
+ dir.system = /system/bin/
+ dir.system = /system/xbin/
+-dir.system = /product/bin/
++dir.system = /%PRODUCT%/bin/
+ 
+ dir.vendor = /odm/bin/
+ dir.vendor = /vendor/bin/
+@@ -39,7 +39,7 @@ additional.namespaces = sphal,vndk,rs
+ namespace.default.isolated = true
+ 
+ namespace.default.search.paths  = /system/${LIB}
+-namespace.default.search.paths += /product/${LIB}
++namespace.default.search.paths += /%PRODUCT%/${LIB}
+ 
+ # We can't have entire /system/${LIB} as permitted paths because doing so
+ # makes it possible to load libs in /system/${LIB}/vndk* directories by
+@@ -51,8 +51,7 @@ namespace.default.search.paths += /product/${LIB}
+ namespace.default.permitted.paths  = /system/${LIB}/drm
+ namespace.default.permitted.paths += /system/${LIB}/extractors
+ namespace.default.permitted.paths += /system/${LIB}/hw
+-namespace.default.permitted.paths += /product/${LIB}
+-namespace.default.permitted.paths += /system/product/${LIB}
++namespace.default.permitted.paths += /%PRODUCT%/${LIB}
+ # These are where odex files are located. libart has to be able to dlopen the files
+ namespace.default.permitted.paths += /system/framework
+ namespace.default.permitted.paths += /system/app
+@@ -64,12 +63,9 @@ namespace.default.permitted.paths += /odm/framework
+ namespace.default.permitted.paths += /odm/app
+ namespace.default.permitted.paths += /odm/priv-app
+ namespace.default.permitted.paths += /oem/app
+-namespace.default.permitted.paths += /product/framework
+-namespace.default.permitted.paths += /product/app
+-namespace.default.permitted.paths += /product/priv-app
+-namespace.default.permitted.paths += /system/product/framework
+-namespace.default.permitted.paths += /system/product/app
+-namespace.default.permitted.paths += /system/product/priv-app
++namespace.default.permitted.paths += /%PRODUCT%/framework
++namespace.default.permitted.paths += /%PRODUCT%/app
++namespace.default.permitted.paths += /%PRODUCT%/priv-app
+ namespace.default.permitted.paths += /data
+ namespace.default.permitted.paths += /mnt/expand
+ 
+@@ -92,14 +88,10 @@ namespace.default.asan.permitted.paths += /odm/framework
+ namespace.default.asan.permitted.paths += /odm/app
+ namespace.default.asan.permitted.paths += /odm/priv-app
+ namespace.default.asan.permitted.paths += /oem/app
+-namespace.default.asan.permitted.paths += /product/${LIB}
+-namespace.default.asan.permitted.paths += /product/framework
+-namespace.default.asan.permitted.paths += /product/app
+-namespace.default.asan.permitted.paths += /product/priv-app
+-namespace.default.asan.permitted.paths += /system/product/${LIB}
+-namespace.default.asan.permitted.paths += /system/product/framework
+-namespace.default.asan.permitted.paths += /system/product/app
+-namespace.default.asan.permitted.paths += /system/product/priv-app
++namespace.default.asan.permitted.paths += /%PRODUCT%/${LIB}
++namespace.default.asan.permitted.paths += /%PRODUCT%/framework
++namespace.default.asan.permitted.paths += /%PRODUCT%/app
++namespace.default.asan.permitted.paths += /%PRODUCT%/priv-app
+ namespace.default.asan.permitted.paths += /mnt/expand
+ 
+ ###############################################################################
+@@ -335,7 +327,7 @@ namespace.vndk.link.default.allow_all_shared_libs = true
+ namespace.system.isolated = false
+ 
+ namespace.system.search.paths  = /system/${LIB}
+-namespace.system.search.paths += /product/${LIB}
++namespace.system.search.paths += /%PRODUCT%/${LIB}
+ 
+ namespace.system.asan.search.paths  = /data/asan/system/${LIB}
+ namespace.system.asan.search.paths +=           /system/${LIB}
+@@ -353,4 +345,4 @@ namespace.system.asan.search.paths +=           /product/${LIB}
+ [postinstall]
+ namespace.default.isolated = false
+ namespace.default.search.paths  = /system/${LIB}
+-namespace.default.search.paths += /product/${LIB}
++namespace.default.search.paths += /%PRODUCT%/${LIB}
+-- 
+2.17.1
+

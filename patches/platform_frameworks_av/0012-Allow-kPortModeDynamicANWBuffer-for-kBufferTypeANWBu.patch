@@ -1,0 +1,30 @@
+From d8cbab144398d0e9b3cdc2f8c42b4ea0c921e355 Mon Sep 17 00:00:00 2001
+From: Toshikazu Saito <toshikazu.x.saito@sony.com>
+Date: Tue, 10 Jul 2018 15:38:38 +0900
+Subject: [PATCH 12/80] Allow kPortModeDynamicANWBuffer for
+ kBufferTypeANWBuffer in useBuffer
+
+Test: play contents
+Bug: 77486542
+Change-Id: I422d49a137889c417d855ebef954f882f67821ed
+---
+ media/libstagefright/omx/OMXNodeInstance.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/omx/OMXNodeInstance.cpp b/media/libstagefright/omx/OMXNodeInstance.cpp
+index 2b2949482..35fb31291 100644
+--- a/media/libstagefright/omx/OMXNodeInstance.cpp
++++ b/media/libstagefright/omx/OMXNodeInstance.cpp
+@@ -1071,7 +1071,8 @@ status_t OMXNodeInstance::useBuffer(
+         }
+ 
+         case OMXBuffer::kBufferTypeANWBuffer: {
+-            if (mPortMode[portIndex] != IOMX::kPortModePresetANWBuffer) {
++            if (mPortMode[portIndex] != IOMX::kPortModePresetANWBuffer
++                    && mPortMode[portIndex] != IOMX::kPortModeDynamicANWBuffer) {
+                 break;
+             }
+             return useGraphicBuffer_l(portIndex, omxBuffer.mGraphicBuffer, buffer);
+-- 
+2.17.1
+

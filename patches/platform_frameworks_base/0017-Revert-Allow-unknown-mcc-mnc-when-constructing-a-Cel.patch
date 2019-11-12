@@ -1,0 +1,119 @@
+From 18e657610cf8f99fd5399cd21dadc2a809eb72a9 Mon Sep 17 00:00:00 2001
+From: Cassie Han <xih@google.com>
+Date: Wed, 15 Nov 2017 17:27:31 +0000
+Subject: [PATCH 017/306] Revert "Allow unknown mcc/mnc when constructing a
+ CellIdentity from Parcel."
+
+Bug: 69349963
+Bug: 69096589
+Bug: 63984327
+
+This reverts commit 993203c7e0d397f193b80c01774b4be925242dae.
+
+Change-Id: I52839aa5991541399651904587aa342a858a5915
+(cherry picked from commit 2200da1cdc292507947eb198a4252f95b1dfb0fc)
+---
+ telephony/java/android/telephony/CellIdentityGsm.java |  9 ++++-----
+ telephony/java/android/telephony/CellIdentityLte.java |  9 ++++-----
+ .../java/android/telephony/CellIdentityWcdma.java     | 11 +++++------
+ 3 files changed, 13 insertions(+), 16 deletions(-)
+
+diff --git a/telephony/java/android/telephony/CellIdentityGsm.java b/telephony/java/android/telephony/CellIdentityGsm.java
+index 4d7c71febd6..6276626afae 100644
+--- a/telephony/java/android/telephony/CellIdentityGsm.java
++++ b/telephony/java/android/telephony/CellIdentityGsm.java
+@@ -115,11 +115,10 @@ public final class CellIdentityGsm implements Parcelable {
+         // for inbound parcels
+         mBsic = (bsic == 0xFF) ? Integer.MAX_VALUE : bsic;
+ 
+-        // Only allow INT_MAX if unknown string mcc/mnc
+         if (mccStr == null || mccStr.matches("^[0-9]{3}$")) {
+             mMccStr = mccStr;
+-        } else if (mccStr.isEmpty() || mccStr.equals(String.valueOf(Integer.MAX_VALUE))) {
+-            // If the mccStr is empty or unknown, set it as null.
++        } else if (mccStr.isEmpty()) {
++            // If the mccStr parsed from Parcel is empty, set it as null.
+             mMccStr = null;
+         } else {
+             throw new IllegalArgumentException("invalid MCC format");
+@@ -127,8 +126,8 @@ public final class CellIdentityGsm implements Parcelable {
+ 
+         if (mncStr == null || mncStr.matches("^[0-9]{2,3}$")) {
+             mMncStr = mncStr;
+-        } else if (mncStr.isEmpty() || mncStr.equals(String.valueOf(Integer.MAX_VALUE))) {
+-            // If the mncStr is empty or unknown, set it as null.
++        } else if (mncStr.isEmpty()) {
++            // If the mncStr parsed from Parcel is empty, set it as null.
+             mMncStr = null;
+         } else {
+             throw new IllegalArgumentException("invalid MNC format");
+diff --git a/telephony/java/android/telephony/CellIdentityLte.java b/telephony/java/android/telephony/CellIdentityLte.java
+index fd837fc0ac2..74d2966b25b 100644
+--- a/telephony/java/android/telephony/CellIdentityLte.java
++++ b/telephony/java/android/telephony/CellIdentityLte.java
+@@ -114,11 +114,10 @@ public final class CellIdentityLte implements Parcelable {
+         mTac = tac;
+         mEarfcn = earfcn;
+ 
+-        // Only allow INT_MAX if unknown string mcc/mnc
+         if (mccStr == null || mccStr.matches("^[0-9]{3}$")) {
+             mMccStr = mccStr;
+-        } else if (mccStr.isEmpty() || mccStr.equals(String.valueOf(Integer.MAX_VALUE))) {
+-            // If the mccStr is empty or unknown, set it as null.
++        } else if (mccStr.isEmpty()) {
++            // If the mccStr parsed from Parcel is empty, set it as null.
+             mMccStr = null;
+         } else {
+             throw new IllegalArgumentException("invalid MCC format");
+@@ -126,8 +125,8 @@ public final class CellIdentityLte implements Parcelable {
+ 
+         if (mncStr == null || mncStr.matches("^[0-9]{2,3}$")) {
+             mMncStr = mncStr;
+-        } else if (mncStr.isEmpty() || mncStr.equals(String.valueOf(Integer.MAX_VALUE))) {
+-            // If the mncStr is empty or unknown, set it as null.
++        } else if (mncStr.isEmpty()) {
++            // If the mncStr parsed from Parcel is empty, set it as null.
+             mMncStr = null;
+         } else {
+             throw new IllegalArgumentException("invalid MNC format");
+diff --git a/telephony/java/android/telephony/CellIdentityWcdma.java b/telephony/java/android/telephony/CellIdentityWcdma.java
+index 1597245c6fa..51b11aa82b9 100644
+--- a/telephony/java/android/telephony/CellIdentityWcdma.java
++++ b/telephony/java/android/telephony/CellIdentityWcdma.java
+@@ -114,11 +114,10 @@ public final class CellIdentityWcdma implements Parcelable {
+         mPsc = psc;
+         mUarfcn = uarfcn;
+ 
+-        // Only allow INT_MAX if unknown string mcc/mnc
+         if (mccStr == null || mccStr.matches("^[0-9]{3}$")) {
+             mMccStr = mccStr;
+-        } else if (mccStr.isEmpty() || mccStr.equals(String.valueOf(Integer.MAX_VALUE))) {
+-            // If the mccStr is empty or unknown, set it as null.
++        } else if (mccStr.isEmpty()) {
++            // If the mccStr parsed from Parcel is empty, set it as null.
+             mMccStr = null;
+         } else {
+             throw new IllegalArgumentException("invalid MCC format");
+@@ -126,8 +125,8 @@ public final class CellIdentityWcdma implements Parcelable {
+ 
+         if (mncStr == null || mncStr.matches("^[0-9]{2,3}$")) {
+             mMncStr = mncStr;
+-        } else if (mncStr.isEmpty() || mncStr.equals(String.valueOf(Integer.MAX_VALUE))) {
+-            // If the mncStr is empty or unknown, set it as null.
++        } else if (mncStr.isEmpty()) {
++            // If the mncStr parsed from Parcel is empty, set it as null.
+             mMncStr = null;
+         } else {
+             throw new IllegalArgumentException("invalid MNC format");
+@@ -136,7 +135,7 @@ public final class CellIdentityWcdma implements Parcelable {
+         mAlphaLong = alphal;
+         mAlphaShort = alphas;
+     }
+-    
++
+     private CellIdentityWcdma(CellIdentityWcdma cid) {
+         this(cid.mLac, cid.mCid, cid.mPsc, cid.mUarfcn, cid.mMccStr,
+                 cid.mMncStr, cid.mAlphaLong, cid.mAlphaShort);
+-- 
+2.17.1
+

@@ -1,0 +1,1180 @@
+From d301d9a39aeee79664da734d79c05311a410531c Mon Sep 17 00:00:00 2001
+From: Chihhang Chuang <chihhangchuang@google.com>
+Date: Tue, 5 Jun 2018 15:29:06 +0800
+Subject: [PATCH 22/70] Add faster emergency dialer UI
+
+If flag "faster_emergency_phone_call_enabled" is true, EmergencyDialer
+will display emergency dialer shortcuts UI. Otherwise, EmergencyDialer
+display original dialer UI.
+Faster emergency dialer implement the part of user's Emergency
+Infomation, and a button which is used to show dialpad.
+
+Test: Manually
+
+Bug: 112168722
+Bug: 80406570
+
+Change-Id: I3637dab0059d6fa87417bb282163ebff04eae71d
+Merged-In: I3637dab0059d6fa87417bb282163ebff04eae71d
+---
+ res/drawable-hdpi/fab_red.png                 | Bin 0 -> 1186 bytes
+ res/drawable-hdpi/ic_dialpad_white_24.png     | Bin 0 -> 264 bytes
+ res/drawable-mdpi/fab_red.png                 | Bin 0 -> 896 bytes
+ res/drawable-mdpi/ic_dialpad_white_24.png     | Bin 0 -> 161 bytes
+ res/drawable-xhdpi/fab_red.png                | Bin 0 -> 1445 bytes
+ res/drawable-xhdpi/ic_dialpad_white_24.png    | Bin 0 -> 281 bytes
+ res/drawable-xxhdpi/fab_red.png               | Bin 0 -> 2185 bytes
+ res/drawable-xxhdpi/ic_dialpad_white_24.png   | Bin 0 -> 362 bytes
+ res/drawable/btn_emergency_shortcuts.xml      |  20 ++
+ res/drawable/floating_action_button_red.xml   |  20 ++
+ res/layout/emergency_dialer.xml               | 172 ++++++++++++------
+ res/layout/emergency_information.xml          |  50 +++++
+ res/values/strings.xml                        |  11 ++
+ .../android/phone/EmergencyActionGroup.java   |  75 +-------
+ .../phone/EmergencyAssistanceHelper.java      | 107 +++++++++++
+ src/com/android/phone/EmergencyDialer.java    | 117 ++++++++++++
+ src/com/android/phone/EmergencyInfoGroup.java | 125 +++++++++++++
+ 17 files changed, 567 insertions(+), 130 deletions(-)
+ create mode 100644 res/drawable-hdpi/fab_red.png
+ create mode 100644 res/drawable-hdpi/ic_dialpad_white_24.png
+ create mode 100644 res/drawable-mdpi/fab_red.png
+ create mode 100644 res/drawable-mdpi/ic_dialpad_white_24.png
+ create mode 100644 res/drawable-xhdpi/fab_red.png
+ create mode 100644 res/drawable-xhdpi/ic_dialpad_white_24.png
+ create mode 100644 res/drawable-xxhdpi/fab_red.png
+ create mode 100644 res/drawable-xxhdpi/ic_dialpad_white_24.png
+ create mode 100644 res/drawable/btn_emergency_shortcuts.xml
+ create mode 100644 res/drawable/floating_action_button_red.xml
+ create mode 100644 res/layout/emergency_information.xml
+ create mode 100644 src/com/android/phone/EmergencyAssistanceHelper.java
+ create mode 100644 src/com/android/phone/EmergencyInfoGroup.java
+
+diff --git a/res/drawable-hdpi/fab_red.png b/res/drawable-hdpi/fab_red.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce672f2e4bbcfb879f2d0654d9ce08a4fe7b05f9
+GIT binary patch
+literal 1186
+zcmeAS@N?(olHy`uVBq!ia0vp^At21b3?#L;KKKlzSkfJR9T^xl_H+M9WCijSl0AZa
+z85pY67#JE_7#My5g&JNkFq9fFFuY1&V6d9Oz#v{QXIG#NP$DqEC&cwppc56*|NsA|
+zv1IW94VNql@(X5QWMXDvWn<^ylyGm^bm+t4u*nzAQy)mWDgK!A0jP*E$=lsUsx<wH
+z5s<@K;1O92q!YmSL$=d-AcMWc)7O>#5gUiNlJ%vU>(dz+m^wUN977@wznyt|T9W~f
+ztMRl;+*ytR%l`jgeA!G_gw1{8m)vu!yZ83JWG!M6`1-WeYOX|b=+VkpZp9^2yv(1U
+zzIsEWIQM*S*gN*`#j(Y4q3;;KM^wm!&6+89QgG$2=zQ}l_jeswD_k~PYNlKy>-0X0
+zEywJpX0kthdoHa$P~1$g^8H)xuis^)&*mA=_3f|O<5XqKbnR+F^Q?bXhgm1Bs^pg3
+z;A><(HR0ru{d!L;D#c%xN)~VKoMqU2_S~DqU8=>_iehD}4$Qjw&bex<R;BM1)!_Xx
+zpU>7Va86XuYN=Xw+w<^k?JZI36PGEONbuUV&wYA^%Q}IzU}Hmz<Vu?$#+iQ<ialFH
+z0#@3uc^(q38yu-<c-8&&yw%~IToD)gzdeuA4U%lm*kXNd%eL;YM%HH)851Y*Oq<Fm
+zR&rhTQ;fI{gOjw>vaP&MmgR2z@0LaOCy4I3Xf1mAR&~R*DQ=5H7npX1Id(iw*PL!0
+z&ZouhwQTFVq{4tE=2@#lnU*M7`fTo*<WT&oxRkGIaoatW3+wiVuXhMGUMt)9MsMcT
+z12g5S*cQz;3Fi*4dLi1eecyD(s%2aMU#QnG-E!iYevwaSe05yz%+>2psK!1i4SI4k
+z{E2Anv*blb()}m$Z*iJGiPf&EyJp_+eN%Q!)VT7g;L<#Gv-B;wPs(5U#>#7+l)5MI
+z>&Ug3%iEr%I<ai=k}jVkG*xRx;+l{a7oi1f53SRm#c}oshhXwfO$QNoW|xVq9jS}_
+zP6d>;1syq_Bw4zAf_>X_dA7T^KmK%?S{1Lde(9X$La!Itzg<&%xH*5Tt&N4*GXei&
+zGO27v?r!d1FJHV^bwYGwJ?~DTPyLG5k6ElcR(R(}wT$^Ai*v%;j~Cj1NVgJvc=>?~
+zFqx{BxJHzuB$lLFB^RXvDF!10LknF4GhG9V5JOWdV-qV=OKk%SD+2>n0jaAf8glbf
+zGSez?YY6dOlnK-z4zeM&A~Vg(6-apICZ?zQq~@iUWH4Bm<fRsa3I{PvCE=MVU=_;K
+z&s_(q5JFMmpO#jfTEbvvW?r722$YqD%LeDCm6RtIr7{F(<d>AE=Hw_C=oy*lnFcJL
+R;|5g7;OXk;vd$@?2>_k_+ok{j
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-hdpi/ic_dialpad_white_24.png b/res/drawable-hdpi/ic_dialpad_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..9037f94e843b77bfd389f4405035d5a89ec017cc
+GIT binary patch
+literal 264
+zcmeAS@N?(olHy`uVBq!ia0vp^Dj>|k0wldT1B8Lpc~2L|5D)LSlLEP#97J4W-Lrmc
+z^oE5zvbvn1n<*bv@OviP+}~ZV+Z!+bw6W1UT(BrZZo(pmMim3qOO26>Wu%#`w=guY
+zMJ7Z&IrpYeS~~khkGSZ}TQj{g)-1dyUz$>tF1K)FTULFE(&79y_xMvY7#PBHPUOrz
+zd3Swfa+8F+%myx>#)<?Xk>t%Bb>=5_+rK*D!}aNMw;HSGM$Ka_$-!ro9^4RdF39QH
+z*rs82G{RYAcG4O}#r^dYjFp}&S9pqqo-P0I_0PO_VUxbC;gFvS^csVwtDnm{r-UW|
+D1Cwe$
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-mdpi/fab_red.png b/res/drawable-mdpi/fab_red.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..094a6065583d63efef4ce213697f4d54df9c47fb
+GIT binary patch
+literal 896
+zcmeAS@N?(olHy`uVBq!ia0vp^79h;Q3?%1AoYnzSEa{HEjtmSN`?>!lvI6-E$sR$z
+z3=CCj3=9n|3=F@3LJcn%7)lKo7+xhXFj&oCU=S~uvn$XBDB&I86XN<P(1|MO|NsA2
+z@4A=+jTJ8m@(X5QWMXDvWn<@1PhEUy@&h+>&X$WG+%-~qmfZy^VNCLNcafN#*(wL*
+za29w(76a)7F#eG3bRNiHFY)wsWq-uRA+BV7spk50pq@NW7sn8f<8P;*p4F_t;}*O{
+zMWgH6wD0wo6%#VwZVBBq>*$~C^V1tV`WPlT_hio6W*gP*vhKC5{>R$q9T#pT-!?mT
+zVse1ei~`Q$!zc75*{5GrTb%88N|E(^{$pns?~ClyPbvD!Z)ox3>~$6YbnvYDzgd_6
+z_=xo_GtPhV#^c1D+=qu!yOZ}FnX0F<q_#6=d#~p%YsrIBekZQHWi%51R&?gNk5kNo
+zqnXElowCZ$%vTgUQdw*tUOjsn=cN}b+q&Ne&tlEo(w98%!Zrc!Ur`s1ryWc>+ILU*
+zLeruIEzTFOEYsQ@n%QJHGOjczH?F#TL;H>0-Pa`-ULTMX(RY62c--)Rb3J#6Jj2(C
+z!SY34)0h66a5cRB*QTJj{;+z*)$R>dFIF6%Q?+5%t3bV8GvB>7Ev|B}N>#hhDS50A
+zSh6O?<9d{;wo&<Q<;EFvw!T<=a@Ve<bMsrSz7fAG?kct^Y;AbZzsP4Fx1U*GC;#F0
+z`@_QDnGKa*UN|LH_ZS!%swJ)wB`Jv|saDBFsX&Us$iUD-*T78Iz#_!Z)XLbz%G6TZ
+zz{1MFKvh8MDvE~O{FKbJO57Skd>3T`HHd?3NUg|BvvLIzp1FzXsXnQB=_MHqre>x`
+zbBuvX#4weFXQqHvRG44f22>%0qQXBdtvI!W!OYCOJUtO8D+`wm&QB{TPb^Ah2+qha
+fDNoJGQ83UmGSM>)SUkrKsF1<a)z4*}Q$iB}nk8O4
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-mdpi/ic_dialpad_white_24.png b/res/drawable-mdpi/ic_dialpad_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..6c405f9ba904d0bab09908acad593ecd8138c556
+GIT binary patch
+literal 161
+zcmeAS@N?(olHy`uVBq!ia0vp^5+KaM0wlfaz7_+i3{Mxw5DWji7k2YD7%(sg@^f@0
+z{I}b$*w@y?;?o!~VaKW7+3L2vtv*T~LfTV{?)j!LEK&(%Jn=VANtTbb;mUh8rimxE
+zy!T0Z_x%BzhU84^rQS33r}p%O8yW2nvr0>i2|JdW8ngaX&gvGK&O`f)#esG*c)I$z
+JtaD0e0svpjI066w
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xhdpi/fab_red.png b/res/drawable-xhdpi/fab_red.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..ab1425e6901f94bba9b4105e90d047d629f8a130
+GIT binary patch
+literal 1445
+zcmeAS@N?(olHy`uVBq!ia0vp^1t8493?x6=u~Y&nmUKs7M+SzC{oH>NS%G|oWRD<U
+z28Jp%28M<f28Lfip@tU>45bDP46hOx7_4S6Fo+k-*%fF5ln4p%32}WC=tM;XH1+@g
+z|8sZ$mjtpTOM?7@85o(ESy<WFIXKP3S~eYe;4YCW`Jwcp#^ibO$sk3HN#5=*(o6|g
+zmH;`N1s;*bKso`8KV&<d2Qt`8Jbhi+AF*+WD_LKvxjvnNfw|4o#W5t~-rL!?XRR{e
+zX??8VVX0a1rtUxcU0Y$Vz$s?MhU;z@{@8EwvN4U(AZz(o<teE*<225HUSz>B)v0IW
+zs=Qn8PR#9#y?tfs59Z1C0{gYOKI-rM;s250r_5&$j;yBB0)B`6e2<G?F;zbsa>7Y*
+zGv_DO{HEkJ@=^bs-d;#vBL75q-ceDZ<xQ*OFY#<POI+tr^>F43m3Mb!u0IU%o4wgp
+zDM?|X@jTfx#l?~RlXsa^r5yKZ>u7u!vg2Ruoemy0OV*@$dQ)GsTeR-!ijg~}kX||G
+zL(%EgdGjAG$rI%g5^T0Hozr7F|M3#3$PIln5*M8het6fsCB12nzCiPyUx(lL8bwyS
+zOg<*?ext1V*9)C<gm??i%%8!dEk5mfR<(;sGnd(ciQ6q}7v~i#CCt+~U+gkZWs}f(
+zK2D#L+yVzx13o78E%(3D%B*o<Q_p$hN)Z=fr3AU|u=x?Xhg+E~8Ye!Rzn)!9Yr#X_
+z%!)bJXRT=5mGFdRk9)-VL%Z(G^j4n1;L0Q{(sR{UcXd|4!LuE`zb_V>>bY!Sj#~Pp
+zFwRg|=>~%^--;_|!?a%TY|4(3dme7QV#9TBpG{m_cYUeKYTz@-Jeo0c7o+F{%gP2V
+zmq>F5(FL4_?2(H^7;ot?MK-9pOep@)`+c#lRTrxt!%@vCZOhAfIej+0ZM%|{;D7XS
+z%oJXgJLS)%A~;)=R~-vscv&&W`$4Brg;rzMwQN(Ki0yw3Uti@^Q1w?46q=t}6Y8*S
+zUFKDXDC0$04F$Knw>m^ES>)50p})n7Nw@#A{s-<qO#hW8)MP5h?>V_${S)tuKOKS}
+z1-|AV&DZ*stn}A$#-A1be~p~~?{fR^<n{NIZ|%wt+}G7qKOPl$dG&gJ%)5zk@m>l)
+zS#>YUTJLLGwl8IQw(=DA%i9;^O;LHj)^lN)K;mZaZPyQc)n0k4GTD9Fs>ICdJD$;-
+z`lip++b(q_#rk8z>~lMM{V#_tH{erP-L%<FB;*=L^1l<og1YBt+HZ-^nBTSHj2ip#
+z-!r8v9tpYM%Xr}FIp?#Rf|8nfVx^f5)9jl)7Do&&@yg|&+_k*TbYZB$Oi7{J`nKJf
+z9THdHy^M}3mow~I_?0t1ORz8J=GnBeu=9uCwS9F~Ii~wL&E-k+yZf7CzjtqYy<mOK
+z^WQg;B~DNO^Q-uE&Bt}6|2q3^pIqag^_Ba(>Y>^4>}!6?B|iMzo^<p%|5EqpV}IE{
+zWqmceKPw%SNmWZ+BT7;dOH!?pi&B9UgOP!ug|2~_u7O2}p{bRziIu6Pwt<C}fq|-k
+z)KwG>x%nxXX_dG&g!nGX1Zt1~*^pY1nP%k*Bs_By(^Gv?^U_N)7z_=K-d3pO0M&?N
+zstM0bfhZ|>zOW9cL<mKRe_C2`Y6*jxnR$77B2ZQqE*qSmR#Ki=l*$mCkzZ1tnv<ho
+Zpl4*FXBx10jvG)RgQu&X%Q~loCII;FSoi<{
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xhdpi/ic_dialpad_white_24.png b/res/drawable-xhdpi/ic_dialpad_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e89f6c74b06fc9b820f7c83cf06157c27acaae8
+GIT binary patch
+literal 281
+zcmeAS@N?(olHy`uVBq!ia0vp^1|ZDA0wn)(8}b0D2c9mDArXh)PVwezau8tM+2dei
+zo!C&IXLoo*U0%roVd)AN-z)D@TPwFJtW^1V(7BIGPL6NpgYYdg1TQGqANu-}vH$hN
+zb!o>=w5NJK-nHP+uTv+Y55Bft$GxZGf%1IT`QLs79+apIU}+S!__&~BkKmoRg|QPB
+z_RlZhVe|Lr-B-`GYrH2eYB}DKG;_cI)fol{PfGUQj_h9Jx~n0F@4nI|%bM;J&*o$b
+z-jvC{Xuho@hwnC2?1Qe->}1_dVmE7-1g@X`e3mo!jb|5_wpngb*b{xgtX=HGS<8h#
+dPCvWD(0kMKnMdBWM?k+ac)I$ztaD0e0sx48fIt8M
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxhdpi/fab_red.png b/res/drawable-xxhdpi/fab_red.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..899a57817519d5c813fd542fe098ef5a404df5ec
+GIT binary patch
+literal 2185
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxhdpi/ic_dialpad_white_24.png b/res/drawable-xxhdpi/ic_dialpad_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..175000510d4d2010d38fe000b55e9121f01a6c1c
+GIT binary patch
+literal 362
+zcmeAS@N?(olHy`uVBq!ia0vp^9w5xY0wn)GsXoKNz-Z{{;uw-~@9njNS%(}XjuiSI
+zOAq+fBE?hbxms;&m;WMxqS<k~3;E@Lux~GWW}~y2n{)roGnLCT)<sp{HC+|FSnGD=
+ziqQ2RZ~CR2^Sb|QZg&{}T>jWjzc;0qEGLy*t10@deX)~w)zs5wFSq!pn`O+meKDh?
+zYMHQf$$2>wmAMmN{<-Kl|7J6v=kjE$jgGV5IF??@oZ<In^ZzP~XC^<FXvcQ=m0T(^
+zdbuR^+4D*@tB>JP*~@3M$%Z`7U+NVtYie`5P-Z!gp_9~-BOI9%gp`*!`t{^yCcW_%
+zejFinp-cM8RJCKvOn~w#M}hJpK>6;Ag*tBC7n8O~=t3yj<Ev_J%D6Q@cx@ncge?$;
+we^lLfoWiydjOVaz^qj+XFnkl+|MEJ9ldSE^bN+Of1H+KP)78&qol`;+0MsO$A^-pY
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable/btn_emergency_shortcuts.xml b/res/drawable/btn_emergency_shortcuts.xml
+new file mode 100644
+index 000000000..8198a5704
+--- /dev/null
++++ b/res/drawable/btn_emergency_shortcuts.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<shape xmlns:android="http://schemas.android.com/apk/res/android"
++       android:shape="rectangle">
++    <solid android:color="?attr/emergencyButtonBackgroundColor"/>
++    <corners android:radius="10dp"/>
++</shape>
+\ No newline at end of file
+diff --git a/res/drawable/floating_action_button_red.xml b/res/drawable/floating_action_button_red.xml
+new file mode 100644
+index 000000000..5fe74a3c7
+--- /dev/null
++++ b/res/drawable/floating_action_button_red.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<ripple xmlns:android="http://schemas.android.com/apk/res/android"
++        android:color="@color/floating_action_button_touch_tint">
++    <item android:drawable="@drawable/fab_red" />
++</ripple>
+\ No newline at end of file
+diff --git a/res/layout/emergency_dialer.xml b/res/layout/emergency_dialer.xml
+index 2a454339b..41da3b1f8 100644
+--- a/res/layout/emergency_dialer.xml
++++ b/res/layout/emergency_dialer.xml
+@@ -16,51 +16,107 @@
+ 
+ <!-- Layout for the emergency dialer; see EmergencyDialer.java. -->
+ <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-        android:id="@+id/top"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent">
++
++    <!-- Emergency dialer shortcuts layout-->
++    <FrameLayout
++        android:id="@+id/emergency_dialer_shortcuts"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent"
++        android:paddingLeft="18dp"
++        android:paddingRight="18dp"
++        android:paddingBottom="@dimen/dialpad_bottom_padding"
++        android:visibility="gone">
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="match_parent"
++            android:orientation="vertical">
++            <include layout="@layout/emergency_information"/>
++        </LinearLayout>
++
++        <FrameLayout
++            android:id="@+id/dialpad_button_container"
++            android:layout_width="@dimen/floating_action_button_width"
++            android:layout_height="@dimen/floating_action_button_height"
++            android:layout_gravity="bottom|end">
++            <ImageButton
++                android:id="@+id/floating_action_button_dialpad"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_gravity="center"
++                android:background="@drawable/floating_action_button_red"
++                android:contentDescription="@string/description_dialpad_button"
++                android:src="@drawable/ic_dialpad_white_24"/>
++        </FrameLayout>
++    </FrameLayout>
++
++    <!--Emergency Dialer Layout-->
++    <FrameLayout
++        android:id="@+id/emergency_dialer"
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:paddingLeft="36dp"
+         android:paddingRight="36dp"
+-        android:paddingBottom="@dimen/dialpad_bottom_padding">
+-
+-    <LinearLayout
++        android:paddingBottom="@dimen/dialpad_bottom_padding"
++        android:visibility="visible">
++        <LinearLayout
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_gravity="bottom"
+             android:orientation="vertical">
+ 
+-        <!-- FrameLayout -->
+-        <com.android.phone.EmergencyActionGroup
++            <!--Emergency dialer shortcuts implement EmergencyInfoGroup to replace
++            EmergencyActionGroup. Using a title to indicate the dialpad is emergency calls only.-->
++            <FrameLayout
++                android:id="@+id/emergency_dialpad_title_container"
++                android:layout_height="64dp"
++                android:layout_width="match_parent"
++                android:layout_marginTop="16dp"
++                android:layout_marginBottom="24dp"
++                android:visibility="gone">
++                <TextView
++                    android:id="@+id/emergency_dialpad_title"
++                    android:layout_height="wrap_content"
++                    android:layout_width="wrap_content"
++                    android:layout_gravity="center"
++                    android:textStyle="bold"
++                    android:maxLines="1"
++                    android:text="@string/emergency_dialpad_title"/>
++            </FrameLayout>
++
++            <!-- FrameLayout -->
++            <com.android.phone.EmergencyActionGroup
+                 android:id="@+id/emergency_action_group"
+                 android:layout_height="64dp"
+                 android:layout_width="match_parent"
+                 android:layout_marginTop="16dp"
+                 android:layout_marginBottom="24dp">
+ 
+-            <!-- Button that says: Emergency Information -->
+-            <LinearLayout
++                <!-- Button that says: Emergency Information -->
++                <LinearLayout
+                     android:layout_width="match_parent"
+                     android:layout_height="match_parent">
+-                <Button android:layout_width="0dp"
+-                        android:layout_height="match_parent"
+-                        android:layout_weight="1"
+-                        android:background="@drawable/btn_emergency"
+-                        android:id="@+id/action1" />
+-                <Button android:layout_width="0dp"
+-                        android:layout_height="match_parent"
+-                        android:layout_weight="1"
+-                        android:background="@drawable/btn_emergency"
+-                        android:id="@+id/action2" />
+-                <Button android:layout_width="0dp"
+-                        android:layout_height="match_parent"
+-                        android:layout_weight="1"
+-                        android:background="@drawable/btn_emergency"
+-                        android:id="@+id/action3" />
+-            </LinearLayout>
++                    <Button android:layout_width="0dp"
++                            android:layout_height="match_parent"
++                            android:layout_weight="1"
++                            android:background="@drawable/btn_emergency"
++                            android:id="@+id/action1" />
++                    <Button android:layout_width="0dp"
++                            android:layout_height="match_parent"
++                            android:layout_weight="1"
++                            android:background="@drawable/btn_emergency"
++                            android:id="@+id/action2" />
++                    <Button android:layout_width="0dp"
++                            android:layout_height="match_parent"
++                            android:layout_weight="1"
++                            android:background="@drawable/btn_emergency"
++                            android:id="@+id/action3" />
++                </LinearLayout>
+ 
+-            <!-- View that shows up on top of "emergency information" button
+-            and asks you to tap again to confirm the action -->
+-            <FrameLayout
++                <!-- View that shows up on top of "emergency information" button
++                and asks you to tap again to confirm the action -->
++                <FrameLayout
+                     android:layout_width="match_parent"
+                     android:layout_height="match_parent"
+                     android:id="@+id/selected_container"
+@@ -68,7 +124,7 @@
+                     android:focusable="true"
+                     android:clickable="true">
+ 
+-                <View
++                    <View
+                         android:layout_width="match_parent"
+                         android:layout_height="match_parent"
+                         android:backgroundTint="#ffe53935"
+@@ -76,7 +132,7 @@
+                         android:clickable="false"
+                         style="?android:attr/buttonStyle"/>
+ 
+-                <View
++                    <View
+                         android:layout_width="match_parent"
+                         android:layout_height="match_parent"
+                         android:id="@+id/ripple_view"
+@@ -86,7 +142,7 @@
+                         android:clickable="false"
+                         style="?android:attr/buttonStyle"/>
+ 
+-                <LinearLayout
++                    <LinearLayout
+                         android:layout_width="match_parent"
+                         android:layout_height="match_parent"
+                         android:orientation="vertical"
+@@ -94,7 +150,7 @@
+                         android:clickable="false"
+                         android:backgroundTint="#00000000"
+                         style="?android:attr/buttonStyle">
+-                    <TextView
++                        <TextView
+                             android:layout_width="match_parent"
+                             android:layout_height="wrap_content"
+                             android:gravity="center"
+@@ -102,7 +158,7 @@
+                             android:id="@+id/selected_label"
+                             android:textColor="@android:color/white"
+                             android:textAppearance="?android:attr/textAppearanceButton" />
+-                    <TextView
++                        <TextView
+                             android:layout_width="wrap_content"
+                             android:layout_height="wrap_content"
+                             android:id="@+id/launch_hint"
+@@ -111,37 +167,39 @@
+                             android:text="@string/emergency_action_launch_hint"
+                             android:textColor="@android:color/white"
+                             android:textStyle="italic" />
+-                </LinearLayout>
++                    </LinearLayout>
+ 
+-            </FrameLayout>
++                </FrameLayout>
+ 
+-        </com.android.phone.EmergencyActionGroup>
++            </com.android.phone.EmergencyActionGroup>
+ 
+-        <include layout="@layout/dialpad_view_unthemed"
+-                android:theme="?attr/dialpadTheme" />
++            <include layout="@layout/dialpad_view_unthemed"
++                     android:theme="?attr/dialpadTheme" />
+ 
+-    </LinearLayout>
++        </LinearLayout>
+ 
+-    <Space
+-        android:id="@+id/floating_action_button_margin_bottom"
+-        android:layout_width="match_parent"
+-        android:layout_height="@dimen/floating_action_button_margin_bottom"
+-        android:layout_alignParentBottom="true"/>
++        <Space
++            android:id="@+id/floating_action_button_margin_bottom"
++            android:layout_width="match_parent"
++            android:layout_height="@dimen/floating_action_button_margin_bottom"
++            android:layout_alignParentBottom="true"/>
++
++        <FrameLayout
++            android:id="@+id/floating_action_button_container"
++            android:layout_width="@dimen/floating_action_button_width"
++            android:layout_height="@dimen/floating_action_button_height"
++            android:layout_gravity="center_horizontal|bottom" >
++
++            <ImageButton
++                android:id="@+id/floating_action_button"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_gravity="center"
++                android:background="@drawable/floating_action_button"
++                android:contentDescription="@string/description_dial_button"
++                android:src="@drawable/fab_ic_call"/>
++        </FrameLayout>
+ 
+-    <FrameLayout
+-        android:id="@+id/floating_action_button_container"
+-        android:layout_width="@dimen/floating_action_button_width"
+-        android:layout_height="@dimen/floating_action_button_height"
+-        android:layout_gravity="center_horizontal|bottom" >
+-
+-        <ImageButton
+-            android:id="@+id/floating_action_button"
+-            android:layout_width="wrap_content"
+-            android:layout_height="wrap_content"
+-            android:layout_gravity="center"
+-            android:background="@drawable/floating_action_button"
+-            android:contentDescription="@string/description_dial_button"
+-            android:src="@drawable/fab_ic_call"/>
+     </FrameLayout>
+ 
+ </FrameLayout>
+diff --git a/res/layout/emergency_information.xml b/res/layout/emergency_information.xml
+new file mode 100644
+index 000000000..c9e9f8b5b
+--- /dev/null
++++ b/res/layout/emergency_information.xml
+@@ -0,0 +1,50 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2018 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<com.android.phone.EmergencyInfoGroup xmlns:android="http://schemas.android.com/apk/res/android"
++    android:id="@+id/emergency_info_group"
++    android:layout_height="wrap_content"
++    android:layout_width="match_parent"
++    android:layout_marginTop="48dp"
++    android:orientation="vertical">
++    <TextView
++        android:id="@+id/emergency_info_title"
++        android:layout_height="wrap_content"
++        android:layout_width="wrap_content"
++        android:layout_gravity="start"
++        android:paddingBottom="12dp"
++        android:textStyle="bold"
++        android:text="@string/emergency_information_title"/>
++    <LinearLayout
++        android:id="@+id/emergency_info_button"
++        android:layout_height="64dp"
++        android:layout_width="match_parent"
++        android:layout_marginTop="2dp"
++        android:orientation="horizontal"
++        android:gravity="center_vertical"
++        android:background="@drawable/btn_emergency_shortcuts">
++        <ImageView
++            android:id="@+id/emergency_info_image"
++            android:layout_width="40dp"
++            android:layout_height="40dp"
++            android:layout_marginLeft="16dp"
++            android:layout_marginRight="16dp"/>
++        <TextView
++            android:id="@+id/emergency_info_name"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:textAppearance="?android:attr/textAppearanceButton"/>
++    </LinearLayout>
++</com.android.phone.EmergencyInfoGroup>
+\ No newline at end of file
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index e91b79e1b..d5c972081 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -1127,8 +1127,12 @@
+     <!-- In-call screen: call failure message displayed in an error dialog when the user is connected to a wireless network, but wifi calling is turned off. [CHAR_LIMIT=NONE] -->
+     <string name="incall_error_promote_wfc">Enable Wi-Fi calling to make a call.</string>
+ 
++    <!-- Title for the button of emergency information -->
++    <string name="emergency_information_title">Emergency information</string>
+     <!-- Dialog title for the "radio enable" UI for emergency calls -->
+     <string name="emergency_enable_radio_dialog_title">Emergency call</string>
++    <!-- Title for the emergency dialpad UI -->
++    <string name="emergency_dialpad_title">Emergency calls only</string>
+     <!-- Status message for the "radio enable" UI for emergency calls -->
+     <string name="emergency_enable_radio_dialog_message">Turning on radio\u2026</string>
+     <!-- Status message for the "radio enable" UI for emergency calls -->
+@@ -1372,6 +1376,13 @@
+     -->
+     <string name="description_dial_button">dial</string>
+ 
++    <!-- String describing the Dialpad ImageButton
++
++         Used by AccessibilityService to announce the purpose of the button.
++         [CHAR LIMIT=NONE]
++    -->
++    <string name="description_dialpad_button">show dialpad</string>
++
+     <!-- Visual voicemail on/off title [CHAR LIMIT=40] -->
+     <string name="voicemail_visual_voicemail_switch_title">Visual Voicemail</string>
+ 
+diff --git a/src/com/android/phone/EmergencyActionGroup.java b/src/com/android/phone/EmergencyActionGroup.java
+index b647623ad..d72c265bb 100644
+--- a/src/com/android/phone/EmergencyActionGroup.java
++++ b/src/com/android/phone/EmergencyActionGroup.java
+@@ -22,11 +22,7 @@ import android.annotation.Nullable;
+ import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.Intent;
+-import android.content.pm.ApplicationInfo;
+-import android.content.pm.PackageInfo;
+-import android.content.pm.PackageManager;
+ import android.content.pm.ResolveInfo;
+-import android.provider.Settings;
+ import android.telephony.TelephonyManager;
+ import android.text.Layout;
+ import android.text.TextUtils;
+@@ -125,15 +121,13 @@ public class EmergencyActionGroup extends FrameLayout implements View.OnClickLis
+         mPendingTouchEvent = null;
+     }
+ 
+-
+-
+     private void setupAssistActions() {
+         int[] buttonIds = new int[] {R.id.action1, R.id.action2, R.id.action3};
+ 
+         List<ResolveInfo> infos;
+ 
+         if (TelephonyManager.EMERGENCY_ASSISTANCE_ENABLED) {
+-            infos = resolveAssistPackageAndQueryActivites();
++            infos = EmergencyAssistanceHelper.resolveAssistPackageAndQueryActivities(getContext());
+         } else {
+             infos = null;
+         }
+@@ -146,7 +140,7 @@ public class EmergencyActionGroup extends FrameLayout implements View.OnClickLis
+ 
+             if (infos != null && infos.size() > i && infos.get(i) != null) {
+                 ResolveInfo info = infos.get(i);
+-                ComponentName name = getComponentName(info);
++                ComponentName name = EmergencyAssistanceHelper.getComponentName(info);
+ 
+                 button.setTag(R.id.tag_intent,
+                         new Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE)
+@@ -159,69 +153,6 @@ public class EmergencyActionGroup extends FrameLayout implements View.OnClickLis
+         }
+     }
+ 
+-    private List<ResolveInfo> resolveAssistPackageAndQueryActivites() {
+-        List<ResolveInfo> infos = queryAssistActivities();
+-
+-        if (infos == null || infos.isEmpty()) {
+-            PackageManager packageManager = getContext().getPackageManager();
+-            Intent queryIntent = new Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE);
+-            infos = packageManager.queryIntentActivities(queryIntent, 0);
+-
+-            PackageInfo bestMatch = null;
+-            for (int i = 0; i < infos.size(); i++) {
+-                if (infos.get(i).activityInfo == null) continue;
+-                String packageName = infos.get(i).activityInfo.packageName;
+-                PackageInfo packageInfo;
+-                try {
+-                    packageInfo = packageManager.getPackageInfo(packageName, 0);
+-                } catch (PackageManager.NameNotFoundException e) {
+-                    continue;
+-                }
+-                // Get earliest installed system app.
+-                if (isSystemApp(packageInfo) && (bestMatch == null ||
+-                        bestMatch.firstInstallTime > packageInfo.firstInstallTime)) {
+-                    bestMatch = packageInfo;
+-                }
+-            }
+-
+-            if (bestMatch != null) {
+-                Settings.Secure.putString(getContext().getContentResolver(),
+-                        Settings.Secure.EMERGENCY_ASSISTANCE_APPLICATION,
+-                        bestMatch.packageName);
+-                return queryAssistActivities();
+-            } else {
+-                return null;
+-            }
+-        } else {
+-            return infos;
+-        }
+-    }
+-
+-    private List<ResolveInfo> queryAssistActivities() {
+-        String assistPackage = Settings.Secure.getString(
+-                getContext().getContentResolver(),
+-                Settings.Secure.EMERGENCY_ASSISTANCE_APPLICATION);
+-        List<ResolveInfo> infos = null;
+-
+-        if (!TextUtils.isEmpty(assistPackage)) {
+-            Intent queryIntent = new Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE)
+-                    .setPackage(assistPackage);
+-            infos = getContext().getPackageManager().queryIntentActivities(queryIntent, 0);
+-        }
+-        return infos;
+-    }
+-
+-    private boolean isSystemApp(PackageInfo info) {
+-        return info.applicationInfo != null
+-                && (info.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+-    }
+-
+-    private ComponentName getComponentName(ResolveInfo resolveInfo) {
+-        if (resolveInfo == null || resolveInfo.activityInfo == null) return null;
+-        return new ComponentName(resolveInfo.activityInfo.packageName,
+-                resolveInfo.activityInfo.name);
+-    }
+-
+     @Override
+     public void onClick(View v) {
+         Intent intent = (Intent) v.getTag(R.id.tag_intent);
+@@ -405,6 +336,4 @@ public class EmergencyActionGroup extends FrameLayout implements View.OnClickLis
+             startRipple();
+         }
+     };
+-
+-
+ }
+diff --git a/src/com/android/phone/EmergencyAssistanceHelper.java b/src/com/android/phone/EmergencyAssistanceHelper.java
+new file mode 100644
+index 000000000..3053125b4
+--- /dev/null
++++ b/src/com/android/phone/EmergencyAssistanceHelper.java
+@@ -0,0 +1,107 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.phone;
++
++import android.content.ComponentName;
++import android.content.Context;
++import android.content.Intent;
++import android.content.pm.ApplicationInfo;
++import android.content.pm.PackageInfo;
++import android.content.pm.PackageManager;
++import android.content.pm.ResolveInfo;
++import android.provider.Settings;
++import android.telephony.TelephonyManager;
++import android.text.TextUtils;
++
++import java.util.List;
++
++/**
++ * A helper to query activities of emergency assistance.
++ */
++public class EmergencyAssistanceHelper {
++
++    /**
++     * Query activities of emergency assistance.
++     *
++     * @param context The context of the application.
++     * @return A list of {@link ResolveInfo} which is queried from default assistance package,
++     * or null if there is no installed system application of emergency assistance.
++     */
++    public static List<ResolveInfo> resolveAssistPackageAndQueryActivities(Context context) {
++        List<ResolveInfo> infos = queryAssistActivities(context);
++
++        if (infos == null || infos.isEmpty()) {
++            PackageManager packageManager = context.getPackageManager();
++            Intent queryIntent = new Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE);
++            infos = packageManager.queryIntentActivities(queryIntent, 0);
++
++            PackageInfo bestMatch = null;
++            for (int i = 0; i < infos.size(); i++) {
++                if (infos.get(i).activityInfo == null) continue;
++                String packageName = infos.get(i).activityInfo.packageName;
++                PackageInfo packageInfo;
++                try {
++                    packageInfo = packageManager.getPackageInfo(packageName, 0);
++                } catch (PackageManager.NameNotFoundException e) {
++                    continue;
++                }
++                // Get earliest installed system app.
++                if (isSystemApp(packageInfo) && (bestMatch == null
++                        || bestMatch.firstInstallTime > packageInfo.firstInstallTime)) {
++                    bestMatch = packageInfo;
++                }
++            }
++
++            if (bestMatch != null) {
++                Settings.Secure.putString(context.getContentResolver(),
++                        Settings.Secure.EMERGENCY_ASSISTANCE_APPLICATION, bestMatch.packageName);
++                return queryAssistActivities(context);
++            } else {
++                return null;
++            }
++        } else {
++            return infos;
++        }
++    }
++
++    /**
++     * Compose {@link ComponentName} from {@link ResolveInfo}.
++     */
++    public static ComponentName getComponentName(ResolveInfo resolveInfo) {
++        if (resolveInfo == null || resolveInfo.activityInfo == null) return null;
++        return new ComponentName(resolveInfo.activityInfo.packageName,
++                resolveInfo.activityInfo.name);
++    }
++
++    private static List<ResolveInfo> queryAssistActivities(Context context) {
++        final String assistPackage = Settings.Secure.getString(context.getContentResolver(),
++                Settings.Secure.EMERGENCY_ASSISTANCE_APPLICATION);
++        List<ResolveInfo> infos = null;
++
++        if (!TextUtils.isEmpty(assistPackage)) {
++            Intent queryIntent = new Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE)
++                    .setPackage(assistPackage);
++            infos = context.getPackageManager().queryIntentActivities(queryIntent, 0);
++        }
++        return infos;
++    }
++
++    private static boolean isSystemApp(PackageInfo info) {
++        return info.applicationInfo != null
++                && (info.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
++    }
++}
+diff --git a/src/com/android/phone/EmergencyDialer.java b/src/com/android/phone/EmergencyDialer.java
+index 31e1958e7..2c8a40b53 100644
+--- a/src/com/android/phone/EmergencyDialer.java
++++ b/src/com/android/phone/EmergencyDialer.java
+@@ -18,6 +18,8 @@ package com.android.phone;
+ 
+ import static android.telephony.ServiceState.RIL_RADIO_TECHNOLOGY_UNKNOWN;
+ 
++import android.animation.Animator;
++import android.animation.AnimatorListenerAdapter;
+ import android.app.Activity;
+ import android.app.AlertDialog;
+ import android.app.Dialog;
+@@ -81,6 +83,13 @@ import com.android.phone.common.widget.ResizingTextEditText;
+  * moved into a shared base class that would live in the framework?
+  * Or could we figure out some way to move *this* class into apps/Contacts
+  * also?
++ *
++ * TODO: Implement emergency dialer shortcut.
++ *  emergency dialer shortcut offer a local emergency number list. Directly click a number to
++ *  make an emergency phone call without entering numbers from dialpad.
++ *  TODO item:
++ *     1.implement emergency shortcut list UI.
++ *     2.integrate emergency phone number table.
+  */
+ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         View.OnLongClickListener, View.OnKeyListener, TextWatcher,
+@@ -119,6 +128,8 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+     ResizingTextEditText mDigits;
+     private View mDialButton;
+     private View mDelete;
++    private View mEmergencyShortcutView;
++    private View mDialpadView;
+ 
+     private ToneGenerator mToneGenerator;
+     private Object mToneGeneratorLock = new Object();
+@@ -148,6 +159,8 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+     private boolean mIsWfcEmergencyCallingWarningEnabled;
+     private float mDefaultDigitsTextSize;
+ 
++    private boolean mAreEmergencyDialerShortcutsEnabled;
++
+     @Override
+     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+         // Do nothing
+@@ -278,6 +291,13 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         registerReceiver(mBroadcastReceiver, intentFilter);
+ 
+         mEmergencyActionGroup = (EmergencyActionGroup) findViewById(R.id.emergency_action_group);
++
++        mAreEmergencyDialerShortcutsEnabled = Settings.Global.getInt(getContentResolver(),
++                Settings.Global.FASTER_EMERGENCY_PHONE_CALL_ENABLED, 0) != 0;
++
++        if (mAreEmergencyDialerShortcutsEnabled) {
++            setupEmergencyShortcutsView();
++        }
+     }
+ 
+     @Override
+@@ -333,6 +353,19 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         view.setOnLongClickListener(this);
+     }
+ 
++    @Override
++    public void onBackPressed() {
++        // If emergency dialer shortcut is enabled and Dialpad view is visible, pressing the
++        // back key will back to display FasterEmergencyDialer view.
++        // Otherwise, it would finish the activity.
++        if (mAreEmergencyDialerShortcutsEnabled && mDialpadView != null
++                && mDialpadView.getVisibility() == View.VISIBLE) {
++            switchView(mEmergencyShortcutView, mDialpadView, true);
++            return;
++        }
++        super.onBackPressed();
++    }
++
+     /**
+      * handle key events
+      */
+@@ -404,6 +437,17 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+                 }
+                 return;
+             }
++            case R.id.floating_action_button_dialpad: {
++                switchView(mDialpadView, mEmergencyShortcutView, true);
++                return;
++            }
++            case R.id.emergency_info_button: {
++                Intent intent = (Intent) view.getTag(R.id.tag_intent);
++                if (intent != null) {
++                    startActivity(intent);
++                }
++                return;
++            }
+         }
+     }
+ 
+@@ -797,4 +841,77 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+             Log.i(LOG_TAG, "hint - setting to " + mDigits.getScaledTextSize());
+         }
+     }
++
++    private void setupEmergencyShortcutsView() {
++        mEmergencyShortcutView = findViewById(R.id.emergency_dialer_shortcuts);
++        mDialpadView = findViewById(R.id.emergency_dialer);
++
++        final View dialpadButton = findViewById(R.id.floating_action_button_dialpad);
++        dialpadButton.setOnClickListener(this);
++
++        final View emergencyInfoButton = findViewById(R.id.emergency_info_button);
++        emergencyInfoButton.setOnClickListener(this);
++
++        // EmergencyActionGroup is replaced by EmergencyInfoGroup.
++        mEmergencyActionGroup.setVisibility(View.GONE);
++
++        // Setup dialpad title.
++        final View emergencyDialpadTitle = findViewById(R.id.emergency_dialpad_title_container);
++        emergencyDialpadTitle.setVisibility(View.VISIBLE);
++
++        switchView(mEmergencyShortcutView, mDialpadView, false);
++    }
++
++    /**
++     * Switch two view.
++     *
++     * @param displayView the view would be displayed.
++     * @param hideView the view would be hidden.
++     * @param hasAnimation is {@code true} when the view should be displayed with animation.
++     */
++    private void switchView(View displayView, View hideView, boolean hasAnimation) {
++        if (displayView == null || hideView == null) {
++            return;
++        }
++
++        if (displayView.getVisibility() == View.VISIBLE) {
++            return;
++        }
++
++        if (hasAnimation) {
++            crossfade(hideView, displayView);
++        } else {
++            hideView.setVisibility(View.GONE);
++            displayView.setVisibility(View.VISIBLE);
++        }
++    }
++
++    /**
++     * Fade out and fade in animation between two view transition.
++     */
++    private void crossfade(View fadeOutView, View fadeInView) {
++        if (fadeOutView == null || fadeInView == null) {
++            return;
++        }
++        final int shortAnimationDuration = getResources().getInteger(
++                android.R.integer.config_shortAnimTime);
++
++        fadeInView.setAlpha(0f);
++        fadeInView.setVisibility(View.VISIBLE);
++
++        fadeInView.animate()
++                .alpha(1f)
++                .setDuration(shortAnimationDuration)
++                .setListener(null);
++
++        fadeOutView.animate()
++                .alpha(0f)
++                .setDuration(shortAnimationDuration)
++                .setListener(new AnimatorListenerAdapter() {
++                    @Override
++                    public void onAnimationEnd(Animator animation) {
++                        fadeOutView.setVisibility(View.GONE);
++                    }
++                });
++    }
+ }
+diff --git a/src/com/android/phone/EmergencyInfoGroup.java b/src/com/android/phone/EmergencyInfoGroup.java
+new file mode 100644
+index 000000000..f63cb263c
+--- /dev/null
++++ b/src/com/android/phone/EmergencyInfoGroup.java
+@@ -0,0 +1,125 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.phone;
++
++import android.annotation.Nullable;
++import android.content.Context;
++import android.content.Intent;
++import android.content.pm.ResolveInfo;
++import android.graphics.Bitmap;
++import android.graphics.drawable.Drawable;
++import android.os.UserHandle;
++import android.os.UserManager;
++import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
++import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
++import android.telephony.TelephonyManager;
++import android.util.AttributeSet;
++import android.view.View;
++import android.widget.ImageView;
++import android.widget.LinearLayout;
++import android.widget.TextView;
++
++import com.android.internal.util.UserIcons;
++
++import java.util.List;
++
++/**
++ * EmergencyInfoGroup display user icon and user name. And it is an entry point to
++ * Emergency Information.
++ */
++public class EmergencyInfoGroup extends LinearLayout {
++
++    private ImageView mEmergencyInfoImage;
++    private TextView mEmergencyInfoName;
++    private View mEmergencyInfoTitle;
++    private View mEmergencyInfoButton;
++
++    public EmergencyInfoGroup(Context context, @Nullable AttributeSet attrs) {
++        super(context, attrs);
++    }
++
++    @Override
++    protected void onFinishInflate() {
++        super.onFinishInflate();
++        mEmergencyInfoTitle = findViewById(R.id.emergency_info_title);
++        mEmergencyInfoButton = findViewById(R.id.emergency_info_button);
++        mEmergencyInfoImage = (ImageView) findViewById(R.id.emergency_info_image);
++        mEmergencyInfoName = (TextView) findViewById(R.id.emergency_info_name);
++    }
++
++    @Override
++    protected void onWindowVisibilityChanged(int visibility) {
++        super.onWindowVisibilityChanged(visibility);
++        if (visibility == View.VISIBLE) {
++            setupButtonInfo();
++        }
++    }
++
++    private void setupButtonInfo() {
++        List<ResolveInfo> infos;
++
++        if (TelephonyManager.EMERGENCY_ASSISTANCE_ENABLED) {
++            infos = EmergencyAssistanceHelper.resolveAssistPackageAndQueryActivities(getContext());
++        } else {
++            infos = null;
++        }
++
++        boolean visible = false;
++
++        if (infos != null && infos.size() > 0) {
++            final String packageName = infos.get(0).activityInfo.packageName;
++            final Intent intent = new Intent(TelephonyManager.ACTION_EMERGENCY_ASSISTANCE)
++                    .setPackage(packageName);
++            mEmergencyInfoButton.setTag(R.id.tag_intent, intent);
++            mEmergencyInfoImage.setImageDrawable(getCircularUserIcon());
++
++            /* TODO: Get user name.
++                if user name exist:
++                    1. mEmergencyInfoTitle show title.
++                    2. mEmergencyInfoName show user name.
++                if user name does not exist:
++                    1. mEmergencyInfoTitle hide.
++                    2. mEmergencyInfoName show app label. */
++            mEmergencyInfoTitle.setVisibility(View.INVISIBLE);
++            mEmergencyInfoName.setText(getContext().getResources().getString(
++                    R.string.emergency_information_title));
++
++            visible = true;
++        }
++
++        setVisibility(visible ? View.VISIBLE : View.GONE);
++    }
++
++    private Drawable getCircularUserIcon() {
++        final UserManager userManager = (UserManager) getContext().getSystemService(
++                Context.USER_SERVICE);
++        Bitmap bitmapUserIcon = userManager.getUserIcon(UserHandle.getCallingUserId());
++
++        if (bitmapUserIcon == null) {
++            // get default user icon.
++            final Drawable defaultUserIcon = UserIcons.getDefaultUserIcon(
++                    getContext().getResources(), UserHandle.getCallingUserId(), false);
++            bitmapUserIcon = UserIcons.convertToBitmap(defaultUserIcon);
++        }
++
++        RoundedBitmapDrawable drawableUserIcon = RoundedBitmapDrawableFactory.create(
++                getContext().getResources(), bitmapUserIcon);
++        drawableUserIcon.setCircular(true);
++
++        return drawableUserIcon;
++    }
++}
+-- 
+2.17.1
+

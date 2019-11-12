@@ -1,0 +1,41 @@
+From 5ffae1b4fd47e3420e9d00d6d891ca89c9206298 Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Fri, 8 Dec 2017 11:55:19 -0800
+Subject: [PATCH 030/306] Fix issue where brightness mirror listener wouldn't
+ be released
+
+Change-Id: I4f0bd83ad6f5915145f59e47fb899dfee8cb2d77
+Fixes: 70388511
+Bug: 70296214
+Test: Unlock from pulsing with fingerprint, then adjust brightness
+(cherry picked from commit 037a50076fd7d64c6d609726e6f81d3c6b335891)
+---
+ .../android/systemui/statusbar/phone/StatusBar.java  | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 68c7d849cf0..87b786a2146 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -4122,14 +4122,10 @@ public class StatusBar extends SystemUI implements DemoMode,
+                 .setStartDelay(0)
+                 .setDuration(FADE_KEYGUARD_DURATION_PULSING)
+                 .setInterpolator(ScrimController.KEYGUARD_FADE_OUT_INTERPOLATOR)
+-                .setListener(new AnimatorListenerAdapter() {
+-                    @Override
+-                    public void onAnimationEnd(Animator animation) {
+-                        hideKeyguard();
+-                        mStatusBarKeyguardViewManager.onKeyguardFadedAway();
+-                    }
+-                })
+-                .start();
++                .withEndAction(()-> {
++                    hideKeyguard();
++                    mStatusBarKeyguardViewManager.onKeyguardFadedAway();
++                }).start();
+     }
+ 
+     /**
+-- 
+2.17.1
+

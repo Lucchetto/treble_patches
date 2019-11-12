@@ -1,0 +1,601 @@
+From 96836814028fc0a34caa64dd3a0bb0df9a63c5d3 Mon Sep 17 00:00:00 2001
+From: Selim Cinek <cinek@google.com>
+Date: Wed, 16 May 2018 16:01:05 -0700
+Subject: [PATCH 194/306] Fix that the empty shade view would be visible
+ sometimes
+
+Refactored the state to be more clear and make sure the end runnable is always called.
+
+Fixes: 78861878
+Test: have no notification, hide view by scrolling up, get notification, observe
+Change-Id: I51b00696f4b2dba565a0213c24a5a67a3c4099e0
+(cherry picked from commit d60ef9ec8715b51ab2f8d341b88c3665cfadd300)
+---
+ .../layout/status_bar_notification_footer.xml |   4 +-
+ .../systemui/statusbar/EmptyShadeView.java    |   3 +-
+ .../systemui/statusbar/FooterView.java        |   2 +-
+ .../statusbar/StackScrollerDecorView.java     | 198 +++++++++---------
+ .../systemui/statusbar/phone/StatusBar.java   |   8 +-
+ .../stack/NotificationStackScrollLayout.java  |  61 +-----
+ .../systemui/statusbar/FooterViewTest.java    |  43 +---
+ .../NotificationStackScrollLayoutTest.java    |  13 +-
+ 8 files changed, 123 insertions(+), 209 deletions(-)
+
+diff --git a/packages/SystemUI/res/layout/status_bar_notification_footer.xml b/packages/SystemUI/res/layout/status_bar_notification_footer.xml
+index b4c2ba86660..6c5cebc39d2 100644
+--- a/packages/SystemUI/res/layout/status_bar_notification_footer.xml
++++ b/packages/SystemUI/res/layout/status_bar_notification_footer.xml
+@@ -22,7 +22,7 @@
+         android:paddingStart="4dp"
+         android:paddingEnd="4dp"
+         android:visibility="gone">
+-    <FrameLayout
++    <com.android.systemui.statusbar.AlphaOptimizedFrameLayout
+         android:id="@+id/content"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content" >
+@@ -46,5 +46,5 @@
+             android:contentDescription="@string/accessibility_clear_all"
+             android:text="@string/clear_all_notifications_text"
+             android:textColor="?attr/wallpaperTextColor"/>
+-    </FrameLayout>
++    </com.android.systemui.statusbar.AlphaOptimizedFrameLayout>
+ </com.android.systemui.statusbar.FooterView>
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/EmptyShadeView.java b/packages/SystemUI/src/com/android/systemui/statusbar/EmptyShadeView.java
+index 011be8821fb..4da155806af 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/EmptyShadeView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/EmptyShadeView.java
+@@ -84,8 +84,7 @@ public class EmptyShadeView extends StackScrollerDecorView {
+             if (view instanceof EmptyShadeView) {
+                 EmptyShadeView emptyShadeView = (EmptyShadeView) view;
+                 boolean visible = this.clipTopAmount <= mEmptyText.getPaddingTop() * 0.6f;
+-                emptyShadeView.performVisibilityAnimation(
+-                        visible && !emptyShadeView.willBeGone());
++                emptyShadeView.setContentVisible(visible && emptyShadeView.isVisible());
+             }
+         }
+     }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/FooterView.java b/packages/SystemUI/src/com/android/systemui/statusbar/FooterView.java
+index 0f4b6215dce..dc5bb9a212c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/FooterView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/FooterView.java
+@@ -98,7 +98,7 @@ public class FooterView extends StackScrollerDecorView {
+             if (view instanceof FooterView) {
+                 FooterView footerView = (FooterView) view;
+                 boolean visible = this.clipTopAmount < mClearAllTopPadding;
+-                footerView.performVisibilityAnimation(visible && !footerView.willBeGone());
++                footerView.setContentVisible(visible && footerView.isVisible());
+             }
+         }
+     }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/StackScrollerDecorView.java b/packages/SystemUI/src/com/android/systemui/statusbar/StackScrollerDecorView.java
+index b2eb18e7e0e..f27ab9e8a66 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/StackScrollerDecorView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/StackScrollerDecorView.java
+@@ -16,13 +16,13 @@
+ 
+ package com.android.systemui.statusbar;
+ 
+-import android.animation.Animator;
+ import android.animation.AnimatorListenerAdapter;
+ import android.content.Context;
+ import android.util.AttributeSet;
+ import android.view.View;
+ import android.view.animation.Interpolator;
+ 
++import com.android.internal.annotations.VisibleForTesting;
+ import com.android.systemui.Interpolators;
+ 
+ /**
+@@ -33,11 +33,19 @@ public abstract class StackScrollerDecorView extends ExpandableView {
+ 
+     protected View mContent;
+     protected View mSecondaryView;
+-    private boolean mIsVisible;
+-    private boolean mIsSecondaryVisible;
+-    private boolean mAnimating;
+-    private boolean mSecondaryAnimating;
++    private boolean mIsVisible = true;
++    private boolean mContentVisible = true;
++    private boolean mIsSecondaryVisible = true;
+     private int mDuration = 260;
++    private boolean mContentAnimating;
++    private final Runnable mContentVisibilityEndRunnable = () -> {
++        mContentAnimating = false;
++        if (getVisibility() != View.GONE && !mIsVisible) {
++            setVisibility(GONE);
++            setWillBeGone(false);
++            notifyHeightChanged(false /* needsAnimation */);
++        }
++    };
+ 
+     public StackScrollerDecorView(Context context, AttributeSet attrs) {
+         super(context, attrs);
+@@ -48,7 +56,8 @@ public abstract class StackScrollerDecorView extends ExpandableView {
+         super.onFinishInflate();
+         mContent = findContentView();
+         mSecondaryView = findSecondaryView();
+-        setInvisible();
++        setVisible(false /* nowVisible */, false /* animate */);
++        setSecondaryVisible(false /* nowVisible */, false /* animate */);
+     }
+ 
+     @Override
+@@ -62,72 +71,82 @@ public abstract class StackScrollerDecorView extends ExpandableView {
+         return true;
+     }
+ 
+-    public void performVisibilityAnimation(boolean nowVisible) {
+-        performVisibilityAnimation(nowVisible, null /* onFinishedRunnable */);
+-    }
+-
+-    public void performVisibilityAnimation(boolean nowVisible, Runnable onFinishedRunnable) {
+-        boolean oldVisible = isVisible();
+-        animateText(mContent, nowVisible, oldVisible, new AnimatorListenerAdapter() {
+-                @Override
+-                public void onAnimationStart(Animator animation) {
+-                    mAnimating = true;
+-                }
+-
+-                @Override
+-                public void onAnimationEnd(Animator animation) {
+-                    mAnimating = false;
+-                    mIsVisible = nowVisible;
+-                    if (onFinishedRunnable != null) {
+-                        onFinishedRunnable.run();
+-                    }
+-                }
+-            });
++    /**
++     * Set the content of this view to be visible in an animated way.
++     *
++     * @param contentVisible True if the content should be visible or false if it should be hidden.
++     */
++    public void setContentVisible(boolean contentVisible) {
++        setContentVisible(contentVisible, true /* animate */);
+     }
+-
+-    public void performSecondaryVisibilityAnimation(boolean nowVisible) {
+-        performSecondaryVisibilityAnimation(nowVisible, null /* onFinishedRunnable */);
++    /**
++     * Set the content of this view to be visible.
++     * @param contentVisible True if the content should be visible or false if it should be hidden.
++     * @param animate Should an animation be performed.
++     */
++    private void setContentVisible(boolean contentVisible, boolean animate) {
++        if (mContentVisible != contentVisible) {
++            mContentAnimating = animate;
++            setViewVisible(mContent, contentVisible, animate, mContentVisibilityEndRunnable);
++            mContentVisible = contentVisible;
++        } if (!mContentAnimating) {
++            mContentVisibilityEndRunnable.run();
++        }
+     }
+ 
+-    public void performSecondaryVisibilityAnimation(boolean nowVisible,
+-            Runnable onFinishedRunnable) {
+-        boolean oldVisible = isSecondaryVisible();
+-        animateText(mSecondaryView, nowVisible, oldVisible, new AnimatorListenerAdapter() {
+-                @Override
+-                public void onAnimationStart(Animator animation) {
+-                    mSecondaryAnimating = true;
+-                }
+-
+-                @Override
+-                public void onAnimationEnd(Animator animation) {
+-                    mSecondaryAnimating = false;
+-                    mIsSecondaryVisible = nowVisible;
+-                    if (onFinishedRunnable != null) {
+-                        onFinishedRunnable.run();
+-                    }
++    /**
++     * Make this view visible. If {@code false} is passed, the view will fade out it's content
++     * and set the view Visibility to GONE. If only the content should be changed
++     * {@link #setContentVisible(boolean)} can be used.
++     *
++     * @param nowVisible should the view be visible
++     * @param animate should the change be animated.
++     */
++    public void setVisible(boolean nowVisible, boolean animate) {
++        if (mIsVisible != nowVisible) {
++            mIsVisible = nowVisible;
++            if (animate) {
++                if (nowVisible) {
++                    setVisibility(VISIBLE);
++                    setWillBeGone(false);
++                    notifyHeightChanged(false /* needsAnimation */);
++                } else {
++                    setWillBeGone(true);
+                 }
+-            });
++                setContentVisible(nowVisible, true /* animate */);
++            } else {
++                setVisibility(nowVisible ? VISIBLE : GONE);
++                setContentVisible(nowVisible, false /* animate */);
++                setWillBeGone(false);
++                notifyHeightChanged(false /* needsAnimation */);
++            }
++        }
+     }
+ 
+     /**
+-     * Check whether the secondary view is visible or not.<p/>
++     * Set the secondary view of this layout to visible.
+      *
+-     * @see #isVisible()
++     * @param nowVisible should the secondary view be visible
++     * @param animate should the change be animated
+      */
+-    public boolean isSecondaryVisible() {
+-        return mSecondaryView != null && (mIsSecondaryVisible ^ mSecondaryAnimating);
++    public void setSecondaryVisible(boolean nowVisible, boolean animate) {
++        if (mIsSecondaryVisible != nowVisible) {
++            setViewVisible(mSecondaryView, nowVisible, animate, null /* endRunnable */);
++            mIsSecondaryVisible = nowVisible;
++        }
++    }
++
++    @VisibleForTesting
++    boolean isSecondaryVisible() {
++        return mIsSecondaryVisible;
+     }
+ 
+     /**
+-     * Check whether the whole view is visible or not.<p/>
+-     * The view is considered visible if it matches one of following:
+-     * <ul>
+-     *   <li> It's visible and there is no ongoing animation. </li>
+-     *   <li> It's not visible but is animating, thus being eventually visible. </li>
+-     * </ul>
++     * Is this view visible. If a view is currently animating to gone, it will
++     * return {@code false}.
+      */
+     public boolean isVisible() {
+-        return mIsVisible ^ mAnimating;
++        return mIsVisible;
+     }
+ 
+     void setDuration(int duration) {
+@@ -135,43 +154,35 @@ public abstract class StackScrollerDecorView extends ExpandableView {
+     }
+ 
+     /**
+-     * Animate the text to a new visibility.
+-     *
+-     * @param view Target view, maybe content view or dissmiss view
+-     * @param nowVisible Should it now be visible
+-     * @param oldVisible Is it visible currently
+-     * @param listener A listener that doing flag settings or other actions
++     * Animate a view to a new visibility.
++     * @param view Target view, maybe content view or dismiss view.
++     * @param nowVisible Should it now be visible.
++     * @param animate Should this be done in an animated way.
++     * @param endRunnable A runnable that is run when the animation is done.
+      */
+-    private void animateText(View view, boolean nowVisible, boolean oldVisible,
+-        AnimatorListenerAdapter listener) {
++    private void setViewVisible(View view, boolean nowVisible,
++            boolean animate, Runnable endRunnable) {
+         if (view == null) {
+             return;
+         }
+-
+-        if (nowVisible != oldVisible) {
+-            // Animate text
+-            float endValue = nowVisible ? 1.0f : 0.0f;
+-            Interpolator interpolator;
+-            if (nowVisible) {
+-                interpolator = Interpolators.ALPHA_IN;
+-            } else {
+-                interpolator = Interpolators.ALPHA_OUT;
++        // cancel any previous animations
++        view.animate().cancel();
++        float endValue = nowVisible ? 1.0f : 0.0f;
++        if (!animate) {
++            view.setAlpha(endValue);
++            if (endRunnable != null) {
++                endRunnable.run();
+             }
+-            view.animate()
+-                    .alpha(endValue)
+-                    .setInterpolator(interpolator)
+-                    .setDuration(mDuration)
+-                    .setListener(listener);
++            return;
+         }
+-    }
+ 
+-    public void setInvisible() {
+-        mContent.setAlpha(0.0f);
+-        if (mSecondaryView != null) {
+-            mSecondaryView.setAlpha(0.0f);
+-        }
+-        mIsVisible = false;
+-        mIsSecondaryVisible = false;
++        // Animate the view alpha
++        Interpolator interpolator = nowVisible ? Interpolators.ALPHA_IN : Interpolators.ALPHA_OUT;
++        view.animate()
++                .alpha(endValue)
++                .setInterpolator(interpolator)
++                .setDuration(mDuration)
++                .withEndAction(endRunnable);
+     }
+ 
+     @Override
+@@ -180,13 +191,13 @@ public abstract class StackScrollerDecorView extends ExpandableView {
+             Runnable onFinishedRunnable,
+             AnimatorListenerAdapter animationListener) {
+         // TODO: Use duration
+-        performVisibilityAnimation(false);
++        setContentVisible(false);
+     }
+ 
+     @Override
+     public void performAddAnimation(long delay, long duration, boolean isHeadsUpAppear) {
+         // TODO: use delay and duration
+-        performVisibilityAnimation(true);
++        setContentVisible(true);
+     }
+ 
+     @Override
+@@ -194,13 +205,6 @@ public abstract class StackScrollerDecorView extends ExpandableView {
+         return false;
+     }
+ 
+-    public void cancelAnimation() {
+-        mContent.animate().cancel();
+-        if (mSecondaryView != null) {
+-            mSecondaryView.animate().cancel();
+-        }
+-    }
+-
+     protected abstract View findContentView();
+ 
+     /**
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 5c1401542fb..662956cff3f 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -1453,11 +1453,11 @@ public class StatusBar extends SystemUI implements DemoMode,
+ 
+     @VisibleForTesting
+     protected void updateFooter() {
+-        boolean showFooterView = mState != StatusBarState.KEYGUARD
+-                && mEntryManager.getNotificationData().getActiveNotifications().size() != 0
++        boolean showDismissView = mClearAllEnabled && hasActiveClearableNotifications();
++        boolean showFooterView = (showDismissView ||
++                        mEntryManager.getNotificationData().getActiveNotifications().size() != 0)
++                && mState != StatusBarState.KEYGUARD
+                 && !mRemoteInputManager.getController().isRemoteInputActive();
+-        boolean showDismissView = mClearAllEnabled && mState != StatusBarState.KEYGUARD
+-                && hasActiveClearableNotifications();
+ 
+         mStackScroller.updateFooterView(showFooterView, showDismissView);
+     }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java b/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java
+index ee700197b13..dc4b697cbdb 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayout.java
+@@ -3922,10 +3922,6 @@ public class NotificationStackScrollLayout extends ViewGroup
+     }
+ 
+     public void goToFullShade(long delay) {
+-        if (mFooterView != null) {
+-            mFooterView.setInvisible();
+-        }
+-        mEmptyShadeView.setInvisible();
+         mGoToFullShadeNeedsAnimation = true;
+         mGoToFullShadeDelay = delay;
+         mNeedsAnimation = true;
+@@ -4073,17 +4069,7 @@ public class NotificationStackScrollLayout extends ViewGroup
+     }
+ 
+     public void updateEmptyShadeView(boolean visible) {
+-        int oldVisibility = mEmptyShadeView.willBeGone() ? GONE : mEmptyShadeView.getVisibility();
+-        int newVisibility = visible ? VISIBLE : GONE;
+-
+-        boolean changedVisibility = oldVisibility != newVisibility;
+-        if (changedVisibility) {
+-            if (newVisibility != GONE) {
+-                showFooterView(mEmptyShadeView);
+-            } else {
+-                hideFooterView(mEmptyShadeView, true);
+-            }
+-        }
++        mEmptyShadeView.setVisible(visible, mIsExpanded && mAnimationsEnabled);
+ 
+         int oldTextRes = mEmptyShadeView.getTextResource();
+         int newTextRes = mStatusBar.areNotificationsHidden()
+@@ -4097,48 +4083,9 @@ public class NotificationStackScrollLayout extends ViewGroup
+         if (mFooterView == null) {
+             return;
+         }
+-        int oldVisibility = mFooterView.willBeGone() ? GONE : mFooterView.getVisibility();
+-        int newVisibility = visible ? VISIBLE : GONE;
+-        if (oldVisibility != newVisibility) {
+-            if (newVisibility != GONE) {
+-                showFooterView(mFooterView);
+-            } else {
+-                hideFooterView(mFooterView, mFooterView.isButtonVisible());
+-            }
+-        }
+-        if (mFooterView.isSecondaryVisible() != showDismissView) {
+-            mFooterView.performSecondaryVisibilityAnimation(showDismissView);
+-        }
+-    }
+-
+-    private void showFooterView(StackScrollerDecorView footerView) {
+-        if (footerView.willBeGone()) {
+-            footerView.cancelAnimation();
+-        } else {
+-            footerView.setInvisible();
+-        }
+-        footerView.setVisibility(VISIBLE);
+-        footerView.setWillBeGone(false);
+-        updateContentHeight();
+-        notifyHeightChangeListener(footerView);
+-    }
+-
+-    private void hideFooterView(StackScrollerDecorView footerView, boolean isButtonVisible) {
+-        Runnable onHideFinishRunnable = new Runnable() {
+-            @Override
+-            public void run() {
+-                footerView.setVisibility(GONE);
+-                footerView.setWillBeGone(false);
+-                updateContentHeight();
+-                notifyHeightChangeListener(footerView);
+-            }
+-        };
+-        if (isButtonVisible && mIsExpanded && mAnimationsEnabled) {
+-            footerView.setWillBeGone(true);
+-            footerView.performVisibilityAnimation(false, onHideFinishRunnable);
+-        } else {
+-            onHideFinishRunnable.run();
+-        }
++        boolean animate = mIsExpanded && mAnimationsEnabled;
++        mFooterView.setVisible(visible, animate);
++        mFooterView.setSecondaryVisible(showDismissView, animate);
+     }
+ 
+     public void setDismissAllInProgress(boolean dismissAllInProgress) {
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/FooterViewTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/FooterViewTest.java
+index 96b02550b63..e6fdfa42719 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/FooterViewTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/FooterViewTest.java
+@@ -23,39 +23,22 @@ import static junit.framework.Assert.assertNull;
+ import static junit.framework.Assert.assertTrue;
+ 
+ import static org.mockito.ArgumentMatchers.any;
+-import static org.mockito.ArgumentMatchers.anyInt;
+-import static org.mockito.ArgumentMatchers.argThat;
+ import static org.mockito.ArgumentMatchers.eq;
+ import static org.mockito.Mockito.doReturn;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.spy;
+-import static org.mockito.Mockito.when;
+-
+-import android.content.Context;
+-import android.content.ContextWrapper;
+-import android.content.pm.ApplicationInfo;
+-import android.content.pm.PackageManager;
+-import android.content.res.Resources;
+-import android.graphics.Color;
+-import android.graphics.drawable.Icon;
+-import android.os.UserHandle;
++
+ import android.support.test.filters.SmallTest;
+ import android.support.test.runner.AndroidJUnit4;
+-import android.util.AttributeSet;
+ import android.view.LayoutInflater;
+ import android.view.View;
+ 
+-import com.android.internal.statusbar.StatusBarIcon;
+-import com.android.internal.util.NotificationColorUtil;
+ import com.android.systemui.R;
+ import com.android.systemui.SysuiTestCase;
+ 
+ import org.junit.Before;
+-import org.junit.Rule;
+ import org.junit.Test;
+-import org.junit.rules.ExpectedException;
+ import org.junit.runner.RunWith;
+-import org.mockito.ArgumentMatcher;
+ 
+ @SmallTest
+ @RunWith(AndroidJUnit4.class)
+@@ -90,34 +73,18 @@ public class FooterViewTest extends SysuiTestCase {
+ 
+     @Test
+     public void testPerformVisibilityAnimation() {
+-        mView.setInvisible();
++        mView.setVisible(false /* visible */, false /* animate */);
+         assertFalse(mView.isVisible());
+ 
+-        Runnable test = new Runnable() {
+-            @Override
+-            public void run() {
+-                assertEquals(1.0f, mView.findContentView().getAlpha());
+-                assertEquals(0.0f, mView.findSecondaryView().getAlpha());
+-                assertTrue(mView.isVisible());
+-            }
+-        };
+-        mView.performVisibilityAnimation(true, test);
++        mView.setVisible(true /* visible */, true /* animate */);
+     }
+ 
+     @Test
+     public void testPerformSecondaryVisibilityAnimation() {
+-        mView.setInvisible();
++        mView.setSecondaryVisible(false /* visible */, false /* animate */);
+         assertFalse(mView.isSecondaryVisible());
+ 
+-        Runnable test = new Runnable() {
+-            @Override
+-            public void run() {
+-                assertEquals(0.0f, mView.findContentView().getAlpha());
+-                assertEquals(1.0f, mView.findSecondaryView().getAlpha());
+-                assertTrue(mView.isSecondaryVisible());
+-            }
+-        };
+-        mView.performSecondaryVisibilityAnimation(true, test);
++        mView.setSecondaryVisible(true /* visible */, true /* animate */);
+     }
+ }
+ 
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayoutTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayoutTest.java
+index eeb4209ccce..5400e3bab67 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayoutTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/stack/NotificationStackScrollLayoutTest.java
+@@ -18,6 +18,7 @@ package com.android.systemui.statusbar.stack;
+ 
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyBoolean;
++import static org.mockito.ArgumentMatchers.eq;
+ import static org.mockito.Mockito.doNothing;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.reset;
+@@ -28,12 +29,10 @@ import static org.mockito.Mockito.when;
+ import android.support.test.annotation.UiThreadTest;
+ import android.support.test.filters.SmallTest;
+ import android.support.test.runner.AndroidJUnit4;
+-import android.view.View;
+ 
+ import com.android.systemui.ExpandHelper;
+ import com.android.systemui.R;
+ import com.android.systemui.SysuiTestCase;
+-import com.android.systemui.TestableDependency;
+ import com.android.systemui.statusbar.EmptyShadeView;
+ import com.android.systemui.statusbar.FooterView;
+ import com.android.systemui.statusbar.NotificationBlockingHelperManager;
+@@ -169,12 +168,11 @@ public class NotificationStackScrollLayoutTest extends SysuiTestCase {
+         FooterView view = mock(FooterView.class);
+         mStackScroller.setFooterView(view);
+         when(view.willBeGone()).thenReturn(true);
+-        when(view.isSecondaryVisible()).thenReturn(true);
+ 
+         mStackScroller.updateFooterView(true, false);
+ 
+-        verify(view).setVisibility(View.VISIBLE);
+-        verify(view).performSecondaryVisibilityAnimation(false);
++        verify(view).setVisible(eq(true), anyBoolean());
++        verify(view).setSecondaryVisible(eq(false), anyBoolean());
+     }
+ 
+     @Test
+@@ -182,11 +180,10 @@ public class NotificationStackScrollLayoutTest extends SysuiTestCase {
+         FooterView view = mock(FooterView.class);
+         mStackScroller.setFooterView(view);
+         when(view.willBeGone()).thenReturn(true);
+-        when(view.isSecondaryVisible()).thenReturn(false);
+ 
+         mStackScroller.updateFooterView(true, true);
+ 
+-        verify(view).setVisibility(View.VISIBLE);
+-        verify(view).performSecondaryVisibilityAnimation(true);
++        verify(view).setVisible(eq(true), anyBoolean());
++        verify(view).setSecondaryVisible(eq(true), anyBoolean());
+     }
+ }
+-- 
+2.17.1
+

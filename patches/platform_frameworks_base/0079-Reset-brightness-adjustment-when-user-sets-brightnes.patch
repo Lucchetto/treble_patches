@@ -1,0 +1,145 @@
+From bdd11af109c633feca2b86d3c3155ea5c2195635 Mon Sep 17 00:00:00 2001
+From: Michael Wright <michaelwr@google.com>
+Date: Thu, 25 Jan 2018 22:20:54 +0000
+Subject: [PATCH 079/306] Reset brightness adjustment when user sets brightness
+ directly.
+
+If the user has a non-zero brightness adjustment then short-term model
+returns an incorrect value after they make a direct change to the
+brightness with auto-brightness on, which then looks like the
+auto-brightness is ignoring their input. To avoid this , if they're
+making a direct change to auto-brightness go ahead and reset the
+brightness adjustment.
+
+Change-Id: I257a6ecc7ca3df0e610710df19d81a65b009af45
+Fixes: 72506596
+Test: manual
+(cherry picked from commit 617564ff2cdee2e9a50339544129283503ae71a8)
+---
+ .../AutomaticBrightnessController.java        | 21 +++++++++++++++----
+ .../display/BrightnessMappingStrategy.java    |  4 ++++
+ .../display/DisplayPowerController.java       | 21 ++++++++++++++++---
+ 3 files changed, 39 insertions(+), 7 deletions(-)
+
+diff --git a/services/core/java/com/android/server/display/AutomaticBrightnessController.java b/services/core/java/com/android/server/display/AutomaticBrightnessController.java
+index e445d271519..6a88b1e1735 100644
+--- a/services/core/java/com/android/server/display/AutomaticBrightnessController.java
++++ b/services/core/java/com/android/server/display/AutomaticBrightnessController.java
+@@ -237,8 +237,13 @@ class AutomaticBrightnessController {
+         return mScreenAutoBrightness;
+     }
+ 
++    public float getAutomaticScreenBrightnessAdjustment() {
++        return mScreenAutoBrightnessAdjustment;
++    }
++
+     public void configure(boolean enable, @Nullable BrightnessConfiguration configuration,
+-            float brightness, float adjustment, int displayPolicy, boolean userInitiatedChange) {
++            float brightness, boolean userChangedBrightness, float adjustment,
++            boolean userChangedAutoBrightnessAdjustment, int displayPolicy) {
+         // While dozing, the application processor may be suspended which will prevent us from
+         // receiving new information from the light sensor. On some devices, we may be able to
+         // switch to a wake-up light sensor instead but for now we will simply disable the sensor
+@@ -247,12 +252,17 @@ class AutomaticBrightnessController {
+         boolean dozing = (displayPolicy == DisplayPowerRequest.POLICY_DOZE);
+         boolean changed = setBrightnessConfiguration(configuration);
+         changed |= setDisplayPolicy(displayPolicy);
+-        if (userInitiatedChange && enable && !dozing) {
+-            // Update the current brightness value.
++        changed |= setScreenAutoBrightnessAdjustment(adjustment);
++        if (userChangedBrightness && enable) {
++            // Update the brightness curve with the new user control point. It's critical this
++            // happens after we update the autobrightness adjustment since it may reset it.
+             changed |= setScreenBrightnessByUser(brightness);
++        }
++        final boolean userInitiatedChange =
++                userChangedBrightness || userChangedAutoBrightnessAdjustment;
++        if (userInitiatedChange && enable && !dozing) {
+             prepareBrightnessAdjustmentSample();
+         }
+-        changed |= setScreenAutoBrightnessAdjustment(adjustment);
+         changed |= setLightSensorEnabled(enable && !dozing);
+         if (changed) {
+             updateAutoBrightness(false /*sendUpdate*/);
+@@ -290,6 +300,9 @@ class AutomaticBrightnessController {
+             return false;
+         }
+         mBrightnessMapper.addUserDataPoint(mAmbientLux, brightness);
++        // Reset the brightness adjustment so that the next time we're queried for brightness we
++        // return the value the user set.
++        mScreenAutoBrightnessAdjustment = 0.0f;
+         return true;
+     }
+ 
+diff --git a/services/core/java/com/android/server/display/BrightnessMappingStrategy.java b/services/core/java/com/android/server/display/BrightnessMappingStrategy.java
+index 436ebff0ad8..001d4d903f3 100644
+--- a/services/core/java/com/android/server/display/BrightnessMappingStrategy.java
++++ b/services/core/java/com/android/server/display/BrightnessMappingStrategy.java
+@@ -182,6 +182,10 @@ public abstract class BrightnessMappingStrategy {
+     /**
+      * Adds a user interaction data point to the brightness mapping.
+      *
++     * This data point <b>must</b> exist on the brightness curve as a result of this call. This is
++     * so that the next time we come to query what the screen brightness should be, we get what the
++     * user requested rather than immediately changing to some other value.
++     *
+      * Currently, we only keep track of one of these at a time to constrain what can happen to the
+      * curve.
+      */
+diff --git a/services/core/java/com/android/server/display/DisplayPowerController.java b/services/core/java/com/android/server/display/DisplayPowerController.java
+index c5bf6d85685..80aec42b719 100644
+--- a/services/core/java/com/android/server/display/DisplayPowerController.java
++++ b/services/core/java/com/android/server/display/DisplayPowerController.java
+@@ -805,15 +805,20 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+             mAutomaticBrightnessController.configure(autoBrightnessEnabled,
+                     mBrightnessConfiguration,
+                     mLastUserSetScreenBrightness / (float) PowerManager.BRIGHTNESS_ON,
+-                    autoBrightnessAdjustment, mPowerRequest.policy, userInitiatedChange);
++                    userSetBrightnessChanged, autoBrightnessAdjustment,
++                    autoBrightnessAdjustmentChanged, mPowerRequest.policy);
+         }
+ 
+         // Apply auto-brightness.
+         boolean slowChange = false;
+         if (brightness < 0) {
++            float newAutoBrightnessAdjustment = autoBrightnessAdjustment;
+             if (autoBrightnessEnabled) {
+                 brightness = mAutomaticBrightnessController.getAutomaticScreenBrightness();
++                newAutoBrightnessAdjustment =
++                        mAutomaticBrightnessController.getAutomaticScreenBrightnessAdjustment();
+             }
++
+             if (brightness >= 0) {
+                 // Use current auto-brightness value and slowly adjust to changes.
+                 brightness = clampScreenBrightness(brightness);
+@@ -829,6 +834,11 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+             } else {
+                 mAppliedAutoBrightness = false;
+             }
++            if (autoBrightnessAdjustment != newAutoBrightnessAdjustment) {
++                // If the autobrightness controller has decided to change the adjustment value
++                // used, make sure that's reflected in settings.
++                putAutoBrightnessAdjustmentSetting(newAutoBrightnessAdjustment);
++            }
+         } else {
+             mAppliedAutoBrightness = false;
+         }
+@@ -1425,8 +1435,13 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
+     private void putScreenBrightnessSetting(int brightness) {
+         mCurrentScreenBrightnessSetting = brightness;
+         Settings.System.putIntForUser(mContext.getContentResolver(),
+-                Settings.System.SCREEN_BRIGHTNESS, brightness,
+-                UserHandle.USER_CURRENT);
++                Settings.System.SCREEN_BRIGHTNESS, brightness, UserHandle.USER_CURRENT);
++    }
++
++    private void putAutoBrightnessAdjustmentSetting(float adjustment) {
++        mAutoBrightnessAdjustment = adjustment;
++        Settings.System.putFloatForUser(mContext.getContentResolver(),
++                Settings.System.SCREEN_AUTO_BRIGHTNESS_ADJ, adjustment, UserHandle.USER_CURRENT);
+     }
+ 
+     private boolean updateAutoBrightnessAdjustment() {
+-- 
+2.17.1
+

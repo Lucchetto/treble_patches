@@ -1,0 +1,663 @@
+From 0f8b7e3ec61a89e8bdd6451e2e2d414ef49c29f7 Mon Sep 17 00:00:00 2001
+From: Chavi Weingarten <chaviw@google.com>
+Date: Thu, 15 Feb 2018 21:00:15 +0000
+Subject: [PATCH 133/306] Revert "Use destroy in transaction for animation"
+
+This reverts commit 1aa12755a98488599de1b240732e16c44b0e3fe0.
+
+Reason for revert: 73448047, 73448319
+
+Change-Id: Ieb5d1f8a7bfd9ba0a2ac6df35dbf76f76698120f
+
+Fixes: 73448047
+Fixes: 73448319
+(cherry picked from commit 38804384df93fb94a1e411ef8752e7aff2249bf4)
+
+Change-Id: I930d2c741b8328e54f0ef3b511cf1ce30c967ccd
+---
+ core/java/android/view/SurfaceControl.java    | 11 ----
+ core/jni/android_view_SurfaceControl.cpp      | 10 ----
+ .../android/server/wm/AppWindowThumbnail.java |  8 ++-
+ .../java/com/android/server/wm/Dimmer.java    |  7 ++-
+ .../com/android/server/wm/DisplayContent.java | 26 +++++++++-
+ .../server/wm/RecentsAnimationController.java |  2 +-
+ .../server/wm/RootWindowContainer.java        |  1 +
+ .../android/server/wm/SurfaceAnimator.java    | 51 +++++++++++++++----
+ .../com/android/server/wm/WindowAnimator.java |  8 +++
+ .../android/server/wm/WindowContainer.java    | 19 +++++--
+ .../com/android/server/wm/WindowState.java    |  4 +-
+ .../server/wm/WindowStateAnimator.java        | 11 +---
+ .../server/wm/WindowSurfaceController.java    | 15 ++----
+ .../server/wm/WindowSurfacePlacer.java        | 20 ++++++++
+ .../wm/AppWindowContainerControllerTests.java |  1 +
+ .../server/wm/SurfaceAnimatorTest.java        | 24 ++++++---
+ 16 files changed, 149 insertions(+), 69 deletions(-)
+
+diff --git a/core/java/android/view/SurfaceControl.java b/core/java/android/view/SurfaceControl.java
+index fc782118ff3..bd7f8e5419e 100644
+--- a/core/java/android/view/SurfaceControl.java
++++ b/core/java/android/view/SurfaceControl.java
+@@ -152,7 +152,6 @@ public class SurfaceControl implements Parcelable {
+     private static native void nativeSeverChildren(long transactionObj, long nativeObject);
+     private static native void nativeSetOverrideScalingMode(long transactionObj, long nativeObject,
+             int scalingMode);
+-    private static native void nativeDestroy(long transactionObj, long nativeObject);
+     private static native IBinder nativeGetHandle(long nativeObject);
+     private static native boolean nativeGetTransformToDisplayInverse(long nativeObject);
+ 
+@@ -1571,16 +1570,6 @@ public class SurfaceControl implements Parcelable {
+             return this;
+         }
+ 
+-        /**
+-         * Same as {@link #destroy()} except this is invoked in a transaction instead of
+-         * immediately.
+-         */
+-        public Transaction destroy(SurfaceControl sc) {
+-            sc.checkNotReleased();
+-            nativeDestroy(mNativeObject, sc.mNativeObject);
+-            return this;
+-        }
+-
+         public Transaction setDisplaySurface(IBinder displayToken, Surface surface) {
+             if (displayToken == null) {
+                 throw new IllegalArgumentException("displayToken must not be null");
+diff --git a/core/jni/android_view_SurfaceControl.cpp b/core/jni/android_view_SurfaceControl.cpp
+index 8ca506254f7..0ef5445afff 100644
+--- a/core/jni/android_view_SurfaceControl.cpp
++++ b/core/jni/android_view_SurfaceControl.cpp
+@@ -846,14 +846,6 @@ static void nativeSetOverrideScalingMode(JNIEnv* env, jclass clazz, jlong transa
+     transaction->setOverrideScalingMode(ctrl, scalingMode);
+ }
+ 
+-static void nativeDestroyInTransaction(JNIEnv* env, jclass clazz,
+-                                       jlong transactionObj,
+-                                       jlong nativeObject) {
+-    auto transaction = reinterpret_cast<SurfaceComposerClient::Transaction*>(transactionObj);
+-    auto ctrl = reinterpret_cast<SurfaceControl*>(nativeObject);
+-    transaction->destroySurface(ctrl);
+-}
+-
+ static jobject nativeGetHandle(JNIEnv* env, jclass clazz, jlong nativeObject) {
+     auto ctrl = reinterpret_cast<SurfaceControl *>(nativeObject);
+     return javaObjectForIBinder(env, ctrl->getHandle());
+@@ -1005,8 +997,6 @@ static const JNINativeMethod sSurfaceControlMethods[] = {
+             (void*)nativeSeverChildren } ,
+     {"nativeSetOverrideScalingMode", "(JJI)V",
+             (void*)nativeSetOverrideScalingMode },
+-    {"nativeDestroy", "(JJ)V",
+-            (void*)nativeDestroyInTransaction },
+     {"nativeGetHandle", "(J)Landroid/os/IBinder;",
+             (void*)nativeGetHandle },
+     {"nativeScreenshotToBuffer",
+diff --git a/services/core/java/com/android/server/wm/AppWindowThumbnail.java b/services/core/java/com/android/server/wm/AppWindowThumbnail.java
+index 3cd3e8b0912..db956344e5a 100644
+--- a/services/core/java/com/android/server/wm/AppWindowThumbnail.java
++++ b/services/core/java/com/android/server/wm/AppWindowThumbnail.java
+@@ -53,7 +53,8 @@ class AppWindowThumbnail implements Animatable {
+ 
+     AppWindowThumbnail(Transaction t, AppWindowToken appToken, GraphicBuffer thumbnailHeader) {
+         mAppToken = appToken;
+-        mSurfaceAnimator = new SurfaceAnimator(this, this::onAnimationFinished, appToken.mService);
++        mSurfaceAnimator = new SurfaceAnimator(this, this::onAnimationFinished,
++                appToken.mService.mAnimator::addAfterPrepareSurfacesRunnable, appToken.mService);
+         mWidth = thumbnailHeader.getWidth();
+         mHeight = thumbnailHeader.getHeight();
+ 
+@@ -143,6 +144,11 @@ class AppWindowThumbnail implements Animatable {
+         mAppToken.commitPendingTransaction();
+     }
+ 
++    @Override
++    public void destroyAfterPendingTransaction(SurfaceControl surface) {
++        mAppToken.destroyAfterPendingTransaction(surface);
++    }
++
+     @Override
+     public void onAnimationLeashCreated(Transaction t, SurfaceControl leash) {
+         t.setLayer(leash, Integer.MAX_VALUE);
+diff --git a/services/core/java/com/android/server/wm/Dimmer.java b/services/core/java/com/android/server/wm/Dimmer.java
+index a180a3acfbe..4394a99bc5c 100644
+--- a/services/core/java/com/android/server/wm/Dimmer.java
++++ b/services/core/java/com/android/server/wm/Dimmer.java
+@@ -54,6 +54,11 @@ class Dimmer {
+         public void onAnimationLeashDestroyed(SurfaceControl.Transaction t) {
+         }
+ 
++        @Override
++        public void destroyAfterPendingTransaction(SurfaceControl surface) {
++            mHost.destroyAfterPendingTransaction(surface);
++        }
++
+         @Override
+         public SurfaceControl.Builder makeAnimationLeash() {
+             return mHost.makeAnimationLeash();
+@@ -114,7 +119,7 @@ class Dimmer {
+                 if (!mDimming) {
+                     mDimLayer.destroy();
+                 }
+-            }, mHost.mService);
++            }, mHost.mService.mAnimator::addAfterPrepareSurfacesRunnable, mHost.mService);
+         }
+     }
+ 
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+index 2d32c81d13a..d22828dba6e 100644
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -380,6 +380,11 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+      */
+     private int mSurfaceSize;
+ 
++    /**
++     * A list of surfaces to be destroyed after {@link #mPendingTransaction} is applied.
++     */
++    private final ArrayList<SurfaceControl> mPendingDestroyingSurfaces = new ArrayList<>();
++
+     /** Temporary float array to retrieve 3x3 matrix values. */
+     private final float[] mTmpFloats = new float[9];
+ 
+@@ -1930,6 +1935,10 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+                 }
+             }
+             mService.mAnimator.removeDisplayLocked(mDisplayId);
++
++            // The pending transaction won't be applied so we should
++            // just clean up any surfaces pending destruction.
++            onPendingTransactionApplied();
+         } finally {
+             mRemovingDisplay = false;
+         }
+@@ -3845,6 +3854,22 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+         t.setRelativeLayer(child.getSurfaceControl(), mImeWindowsContainers.getSurfaceControl(), 1);
+     }
+ 
++    @Override
++    public void destroyAfterPendingTransaction(SurfaceControl surface) {
++        mPendingDestroyingSurfaces.add(surface);
++    }
++
++    /**
++     * Destroys any surfaces that have been put into the pending list with
++     * {@link #destroyAfterPendingTransaction}.
++     */
++    void onPendingTransactionApplied() {
++        for (int i = mPendingDestroyingSurfaces.size() - 1; i >= 0; i--) {
++            mPendingDestroyingSurfaces.get(i).destroy();
++        }
++        mPendingDestroyingSurfaces.clear();
++    }
++
+     @Override
+     void prepareSurfaces() {
+         final ScreenRotationAnimation screenRotationAnimation =
+@@ -3859,7 +3884,6 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+             mPendingTransaction.setAlpha(mWindowingLayer,
+                     screenRotationAnimation.getEnterTransformation().getAlpha());
+         }
+-
+         super.prepareSurfaces();
+     }
+ 
+diff --git a/services/core/java/com/android/server/wm/RecentsAnimationController.java b/services/core/java/com/android/server/wm/RecentsAnimationController.java
+index e4edeb877b7..78dd580259a 100644
+--- a/services/core/java/com/android/server/wm/RecentsAnimationController.java
++++ b/services/core/java/com/android/server/wm/RecentsAnimationController.java
+@@ -219,7 +219,7 @@ public class RecentsAnimationController {
+     private void addAnimation(Task task) {
+         if (DEBUG) Log.d(TAG, "addAnimation(" + task.getName() + ")");
+         final SurfaceAnimator anim = new SurfaceAnimator(task, null /* animationFinishedCallback */,
+-                mService);
++                mService.mAnimator::addAfterPrepareSurfacesRunnable, mService);
+         final TaskAnimationAdapter taskAdapter = new TaskAnimationAdapter(task);
+         anim.startAnimation(task.getPendingTransaction(), taskAdapter, false /* hidden */);
+         task.commitPendingTransaction();
+diff --git a/services/core/java/com/android/server/wm/RootWindowContainer.java b/services/core/java/com/android/server/wm/RootWindowContainer.java
+index 2fe55b9ec11..3d60ee4b5e1 100644
+--- a/services/core/java/com/android/server/wm/RootWindowContainer.java
++++ b/services/core/java/com/android/server/wm/RootWindowContainer.java
+@@ -800,6 +800,7 @@ class RootWindowContainer extends WindowContainer<DisplayContent> {
+         mService.enableScreenIfNeededLocked();
+ 
+         mService.scheduleAnimationLocked();
++        mService.mWindowPlacerLocked.destroyPendingSurfaces();
+ 
+         if (DEBUG_WINDOW_TRACE) Slog.e(TAG,
+                 "performSurfacePlacementInner exit: animating=" + mService.mAnimator.isAnimating());
+diff --git a/services/core/java/com/android/server/wm/SurfaceAnimator.java b/services/core/java/com/android/server/wm/SurfaceAnimator.java
+index 37be1491c0a..83baee1ddbc 100644
+--- a/services/core/java/com/android/server/wm/SurfaceAnimator.java
++++ b/services/core/java/com/android/server/wm/SurfaceAnimator.java
+@@ -33,6 +33,7 @@ import android.view.SurfaceControl.Transaction;
+ import com.android.internal.annotations.VisibleForTesting;
+ 
+ import java.io.PrintWriter;
++import java.util.function.Consumer;
+ 
+ /**
+  * A class that can run animations on objects that have a set of child surfaces. We do this by
+@@ -59,17 +60,21 @@ class SurfaceAnimator {
+     /**
+      * @param animatable The object to animate.
+      * @param animationFinishedCallback Callback to invoke when an animation has finished running.
++     * @param addAfterPrepareSurfaces Consumer that takes a runnable and executes it after preparing
++     *                                surfaces in WM. Can be implemented differently during testing.
+      */
+     SurfaceAnimator(Animatable animatable, @Nullable Runnable animationFinishedCallback,
+-            WindowManagerService service) {
++            Consumer<Runnable> addAfterPrepareSurfaces, WindowManagerService service) {
+         mAnimatable = animatable;
+         mService = service;
+         mAnimationFinishedCallback = animationFinishedCallback;
+-        mInnerAnimationFinishedCallback = getFinishedCallback(animationFinishedCallback);
++        mInnerAnimationFinishedCallback = getFinishedCallback(animationFinishedCallback,
++                addAfterPrepareSurfaces);
+     }
+ 
+     private OnAnimationFinishedCallback getFinishedCallback(
+-            @Nullable Runnable animationFinishedCallback) {
++            @Nullable Runnable animationFinishedCallback,
++            Consumer<Runnable> addAfterPrepareSurfaces) {
+         return anim -> {
+             synchronized (mService.mWindowMap) {
+                 final SurfaceAnimator target = mService.mAnimationTransferMap.remove(anim);
+@@ -78,13 +83,30 @@ class SurfaceAnimator {
+                     return;
+                 }
+ 
+-                if (anim != mAnimation) {
+-                    return;
+-                }
+-                reset(mAnimatable.getPendingTransaction(), true /* destroyLeash */);
+-                if (animationFinishedCallback != null) {
+-                    animationFinishedCallback.run();
+-                }
++                // TODO: This should use pendingTransaction eventually, but right now things
++                // happening on the animation finished callback are happening on the global
++                // transaction.
++                // For now we need to run this after it's guaranteed that the transaction that
++                // reparents the surface onto the leash is executed already. Otherwise this may be
++                // executed first, leading to surface loss, as the reparent operations wouldn't
++                // be in order.
++                addAfterPrepareSurfaces.accept(() -> {
++                    if (anim != mAnimation) {
++                        // Callback was from another animation - ignore.
++                        return;
++                    }
++                    final Transaction t = new Transaction();
++                    SurfaceControl.openTransaction();
++                    try {
++                        reset(t, true /* destroyLeash */);
++                        if (animationFinishedCallback != null) {
++                            animationFinishedCallback.run();
++                        }
++                    } finally {
++                        SurfaceControl.mergeToGlobalTransaction(t);
++                        SurfaceControl.closeTransaction();
++                    }
++                });
+             }
+         };
+     }
+@@ -268,7 +290,7 @@ class SurfaceAnimator {
+         }
+         mService.mAnimationTransferMap.remove(mAnimation);
+         if (mLeash != null && destroyLeash) {
+-            t.destroy(mLeash);
++            mAnimatable.destroyAfterPendingTransaction(mLeash);
+         }
+         mLeash = null;
+         mAnimation = null;
+@@ -356,6 +378,13 @@ class SurfaceAnimator {
+          */
+         void onAnimationLeashDestroyed(Transaction t);
+ 
++        /**
++         * Destroy a given surface after executing {@link #getPendingTransaction}.
++         *
++         * @see WindowContainer#destroyAfterPendingTransaction
++         */
++        void destroyAfterPendingTransaction(SurfaceControl surface);
++
+         /**
+          * @return A new surface to be used for the animation leash, inserted at the correct
+          *         position in the hierarchy.
+diff --git a/services/core/java/com/android/server/wm/WindowAnimator.java b/services/core/java/com/android/server/wm/WindowAnimator.java
+index ab1019779b0..20349b990df 100644
+--- a/services/core/java/com/android/server/wm/WindowAnimator.java
++++ b/services/core/java/com/android/server/wm/WindowAnimator.java
+@@ -226,6 +226,13 @@ public class WindowAnimator {
+                 if (SHOW_TRANSACTIONS) Slog.i(TAG, "<<< CLOSE TRANSACTION animate");
+             }
+ 
++            final int numDisplays = mDisplayContentsAnimators.size();
++            for (int i = 0; i < numDisplays; i++) {
++                final int displayId = mDisplayContentsAnimators.keyAt(i);
++                final DisplayContent dc = mService.mRoot.getDisplayContent(displayId);
++                dc.onPendingTransactionApplied();
++            }
++
+             boolean hasPendingLayoutChanges = mService.mRoot.hasPendingLayoutChanges(this);
+             boolean doRequest = false;
+             if (mBulkUpdateParams != 0) {
+@@ -259,6 +266,7 @@ public class WindowAnimator {
+             }
+ 
+             mService.destroyPreservedSurfaceLocked();
++            mService.mWindowPlacerLocked.destroyPendingSurfaces();
+ 
+             executeAfterPrepareSurfacesRunnables();
+ 
+diff --git a/services/core/java/com/android/server/wm/WindowContainer.java b/services/core/java/com/android/server/wm/WindowContainer.java
+index 93e9137e322..1f7caffd191 100644
+--- a/services/core/java/com/android/server/wm/WindowContainer.java
++++ b/services/core/java/com/android/server/wm/WindowContainer.java
+@@ -109,7 +109,8 @@ class WindowContainer<E extends WindowContainer> extends ConfigurationContainer<
+     WindowContainer(WindowManagerService service) {
+         mService = service;
+         mPendingTransaction = service.mTransactionFactory.make();
+-        mSurfaceAnimator = new SurfaceAnimator(this, this::onAnimationFinished, service);
++        mSurfaceAnimator = new SurfaceAnimator(this, this::onAnimationFinished,
++                service.mAnimator::addAfterPrepareSurfacesRunnable, service);
+     }
+ 
+     @Override
+@@ -285,9 +286,8 @@ class WindowContainer<E extends WindowContainer> extends ConfigurationContainer<
+         }
+ 
+         if (mSurfaceControl != null) {
+-            getPendingTransaction().destroy(mSurfaceControl);
++            destroyAfterPendingTransaction(mSurfaceControl);
+             mSurfaceControl = null;
+-            scheduleAnimation();
+         }
+ 
+         if (mParent != null) {
+@@ -1075,6 +1075,19 @@ class WindowContainer<E extends WindowContainer> extends ConfigurationContainer<
+         return mSurfaceControl;
+     }
+ 
++    /**
++     * Destroy a given surface after executing mPendingTransaction. This is
++     * largely a workaround for destroy not being part of transactions
++     * rather than an intentional design, so please take care when
++     * expanding use.
++     */
++    @Override
++    public void destroyAfterPendingTransaction(SurfaceControl surface) {
++        if (mParent != null) {
++            mParent.destroyAfterPendingTransaction(surface);
++        }
++    }
++
+     @Override
+     public Transaction getPendingTransaction() {
+         return mPendingTransaction;
+diff --git a/services/core/java/com/android/server/wm/WindowState.java b/services/core/java/com/android/server/wm/WindowState.java
+index c1a1452dae3..21b436112fd 100644
+--- a/services/core/java/com/android/server/wm/WindowState.java
++++ b/services/core/java/com/android/server/wm/WindowState.java
+@@ -4067,9 +4067,7 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+ 
+         final boolean hasSurface = mWinAnimator.hasSurface();
+         if (hasSurface) {
+-            // Use pendingTransaction here so hide is done the same transaction as the other
+-            // animations when exiting
+-            mWinAnimator.hide(getPendingTransaction(), "onExitAnimationDone");
++            mWinAnimator.hide("onExitAnimationDone");
+         }
+ 
+         // If we have an app token, we ask it to destroy the surface for us, so that it can take
+diff --git a/services/core/java/com/android/server/wm/WindowStateAnimator.java b/services/core/java/com/android/server/wm/WindowStateAnimator.java
+index a699ba00cd4..9621ee527ca 100644
+--- a/services/core/java/com/android/server/wm/WindowStateAnimator.java
++++ b/services/core/java/com/android/server/wm/WindowStateAnimator.java
+@@ -164,8 +164,6 @@ class WindowStateAnimator {
+ 
+     private boolean mAnimationStartDelayed;
+ 
+-    private final SurfaceControl.Transaction mTmpTransaction = new SurfaceControl.Transaction();
+-
+     /** The pixel format of the underlying SurfaceControl */
+     int mSurfaceFormat;
+ 
+@@ -282,21 +280,16 @@ class WindowStateAnimator {
+         }
+     }
+ 
+-    void hide(SurfaceControl.Transaction transaction, String reason) {
++    void hide(String reason) {
+         if (!mLastHidden) {
+             //dump();
+             mLastHidden = true;
+             if (mSurfaceController != null) {
+-                mSurfaceController.hide(transaction, reason);
++                mSurfaceController.hideInTransaction(reason);
+             }
+         }
+     }
+ 
+-    void hide(String reason) {
+-        hide(mTmpTransaction, reason);
+-        SurfaceControl.mergeToGlobalTransaction(mTmpTransaction);
+-    }
+-
+     boolean finishDrawingLocked() {
+         final boolean startingWindow =
+                 mWin.mAttrs.type == WindowManager.LayoutParams.TYPE_APPLICATION_STARTING;
+diff --git a/services/core/java/com/android/server/wm/WindowSurfaceController.java b/services/core/java/com/android/server/wm/WindowSurfaceController.java
+index d88e59c22aa..554a60023af 100644
+--- a/services/core/java/com/android/server/wm/WindowSurfaceController.java
++++ b/services/core/java/com/android/server/wm/WindowSurfaceController.java
+@@ -86,8 +86,6 @@ class WindowSurfaceController {
+     private final int mWindowType;
+     private final Session mWindowSession;
+ 
+-    private final SurfaceControl.Transaction mTmpTransaction = new SurfaceControl.Transaction();
+-
+     public WindowSurfaceController(SurfaceSession s, String name, int w, int h, int format,
+             int flags, WindowStateAnimator animator, int windowType, int ownerUid) {
+         mAnimator = animator;
+@@ -150,23 +148,21 @@ class WindowSurfaceController {
+         }
+     }
+ 
+-    void hide(SurfaceControl.Transaction transaction, String reason) {
++    void hideInTransaction(String reason) {
+         if (SHOW_TRANSACTIONS) logSurface("HIDE ( " + reason + " )", null);
+         mHiddenForOtherReasons = true;
+ 
+         mAnimator.destroyPreservedSurfaceLocked();
+-        if (mSurfaceShown) {
+-            hideSurface(transaction);
+-        }
++        updateVisibility();
+     }
+ 
+-    private void hideSurface(SurfaceControl.Transaction transaction) {
++    private void hideSurface() {
+         if (mSurfaceControl == null) {
+             return;
+         }
+         setShown(false);
+         try {
+-            transaction.hide(mSurfaceControl);
++            mSurfaceControl.hide();
+         } catch (RuntimeException e) {
+             Slog.w(TAG, "Exception hiding surface in " + this);
+         }
+@@ -425,8 +421,7 @@ class WindowSurfaceController {
+     private boolean updateVisibility() {
+         if (mHiddenForCrop || mHiddenForOtherReasons) {
+             if (mSurfaceShown) {
+-                hideSurface(mTmpTransaction);
+-                SurfaceControl.mergeToGlobalTransaction(mTmpTransaction);
++                hideSurface();
+             }
+             return false;
+         } else {
+diff --git a/services/core/java/com/android/server/wm/WindowSurfacePlacer.java b/services/core/java/com/android/server/wm/WindowSurfacePlacer.java
+index 272f3a5802c..7364e87227e 100644
+--- a/services/core/java/com/android/server/wm/WindowSurfacePlacer.java
++++ b/services/core/java/com/android/server/wm/WindowSurfacePlacer.java
+@@ -102,6 +102,7 @@ class WindowSurfacePlacer {
+     }
+     private final LayerAndToken mTmpLayerAndToken = new LayerAndToken();
+ 
++    private final ArrayList<SurfaceControl> mPendingDestroyingSurfaces = new ArrayList<>();
+     private final SparseIntArray mTempTransitionReasons = new SparseIntArray();
+ 
+     private final Runnable mPerformSurfacePlacement;
+@@ -696,6 +697,25 @@ class WindowSurfacePlacer {
+         }
+     }
+ 
++    /**
++     * Puts the {@param surface} into a pending list to be destroyed after the current transaction
++     * has been committed.
++     */
++    void destroyAfterTransaction(SurfaceControl surface) {
++        mPendingDestroyingSurfaces.add(surface);
++    }
++
++    /**
++     * Destroys any surfaces that have been put into the pending list with
++     * {@link #destroyAfterTransaction}.
++     */
++    void destroyPendingSurfaces() {
++        for (int i = mPendingDestroyingSurfaces.size() - 1; i >= 0; i--) {
++            mPendingDestroyingSurfaces.get(i).destroy();
++        }
++        mPendingDestroyingSurfaces.clear();
++    }
++
+     public void dump(PrintWriter pw, String prefix) {
+         pw.println(prefix + "mTraversalScheduled=" + mTraversalScheduled);
+         pw.println(prefix + "mHoldScreenWindow=" + mService.mRoot.mHoldScreenWindow);
+diff --git a/services/tests/servicestests/src/com/android/server/wm/AppWindowContainerControllerTests.java b/services/tests/servicestests/src/com/android/server/wm/AppWindowContainerControllerTests.java
+index 79a9610bdbb..b55c79b4957 100644
+--- a/services/tests/servicestests/src/com/android/server/wm/AppWindowContainerControllerTests.java
++++ b/services/tests/servicestests/src/com/android/server/wm/AppWindowContainerControllerTests.java
+@@ -131,6 +131,7 @@ public class AppWindowContainerControllerTests extends WindowTestsBase {
+             assertNoStartingWindow(controller.getAppWindowToken(mDisplayContent));
+ 
+             controller.getAppWindowToken(mDisplayContent).getParent().getParent().removeImmediately();
++            mDisplayContent.onPendingTransactionApplied();
+         }
+     }
+ 
+diff --git a/services/tests/servicestests/src/com/android/server/wm/SurfaceAnimatorTest.java b/services/tests/servicestests/src/com/android/server/wm/SurfaceAnimatorTest.java
+index a120eba623a..64c30370063 100644
+--- a/services/tests/servicestests/src/com/android/server/wm/SurfaceAnimatorTest.java
++++ b/services/tests/servicestests/src/com/android/server/wm/SurfaceAnimatorTest.java
+@@ -23,11 +23,11 @@ import static org.junit.Assert.assertNull;
+ import static org.junit.Assert.assertTrue;
+ import static org.mockito.ArgumentMatchers.eq;
+ import static org.mockito.Mockito.any;
+-import static org.mockito.Mockito.never;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.verifyZeroInteractions;
+ 
+ import android.platform.test.annotations.Presubmit;
++import android.support.test.filters.FlakyTest;
+ import android.support.test.filters.SmallTest;
+ import android.support.test.runner.AndroidJUnit4;
+ import android.view.SurfaceControl;
+@@ -39,6 +39,7 @@ import com.android.server.wm.SurfaceAnimator.Animatable;
+ import com.android.server.wm.SurfaceAnimator.OnAnimationFinishedCallback;
+ 
+ import org.junit.Before;
++import org.junit.Ignore;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.ArgumentCaptor;
+@@ -46,6 +47,7 @@ import org.mockito.Mock;
+ import org.mockito.MockitoAnnotations;
+ 
+ import java.util.ArrayList;
++import java.util.concurrent.CountDownLatch;
+ 
+ /**
+  * Test class for {@link SurfaceAnimatorTest}.
+@@ -85,7 +87,7 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+         callbackCaptor.getValue().onAnimationFinished(mSpec);
+         assertNotAnimating(mAnimatable);
+         assertTrue(mAnimatable.mFinishedCallbackCalled);
+-        verify(mTransaction).destroy(eq(mAnimatable.mLeash));
++        assertTrue(mAnimatable.mPendingDestroySurfaces.contains(mAnimatable.mLeash));
+         // TODO: Verify reparenting once we use mPendingTransaction to reparent it back
+     }
+ 
+@@ -95,7 +97,7 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+         final SurfaceControl firstLeash = mAnimatable.mLeash;
+         mAnimatable.mSurfaceAnimator.startAnimation(mTransaction, mSpec2, true /* hidden */);
+ 
+-        verify(mTransaction).destroy(eq(firstLeash));
++        assertTrue(mAnimatable.mPendingDestroySurfaces.contains(firstLeash));
+         assertFalse(mAnimatable.mFinishedCallbackCalled);
+ 
+         final ArgumentCaptor<OnAnimationFinishedCallback> callbackCaptor = ArgumentCaptor.forClass(
+@@ -122,7 +124,7 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+         assertNotAnimating(mAnimatable);
+         verify(mSpec).onAnimationCancelled(any());
+         assertTrue(mAnimatable.mFinishedCallbackCalled);
+-        verify(mTransaction).destroy(eq(mAnimatable.mLeash));
++        assertTrue(mAnimatable.mPendingDestroySurfaces.contains(mAnimatable.mLeash));
+     }
+ 
+     @Test
+@@ -143,7 +145,7 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+         verifyZeroInteractions(mSpec);
+         assertNotAnimating(mAnimatable);
+         assertTrue(mAnimatable.mFinishedCallbackCalled);
+-        verify(mTransaction).destroy(eq(mAnimatable.mLeash));
++        assertTrue(mAnimatable.mPendingDestroySurfaces.contains(mAnimatable.mLeash));
+     }
+ 
+     @Test
+@@ -159,11 +161,11 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+         assertNotAnimating(mAnimatable);
+         assertAnimating(mAnimatable2);
+         assertEquals(leash, mAnimatable2.mSurfaceAnimator.mLeash);
+-        verify(mTransaction, never()).destroy(eq(leash));
++        assertFalse(mAnimatable.mPendingDestroySurfaces.contains(leash));
+         callbackCaptor.getValue().onAnimationFinished(mSpec);
+         assertNotAnimating(mAnimatable2);
+         assertTrue(mAnimatable2.mFinishedCallbackCalled);
+-        verify(mTransaction).destroy(eq(leash));
++        assertTrue(mAnimatable2.mPendingDestroySurfaces.contains(leash));
+     }
+ 
+     private void assertAnimating(MyAnimatable animatable) {
+@@ -180,6 +182,7 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+ 
+         final SurfaceControl mParent;
+         final SurfaceControl mSurface;
++        final ArrayList<SurfaceControl> mPendingDestroySurfaces = new ArrayList<>();
+         final SurfaceAnimator mSurfaceAnimator;
+         SurfaceControl mLeash;
+         boolean mFinishedCallbackCalled;
+@@ -195,7 +198,7 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+                     .build();
+             mFinishedCallbackCalled = false;
+             mLeash = null;
+-            mSurfaceAnimator = new SurfaceAnimator(this, mFinishedCallback, sWm);
++            mSurfaceAnimator = new SurfaceAnimator(this, mFinishedCallback, Runnable::run, sWm);
+         }
+ 
+         @Override
+@@ -215,6 +218,11 @@ public class SurfaceAnimatorTest extends WindowTestsBase {
+         public void onAnimationLeashDestroyed(Transaction t) {
+         }
+ 
++        @Override
++        public void destroyAfterPendingTransaction(SurfaceControl surface) {
++            mPendingDestroySurfaces.add(surface);
++        }
++
+         @Override
+         public Builder makeAnimationLeash() {
+             return new SurfaceControl.Builder(mSession) {
+-- 
+2.17.1
+

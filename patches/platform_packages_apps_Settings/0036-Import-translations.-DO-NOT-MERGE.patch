@@ -1,0 +1,158 @@
+From 22360f97060ee11a1d526b7d1c588d68f3944cef Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Sat, 8 Sep 2018 18:11:46 -0700
+Subject: [PATCH 36/71] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: I77779e462781ec27ccf1122e7dcac6fd170cad5f
+---
+ res/values-bn/strings.xml     |  6 ++----
+ res/values-da/strings.xml     | 10 +++++-----
+ res/values-es-rUS/strings.xml |  2 +-
+ res/values-hi/strings.xml     |  8 +++-----
+ res/values-ru/strings.xml     |  2 +-
+ res/values-zh-rTW/strings.xml |  6 +++---
+ 6 files changed, 15 insertions(+), 19 deletions(-)
+
+diff --git a/res/values-bn/strings.xml b/res/values-bn/strings.xml
+index 9da7f5c49a..f2b57a4d0a 100644
+--- a/res/values-bn/strings.xml
++++ b/res/values-bn/strings.xml
+@@ -3889,11 +3889,9 @@
+     <string name="notification_log_details_none" msgid="184131801230614059">"কোনো কিছুই নয়"</string>
+     <string name="notification_log_details_ranking_null" msgid="244660392058720919">"রেঙ্কিং অবজেক্ট অনুপস্থিত।"</string>
+     <string name="notification_log_details_ranking_none" msgid="599607025882587844">"রেঙ্কিং অবজেক্টে এই কী থাকে না।"</string>
+-    <!-- no translation found for display_cutout_emulation (7466869822418376317) -->
+-    <skip />
++    <string name="display_cutout_emulation" msgid="7466869822418376317">"ডিসপ্লে কাট-আউট"</string>
+     <string name="display_cutout_emulation_keywords" msgid="4495418317471622562">"ডিসপ্লে কাট-আউট, নচ"</string>
+-    <!-- no translation found for display_cutout_emulation_device_default (7957250558326167503) -->
+-    <skip />
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"ডিভাইসের ডিফল্ট"</string>
+     <string name="special_access" msgid="3458780842491881155">"বিশেষ অ্যাপ অ্যাক্সেস করুন"</string>
+     <plurals name="special_access_summary" formatted="false" msgid="260765309935675867">
+       <item quantity="one"><xliff:g id="COUNT">%d</xliff:g>টি অ্যাপ অপরিমিত ডেটা ব্যবহার করতে পারে</item>
+diff --git a/res/values-da/strings.xml b/res/values-da/strings.xml
+index 73b69d7998..63e891f3ec 100644
+--- a/res/values-da/strings.xml
++++ b/res/values-da/strings.xml
+@@ -761,7 +761,7 @@
+     <string name="android_beam_off_summary" msgid="4663095428454779138">"Fra"</string>
+     <string name="android_beam_disabled_summary" msgid="1737782116894793393">"Utilgængelig, fordi NFC er slukket"</string>
+     <string name="android_beam_label" msgid="6257036050366775040">"Android Beam"</string>
+-    <string name="android_beam_explained" msgid="1810540319385192758">"Når denne funktion er slået til, kan du overføre appindhold til en anden NFC-kompatibel enhed ved at placere enhederne tæt på hinanden. Du kan f.eks. overføre websider, YouTube-videoer, kontaktpersoner og meget mere.\n\nDu skal blot placere enhederne tæt på hinanden (normalt bagside mod bagside) og derefter trykke på din skærm. Appen bestemmer, hvad der overføres."</string>
++    <string name="android_beam_explained" msgid="1810540319385192758">"Når denne funktion er slået til, kan du overføre appindhold til en anden NFC-kompatibel enhed ved at placere enhederne tæt på hinanden. Du kan f.eks. overføre websider, YouTube-videoer, kontakter og meget mere.\n\nDu skal blot placere enhederne tæt på hinanden (normalt bagside mod bagside) og derefter trykke på din skærm. Appen bestemmer, hvad der overføres."</string>
+     <string name="wifi_quick_toggle_title" msgid="8850161330437693895">"Wi-Fi"</string>
+     <string name="wifi_quick_toggle_summary" msgid="2696547080481267642">"Slå Wi-Fi til"</string>
+     <string name="wifi_settings" msgid="29722149822540994">"Wi-Fi"</string>
+@@ -1197,7 +1197,7 @@
+     <string name="system_update_settings_list_item_summary" msgid="3853057315907710747"></string>
+     <string name="firmware_version" msgid="4801135784886859972">"Android-version"</string>
+     <string name="firmware_title" msgid="5203122368389157877">"Android"</string>
+-    <string name="security_patch" msgid="8438384045870296634">"Niveau for sikkerhedsrettelse på Android"</string>
++    <string name="security_patch" msgid="8438384045870296634">"Seneste sikkerhedsopdatering i Android"</string>
+     <string name="model_info" msgid="1952009518045740889">"Model"</string>
+     <string name="model_summary" msgid="8306235877567782987">"Model: %1$s"</string>
+     <string name="hardware_info" msgid="2605080746512527805">"Model og hardware"</string>
+@@ -2455,7 +2455,7 @@
+     <string name="backup_erase_dialog_title" msgid="1027640829482174106"></string>
+     <string name="backup_erase_dialog_message" msgid="5221011285568343155">"Vil du stoppe sikkerhedskopieringen af dine Wi-Fi-adgangskoder, bogmærker, andre indstillinger og appdata samt slette alle kopier på Googles servere?"</string>
+     <string name="fullbackup_erase_dialog_message" msgid="694766389396659626">"Vil du stoppe med at sikkerhedskopiere enhedsdata (f.eks. Wi-Fi-adgangskoder og opkaldshistorik) og appdata (f.eks. indstillinger og filer, som apps har gemt) og slette alle kopier på fjernservere?"</string>
+-    <string name="fullbackup_data_summary" msgid="960850365007767734">"Foretag automatisk ekstern backup af enhedsdata (f.eks. Wi-Fi-adgangskoder og opkaldshistorik) og appdata (f.eks. indstillinger og filer, der er gemt i apps).\n\n Når du slår automatisk backup til, gemmes enheds- og appdata med jævne mellemrum eksternt. Appdata kan være alle former for data, som en app har gemt (afhængigt af udviklerens indstillinger), f.eks. potentielt følsomme data, såsom kontaktpersoner, beskeder og billeder."</string>
++    <string name="fullbackup_data_summary" msgid="960850365007767734">"Foretag automatisk ekstern backup af enhedsdata (f.eks. Wi-Fi-adgangskoder og opkaldshistorik) og appdata (f.eks. indstillinger og filer, der er gemt i apps).\n\n Når du slår automatisk backup til, gemmes enheds- og appdata med jævne mellemrum eksternt. Appdata kan være alle former for data, som en app har gemt (afhængigt af udviklerens indstillinger), f.eks. potentielt følsomme data, såsom kontakter, beskeder og billeder."</string>
+     <string name="device_admin_settings_title" msgid="4960761799560705902">"Indstillinger for enhedsadministrator"</string>
+     <string name="active_device_admin_msg" msgid="578748451637360192">"App til enhedsadministration"</string>
+     <string name="remove_device_admin" msgid="9207368982033308173">"Deaktiver denne app til enhedsadministration"</string>
+@@ -3010,7 +3010,7 @@
+     <string name="keywords_imei_info" msgid="7230982940217544527">"imei, meid, min, prl version, imei sv"</string>
+     <string name="keywords_sim_status" msgid="1474422416860990564">"netværk, mobilnetværkstilstand, netværkstilstand, signalstyrke, type mobilnetværk, roaming, iccid"</string>
+     <string name="keywords_model_and_hardware" msgid="1459248377212829642">"serienummer, hardwareversion"</string>
+-    <string name="keywords_android_version" msgid="9069747153590902819">"niveau for programrettelse i Android, basebandversion, kernesystem"</string>
++    <string name="keywords_android_version" msgid="9069747153590902819">"seneste sikkerhedsopdatering i Android, basebandversion, kernesystem"</string>
+     <string name="keywords_ambient_display_screen" msgid="5874969496073249362">"Aktiv låseskærm, visning af låseskærm"</string>
+     <string name="keywords_fingerprint_settings" msgid="239222512315619538">"fingeraftryk"</string>
+     <string name="keywords_auto_rotate" msgid="5620879898668211494">"rotere, vende, rotation, stående, liggende, retning, lodret, vandret"</string>
+@@ -4054,7 +4054,7 @@
+       <item quantity="other">Kameraapps</item>
+     </plurals>
+     <string name="default_calendar_app_title" msgid="3545972964391065220">"Kalenderapp"</string>
+-    <string name="default_contacts_app_title" msgid="3497370557378660098">"App til kontaktpersoner"</string>
++    <string name="default_contacts_app_title" msgid="3497370557378660098">"App til kontakter"</string>
+     <plurals name="default_email_app_title" formatted="false" msgid="42826975161049245">
+       <item quantity="one">Mailklientapp</item>
+       <item quantity="other">Mailklientapps</item>
+diff --git a/res/values-es-rUS/strings.xml b/res/values-es-rUS/strings.xml
+index 64386e1eef..743cef4a2a 100644
+--- a/res/values-es-rUS/strings.xml
++++ b/res/values-es-rUS/strings.xml
+@@ -520,7 +520,7 @@
+     <string name="unlock_set_unlock_launch_picker_change_title" msgid="5045866882028324941">"Cambiar pant. bloqueada"</string>
+     <string name="unlock_set_unlock_launch_picker_change_summary" msgid="2790960639554590668">"Cambiar/inhab. patrón/PIN/contraseña"</string>
+     <string name="unlock_set_unlock_launch_picker_enable_summary" msgid="4791110798817242301">"Elige un método para bloquear la pantalla."</string>
+-    <string name="unlock_set_unlock_off_title" msgid="7117155352183088342">"Ninguna"</string>
++    <string name="unlock_set_unlock_off_title" msgid="7117155352183088342">"Ninguno"</string>
+     <string name="unlock_set_unlock_off_summary" msgid="94361581669110415"></string>
+     <string name="unlock_set_unlock_none_title" msgid="5679243878975864640">"Deslizar"</string>
+     <string name="unlock_set_unlock_none_summary" msgid="8914673583104628191">"Sin seguridad"</string>
+diff --git a/res/values-hi/strings.xml b/res/values-hi/strings.xml
+index 934518d55e..5fa02baa0c 100644
+--- a/res/values-hi/strings.xml
++++ b/res/values-hi/strings.xml
+@@ -3051,7 +3051,7 @@
+     <string name="notification_unknown_sound_title" msgid="2535027767851838335">"ऐप की ओर से दी जाने वाली ध्वनि"</string>
+     <string name="notification_sound_default" msgid="565135733949733766">"सूचना की डिफ़ॉल्ट टोन"</string>
+     <string name="alarm_ringtone_title" msgid="6344025478514311386">"अलार्म की डिफ़ॉल्ट आवाज़"</string>
+-    <string name="vibrate_when_ringing_title" msgid="3806079144545849032">"कॉल के लिए भी कंपन (वाइब्रेशन) करें"</string>
++    <string name="vibrate_when_ringing_title" msgid="3806079144545849032">"कॉल आने पर वाइब्रेट भी करें"</string>
+     <string name="other_sound_settings" msgid="3151004537006844718">"अन्य आवाज़ें"</string>
+     <string name="dial_pad_tones_title" msgid="1999293510400911558">"डायल पैड टोन"</string>
+     <string name="screen_locking_sounds_title" msgid="1340569241625989837">"स्क्रीन लॉक करने की आवाज़ें"</string>
+@@ -3889,11 +3889,9 @@
+     <string name="notification_log_details_none" msgid="184131801230614059">"कोई नहीं"</string>
+     <string name="notification_log_details_ranking_null" msgid="244660392058720919">"रैंकिंग ऑब्जेक्ट अनुपलब्ध है."</string>
+     <string name="notification_log_details_ranking_none" msgid="599607025882587844">"रैंकिंग ऑब्जेक्ट में यह कुंजी शामिल नहीं है."</string>
+-    <!-- no translation found for display_cutout_emulation (7466869822418376317) -->
+-    <skip />
++    <string name="display_cutout_emulation" msgid="7466869822418376317">"डिसप्ले कटआउट"</string>
+     <string name="display_cutout_emulation_keywords" msgid="4495418317471622562">"डिसप्ले कटआउट, नॉच"</string>
+-    <!-- no translation found for display_cutout_emulation_device_default (7957250558326167503) -->
+-    <skip />
++    <string name="display_cutout_emulation_device_default" msgid="7957250558326167503">"डिवाइस का डिफ़ॉल्ट कटआउट"</string>
+     <string name="special_access" msgid="3458780842491881155">"ऐप्लिकेशन के लिए खास एक्सेस"</string>
+     <plurals name="special_access_summary" formatted="false" msgid="260765309935675867">
+       <item quantity="one"><xliff:g id="COUNT">%d</xliff:g> ऐप्लिकेशन बिना पाबंदी के डेटा का उपयोग कर सकते हैं</item>
+diff --git a/res/values-ru/strings.xml b/res/values-ru/strings.xml
+index 58bef82c50..6d9660af9a 100644
+--- a/res/values-ru/strings.xml
++++ b/res/values-ru/strings.xml
+@@ -2496,7 +2496,7 @@
+     <string name="credentials_enabled" msgid="7588607413349978930">"Хранилище регистрационных данных включено."</string>
+     <string name="credentials_configure_lock_screen_hint" msgid="8058230497337529036">"Чтобы использовать хранилище учетных данных, необходимо сначала настроить блокировку экрана на устройстве."</string>
+     <string name="credentials_configure_lock_screen_button" msgid="253239765216055321">"НАСТРОИТЬ БЛОКИРОВКУ"</string>
+-    <string name="usage_access_title" msgid="332333405495457839">"Приложения с доступом к данным"</string>
++    <string name="usage_access_title" msgid="332333405495457839">"Доступ к данным"</string>
+     <string name="emergency_tone_title" msgid="254495218194925271">"Сигнал набора номера при экстренных вызовах"</string>
+     <string name="emergency_tone_summary" msgid="722259232924572153">"Настроить режим работы при экстренном вызове"</string>
+     <string name="privacy_settings_title" msgid="2978878794187459190">"Резервное копирование"</string>
+diff --git a/res/values-zh-rTW/strings.xml b/res/values-zh-rTW/strings.xml
+index 5d9ee8a326..81db247613 100644
+--- a/res/values-zh-rTW/strings.xml
++++ b/res/values-zh-rTW/strings.xml
+@@ -3876,9 +3876,9 @@
+     <string name="notification_log_details_importance" msgid="2153168790791683139">"重要性"</string>
+     <string name="notification_log_details_explanation" msgid="1914295130775393551">"說明"</string>
+     <string name="notification_log_details_badge" msgid="3258183328267662285">"可顯示徽章"</string>
+-    <string name="notification_log_details_content_intent" msgid="1113554570409128083">"調用請求"</string>
+-    <string name="notification_log_details_delete_intent" msgid="905118520685297007">"刪除調用請求"</string>
+-    <string name="notification_log_details_full_screen_intent" msgid="7118560817013522978">"全螢幕調用請求"</string>
++    <string name="notification_log_details_content_intent" msgid="1113554570409128083">"意圖"</string>
++    <string name="notification_log_details_delete_intent" msgid="905118520685297007">"刪除意圖"</string>
++    <string name="notification_log_details_full_screen_intent" msgid="7118560817013522978">"全螢幕意圖"</string>
+     <string name="notification_log_details_actions" msgid="242523930165118066">"動作"</string>
+     <string name="notification_log_details_title" msgid="7177091647508863295">"標題"</string>
+     <string name="notification_log_details_remoteinput" msgid="8328591329858827409">"遠端輸入裝置"</string>
+-- 
+2.17.1
+

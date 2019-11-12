@@ -1,0 +1,93 @@
+From 79533f45665f450321c1c894ec4cbe14451a1457 Mon Sep 17 00:00:00 2001
+From: Robert Carr <racarr@google.com>
+Date: Wed, 22 Nov 2017 12:47:58 -0800
+Subject: [PATCH 020/306] Correct ordering of status bar panel layers.
+
+Not sure what bug was hiding this before but seems pretty clear,
+that this is the ordering we need. See the documentation, APPLICATION_PANEL, etc...
+
+Bug: 69591927
+Test: Manual
+Change-Id: I82fc011aff6122efa5c3ed63da154761e7065612
+(cherry picked from commit 8360a782fa529b142673b921f1d178f4b3d0be93)
+---
+ core/java/android/view/WindowManager.java     |  6 ++++--
+ .../server/policy/WindowManagerPolicy.java    |  6 +++---
+ .../com/android/server/wm/ZOrderingTests.java | 20 +++++++++++++++++++
+ 3 files changed, 27 insertions(+), 5 deletions(-)
+
+diff --git a/core/java/android/view/WindowManager.java b/core/java/android/view/WindowManager.java
+index eb5fc92e5cc..905c0715ecb 100644
+--- a/core/java/android/view/WindowManager.java
++++ b/core/java/android/view/WindowManager.java
+@@ -604,8 +604,10 @@ public interface WindowManager extends ViewManager {
+         public static final int TYPE_DRAG               = FIRST_SYSTEM_WINDOW+16;
+ 
+         /**
+-         * Window type: panel that slides out from under the status bar
+-         * In multiuser systems shows on all users' windows.
++         * Window type: panel that slides out from over the status bar
++         * In multiuser systems shows on all users' windows. These windows
++         * are displayed on top of the stauts bar and any {@link #TYPE_STATUS_BAR_PANEL}
++         * windows.
+          * @hide
+          */
+         public static final int TYPE_STATUS_BAR_SUB_PANEL = FIRST_SYSTEM_WINDOW+17;
+diff --git a/services/core/java/com/android/server/policy/WindowManagerPolicy.java b/services/core/java/com/android/server/policy/WindowManagerPolicy.java
+index 8d56eb80181..9e97d846b52 100644
+--- a/services/core/java/com/android/server/policy/WindowManagerPolicy.java
++++ b/services/core/java/com/android/server/policy/WindowManagerPolicy.java
+@@ -808,11 +808,11 @@ public interface WindowManagerPolicy extends WindowManagerPolicyConstants {
+             case TYPE_INPUT_METHOD_DIALOG:
+                 // on-screen keyboards and other such input method user interfaces go here.
+                 return  15;
+-            case TYPE_STATUS_BAR_SUB_PANEL:
+-                return  17;
+             case TYPE_STATUS_BAR:
+-                return  18;
++                return  17;
+             case TYPE_STATUS_BAR_PANEL:
++                return  18;
++            case TYPE_STATUS_BAR_SUB_PANEL:
+                 return  19;
+             case TYPE_KEYGUARD_DIALOG:
+                 return  20;
+diff --git a/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java b/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java
+index 4e23b515eb4..04f5e5e919a 100644
+--- a/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java
++++ b/services/tests/servicestests/src/com/android/server/wm/ZOrderingTests.java
+@@ -42,6 +42,9 @@ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_
+ import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_MEDIA_OVERLAY;
+ import static android.view.WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
+ import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
++import static android.view.WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL;
++import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL;
++import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR_SUB_PANEL;
+ 
+ /**
+  * Tests for the {@link WindowLayersController} class.
+@@ -323,4 +326,21 @@ public class ZOrderingTests extends WindowTestsBase {
+         assertWindowLayerGreaterThan(mTransaction, assistantStackWindow, dockedStackWindow);
+         assertWindowLayerGreaterThan(mTransaction, pinnedStackWindow, assistantStackWindow);
+     }
++
++    @Test
++    public void testAssignWindowLayers_ForSysUiPanels() throws Exception {
++        final WindowState navBarPanel =
++                createWindow(null, TYPE_NAVIGATION_BAR_PANEL, mDisplayContent, "NavBarPanel");
++        final WindowState statusBarPanel =
++                createWindow(null, TYPE_STATUS_BAR_PANEL, mDisplayContent, "StatusBarPanel");
++        final WindowState statusBarSubPanel =
++                createWindow(null, TYPE_STATUS_BAR_SUB_PANEL, mDisplayContent, "StatusBarSubPanel");
++        mDisplayContent.assignChildLayers(mTransaction);
++
++        // Ime should be above all app windows and below system windows if it is targeting an app
++        // window.
++        assertWindowLayerGreaterThan(mTransaction, navBarPanel, mNavBarWindow);
++        assertWindowLayerGreaterThan(mTransaction, statusBarPanel, mStatusBarWindow);
++        assertWindowLayerGreaterThan(mTransaction, statusBarSubPanel, statusBarPanel);
++    }
+ }
+-- 
+2.17.1
+

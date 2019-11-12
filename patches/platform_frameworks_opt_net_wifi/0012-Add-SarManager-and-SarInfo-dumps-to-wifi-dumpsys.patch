@@ -1,0 +1,99 @@
+From 4fc8cdcbb46c788d3e55e23b8cd1dbe061369bc8 Mon Sep 17 00:00:00 2001
+From: Ahmed ElArabawy <arabawy@google.com>
+Date: Tue, 10 Jul 2018 11:29:11 -0700
+Subject: [PATCH 12/32] Add SarManager and SarInfo dumps to wifi dumpsys
+
+This commit adds dump of SarManager and SarInfo state information into
+the wifi dumpsys.
+
+Bug: 65174506
+Test: run the command: $ adb shell dumpsys wifi
+
+Change-Id: Ib329fc9ac983d010fd3b84c14969296a54997045
+Merged-In: Ib329fc9ac983d010fd3b84c14969296a54997045
+---
+ service/java/com/android/server/wifi/SarInfo.java         | 7 ++++++-
+ service/java/com/android/server/wifi/SarManager.java      | 6 ++++--
+ service/java/com/android/server/wifi/WifiServiceImpl.java | 5 +++++
+ 3 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/service/java/com/android/server/wifi/SarInfo.java b/service/java/com/android/server/wifi/SarInfo.java
+index 514f15e10..a62307e13 100644
+--- a/service/java/com/android/server/wifi/SarInfo.java
++++ b/service/java/com/android/server/wifi/SarInfo.java
+@@ -83,6 +83,7 @@ public class SarInfo {
+     private boolean mLastReportedIsWifiSapEnabled = false;
+     private boolean mLastReportedIsVoiceCall = false;
+     private int mLastReportedScenario = INITIAL_SAR_SCENARIO;
++    private long mLastReportedScenarioTs = 0;
+ 
+     /**
+      * shouldReport()
+@@ -129,6 +130,7 @@ public class SarInfo {
+         mLastReportedIsWifiSapEnabled = isWifiSapEnabled;
+         mLastReportedIsVoiceCall = isVoiceCall;
+         mLastReportedScenario = attemptedSarScenario;
++        mLastReportedScenarioTs = System.currentTimeMillis();
+ 
+         mAllWifiDisabled = false;
+     }
+@@ -160,7 +162,7 @@ public class SarInfo {
+      * Dumps the state of SarInfo
+      */
+     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+-        pw.println("*** WiFi SAR Info Dump  ***");
++        pw.println("Dump of SarInfo");
+         pw.println("Current values:");
+         pw.println("    Sensor state is: " + sensorStateToString(sensorState));
+         pw.println("    Voice Call state is: " + isVoiceCall);
+@@ -171,6 +173,9 @@ public class SarInfo {
+         pw.println("    Sensor state is: " + sensorStateToString(mLastReportedSensorState));
+         pw.println("    Soft AP state is: " + mLastReportedIsWifiSapEnabled);
+         pw.println("    Voice Call state is: " + mLastReportedIsVoiceCall);
++        pw.println("Last reported scenario: " + mLastReportedScenario);
++        pw.println("Reported " +  (System.currentTimeMillis() - mLastReportedScenarioTs) / 1000
++                + " seconds ago");
+     }
+ 
+     /**
+diff --git a/service/java/com/android/server/wifi/SarManager.java b/service/java/com/android/server/wifi/SarManager.java
+index 89da7012b..598e5c964 100644
+--- a/service/java/com/android/server/wifi/SarManager.java
++++ b/service/java/com/android/server/wifi/SarManager.java
+@@ -323,13 +323,15 @@ public class SarManager {
+      * Dumps SarManager state (as well as its SarInfo member variable state)
+      */
+     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+-        pw.println("*** WiFi SAR Manager Dump ***");
++        pw.println("Dump of SarManager");
+         pw.println("isSarSupported: " + mSupportSarTxPowerLimit);
+         pw.println("isSarVoiceCallSupported: " + mSupportSarVoiceCall);
+         pw.println("isSarSoftApSupported: " + mSupportSarSoftAp);
+         pw.println("isSarSensorSupported: " + mSupportSarSensor);
+         pw.println("");
+-        mSarInfo.dump(fd, pw, args);
++        if (mSarInfo != null) {
++            mSarInfo.dump(fd, pw, args);
++        }
+     }
+ 
+     /**
+diff --git a/service/java/com/android/server/wifi/WifiServiceImpl.java b/service/java/com/android/server/wifi/WifiServiceImpl.java
+index cb16efd99..6a8e0639b 100644
+--- a/service/java/com/android/server/wifi/WifiServiceImpl.java
++++ b/service/java/com/android/server/wifi/WifiServiceImpl.java
+@@ -2573,6 +2573,11 @@ public class WifiServiceImpl extends IWifiManager.Stub {
+                 wifiScoreReport.dump(fd, pw, args);
+             }
+             pw.println();
++            SarManager sarManager = mWifiInjector.getSarManager();
++            if (sarManager != null) {
++                sarManager.dump(fd, pw, args);
++            }
++            pw.println();
+         }
+     }
+ 
+-- 
+2.17.1
+

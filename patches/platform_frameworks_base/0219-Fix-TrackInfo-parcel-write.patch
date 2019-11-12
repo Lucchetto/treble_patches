@@ -1,0 +1,31 @@
+From bb02551945394c620b9a2ea6f8563e2076d7e87d Mon Sep 17 00:00:00 2001
+From: Robert Shih <robertshih@google.com>
+Date: Mon, 9 Jul 2018 13:38:31 -0700
+Subject: [PATCH 219/306] Fix TrackInfo parcel write
+
+Bug: 77600398
+Change-Id: Ia316f1c5dc4879f6851fdb78fe8b9039579be7bc
+(cherry picked from commit 0d2dc943dcaa3d7c8479e22ae62be9753ea2643c)
+---
+ media/java/android/media/MediaPlayer.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/java/android/media/MediaPlayer.java b/media/java/android/media/MediaPlayer.java
+index ada91be9ca4..d532e526f2f 100644
+--- a/media/java/android/media/MediaPlayer.java
++++ b/media/java/android/media/MediaPlayer.java
+@@ -2510,10 +2510,10 @@ public class MediaPlayer extends PlayerBase
+         @Override
+         public void writeToParcel(Parcel dest, int flags) {
+             dest.writeInt(mTrackType);
++            dest.writeString(mFormat.getString(MediaFormat.KEY_MIME));
+             dest.writeString(getLanguage());
+ 
+             if (mTrackType == MEDIA_TRACK_TYPE_SUBTITLE) {
+-                dest.writeString(mFormat.getString(MediaFormat.KEY_MIME));
+                 dest.writeInt(mFormat.getInteger(MediaFormat.KEY_IS_AUTOSELECT));
+                 dest.writeInt(mFormat.getInteger(MediaFormat.KEY_IS_DEFAULT));
+                 dest.writeInt(mFormat.getInteger(MediaFormat.KEY_IS_FORCED_SUBTITLE));
+-- 
+2.17.1
+

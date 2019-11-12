@@ -1,0 +1,73 @@
+From b66ce759b4d35ef8735d92c7bc056f09469c7e9b Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Fri, 8 Dec 2017 10:36:28 -0800
+Subject: [PATCH 029/306] Fix issue with transition cancelling
+
+Fixes: 69901116
+Fixes: 70296214
+Test: Double tap power button to launch camera
+Test: Unlock with fingerprint, pin, SmartLock
+Test: Unlock with fingerprint while changing brightness
+Test: Unlock by tapping notification
+Change-Id: I487b29c3aa5460cbd120072becb4e0449cffcce6
+(cherry picked from commit 8635c4494f75205227b46c48cfe7ba7c75778034)
+---
+ .../android/systemui/statusbar/phone/ScrimController.java | 8 ++++----
+ .../com/android/systemui/statusbar/phone/StatusBar.java   | 3 +--
+ 2 files changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+index 3a36776304f..05fcbb0a11b 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+@@ -204,12 +204,15 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+             throw new IllegalArgumentException("Cannot change to UNINITIALIZED.");
+         }
+ 
++        final ScrimState oldState = mState;
++        mState = state;
++
+         if (mCallback != null) {
+             mCallback.onCancelled();
+         }
+         mCallback = callback;
+ 
+-        state.prepare(mState);
++        state.prepare(oldState);
+         mScreenBlankingCallbackCalled = false;
+         mAnimationDelay = 0;
+         mBlankScreen = state.getBlanksScreen();
+@@ -228,8 +231,6 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+             mKeyguardFadeoutAnimation.cancel();
+         }
+ 
+-        mState = state;
+-
+         // Do not let the device sleep until we're done with all animations
+         if (!mWakeLockHeld) {
+             if (mWakeLock != null) {
+@@ -310,7 +311,6 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+                     mCurrentInFrontAlpha = 0;
+                 }
+             } else {
+-                Log.w(TAG, "Invalid state, cannot set panel expansion when: " + mState);
+                 return;
+             }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 59533e602ae..68c7d849cf0 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -659,8 +659,7 @@ public class StatusBar extends SystemUI implements DemoMode,
+ 
+         @Override
+         public void onCancelled() {
+-            // Transition was cancelled because another one took over.
+-            // Nothing to do in here but wait.
++            onFinished();
+         }
+     };
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,58 @@
+From 18424bb7a480883ac54d30303cbbe257e7edf712 Mon Sep 17 00:00:00 2001
+From: Jean-Michel Trivi <jmtrivi@google.com>
+Date: Thu, 7 Jun 2018 12:28:27 -0700
+Subject: [PATCH 199/306] AudioService: fix deallock setBluetoothScoOn vs
+ setMode
+
+In AudioService:
+setBluetoothScoOn()
+  > setBluetoothScoOnInt()
+     > synchronized(mSettingsLock)
+     > muteRingerModeStreams()
+	> synchronized (VolumeStreamState.class)
+vs
+setMode()
+  > setModeInt()
+     > synchronized (mSettingsLock)
+        > synchronized (VolumeStreamState.class)
+
+The issue comes from setBluetoothScoOnInt() releasing the lock
+  on mSettingsLock before calling muteRingerModeStreams(). This
+  breaks the expected lock ordering in AudioService, where
+  mSettingsLock must be locked before VolumeStreamState.class.
+
+Bug: 109746821
+Test: see bug
+Change-Id: I853ca60781efc506626b6345f27da701655ac359
+(cherry picked from commit c106d9f958be76ab14a6724525f39bc3fec03fd2)
+---
+ services/core/java/com/android/server/audio/AudioService.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/audio/AudioService.java b/services/core/java/com/android/server/audio/AudioService.java
+index 3fd69ee5645..db5f7ed7cc8 100644
+--- a/services/core/java/com/android/server/audio/AudioService.java
++++ b/services/core/java/com/android/server/audio/AudioService.java
+@@ -2623,6 +2623,7 @@ public class AudioService extends IAudioService.Stub
+         broadcastRingerMode(AudioManager.RINGER_MODE_CHANGED_ACTION, ringerMode);
+     }
+ 
++    @GuardedBy("mSettingsLock")
+     private void muteRingerModeStreams() {
+         // Mute stream if not previously muted by ringer mode and (ringer mode
+         // is not RINGER_MODE_NORMAL OR stream is zen muted) and stream is affected by ringer mode.
+@@ -2710,10 +2711,9 @@ public class AudioService extends IAudioService.Stub
+         synchronized(mSettingsLock) {
+             change = mRingerMode != ringerMode;
+             mRingerMode = ringerMode;
++            muteRingerModeStreams();
+         }
+ 
+-        muteRingerModeStreams();
+-
+         // Post a persist ringer mode msg
+         if (persist) {
+             sendMsg(mAudioHandler, MSG_PERSIST_RINGER_MODE,
+-- 
+2.17.1
+

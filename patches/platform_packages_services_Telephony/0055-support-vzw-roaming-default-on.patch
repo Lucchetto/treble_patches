@@ -1,0 +1,50 @@
+From d9622280d0be6e7d370b9bf9da39d1210f9cc319 Mon Sep 17 00:00:00 2001
+From: fionaxu <fionaxu@google.com>
+Date: Mon, 17 Jul 2017 17:51:30 -0700
+Subject: [PATCH 55/70] support vzw roaming default on
+
+1. sms link handling by defaultcarrierapp under restricted NW
+2. support launching defaultcarrierapp from carrier notification to
+load captive portal page.
+2. new carrier action to reset all actions
+
+Bug: 113114222
+Change-Id: I9a2000c87341d81a0f2a9bf555c237da2ac5f565
+---
+ .../android/phone/PhoneInterfaceManager.java  | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/src/com/android/phone/PhoneInterfaceManager.java b/src/com/android/phone/PhoneInterfaceManager.java
+index a327d8883..393168b5b 100755
+--- a/src/com/android/phone/PhoneInterfaceManager.java
++++ b/src/com/android/phone/PhoneInterfaceManager.java
+@@ -4057,6 +4057,26 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+         }
+     }
+ 
++    /**
++     * Action set from carrier signalling broadcast receivers to reset all carrier actions
++     * @param subId the subscription ID that this action applies to.
++     * {@hide}
++     */
++    @Override
++    public void carrierActionResetAll(int subId) {
++        enforceModifyPermission();
++        final Phone phone = getPhone(subId);
++        if (phone == null) {
++            loge("carrierAction: ResetAll fails with invalid sibId: " + subId);
++            return;
++        }
++        try {
++            phone.carrierActionResetAll();
++        } catch (Exception e) {
++            Log.e(LOG_TAG, "carrierAction: ResetAll fails. Exception ex=" + e);
++        }
++    }
++
+     /**
+      * Called when "adb shell dumpsys phone" is invoked. Dump is also automatically invoked when a
+      * bug report is being generated.
+-- 
+2.17.1
+

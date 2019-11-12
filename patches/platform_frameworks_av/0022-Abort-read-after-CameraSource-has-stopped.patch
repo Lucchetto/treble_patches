@@ -1,0 +1,89 @@
+From 44b042cacaf79836bc982de2e889fc46d291c613 Mon Sep 17 00:00:00 2001
+From: Pawin Vongmasa <pawin@google.com>
+Date: Thu, 26 Jul 2018 12:11:05 -0700
+Subject: [PATCH 22/80] Abort read() after CameraSource has stopped
+
+Before this change, CameraSource::read() may loop forever if
+- setStopTimeUs() is called when there are no pending unprocessed
+frames; and
+- New frames that arrive after setStopTimeUs() was called have timestamps
+greater than what was passed to setStopTimeUs().
+
+This change makes read() return ERROR_END_OF_STREAM in this situation.
+
+Test: cts-tradefed run cts -m CtsMediaTestCases \
+-t android.media.cts.MediaRandomTest#testRecorderRandomAction
+
+Test: cts-tradefed run cts -m CtsCameraTestCases \
+-t android.hardware.camera2.cts.FastBasicsTest
+
+Bug: 111661316
+Change-Id: I4db4011849dbf9cc4b31e7f142017a650e4d0ed7
+---
+ media/libstagefright/CameraSource.cpp                    | 9 ++++++++-
+ .../include/media/stagefright/CameraSource.h             | 1 +
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/CameraSource.cpp b/media/libstagefright/CameraSource.cpp
+index db37021c6..41f5db04d 100644
+--- a/media/libstagefright/CameraSource.cpp
++++ b/media/libstagefright/CameraSource.cpp
+@@ -217,6 +217,7 @@ CameraSource::CameraSource(
+       mNumFramesReceived(0),
+       mLastFrameTimestampUs(0),
+       mStarted(false),
++      mEos(false),
+       mNumFramesEncoded(0),
+       mTimeBetweenFrameCaptureUs(0),
+       mFirstFrameTimeUs(0),
+@@ -880,6 +881,7 @@ status_t CameraSource::reset() {
+     {
+         Mutex::Autolock autoLock(mLock);
+         mStarted = false;
++        mEos = false;
+         mStopSystemTimeUs = -1;
+         mFrameAvailableCondition.signal();
+ 
+@@ -1075,7 +1077,7 @@ status_t CameraSource::read(
+ 
+     {
+         Mutex::Autolock autoLock(mLock);
+-        while (mStarted && mFramesReceived.empty()) {
++        while (mStarted && !mEos && mFramesReceived.empty()) {
+             if (NO_ERROR !=
+                 mFrameAvailableCondition.waitRelative(mLock,
+                     mTimeBetweenFrameCaptureUs * 1000LL + CAMERA_SOURCE_TIMEOUT_NS)) {
+@@ -1091,6 +1093,9 @@ status_t CameraSource::read(
+         if (!mStarted) {
+             return OK;
+         }
++        if (mFramesReceived.empty()) {
++            return ERROR_END_OF_STREAM;
++        }
+         frame = *mFramesReceived.begin();
+         mFramesReceived.erase(mFramesReceived.begin());
+ 
+@@ -1129,6 +1134,8 @@ bool CameraSource::shouldSkipFrameLocked(int64_t timestampUs) {
+     if (mStopSystemTimeUs != -1 && timestampUs >= mStopSystemTimeUs) {
+         ALOGV("Drop Camera frame at %lld  stop time: %lld us",
+                 (long long)timestampUs, (long long)mStopSystemTimeUs);
++        mEos = true;
++        mFrameAvailableCondition.signal();
+         return true;
+     }
+ 
+diff --git a/media/libstagefright/include/media/stagefright/CameraSource.h b/media/libstagefright/include/media/stagefright/CameraSource.h
+index 475976b6e..3037b72ff 100644
+--- a/media/libstagefright/include/media/stagefright/CameraSource.h
++++ b/media/libstagefright/include/media/stagefright/CameraSource.h
+@@ -204,6 +204,7 @@ protected:
+     int32_t mNumFramesReceived;
+     int64_t mLastFrameTimestampUs;
+     bool mStarted;
++    bool mEos;
+     int32_t mNumFramesEncoded;
+ 
+     // Time between capture of two frames.
+-- 
+2.17.1
+

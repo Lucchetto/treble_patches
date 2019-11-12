@@ -1,0 +1,82 @@
+From 06fb16617ceb8942cf70009be4503a2e32699229 Mon Sep 17 00:00:00 2001
+From: Adrian Roos <roosa@google.com>
+Date: Mon, 7 Jan 2019 16:57:31 +0100
+Subject: [PATCH 235/306] DPM: Fix regression from
+ I54376f60ac53451ace22965d331b47cd8c2e614e
+
+Fixes an issue where setting a password via DPM would never
+satisfy a QUALITY_COMPLEX password requirement.
+
+Change-Id: I3fbc952bd44291ac22728c626b128fc0c1aae232
+Merged-In: I3fbc952bd44291ac22728c626b128fc0c1aae232
+Fixes: 120915644
+Bug: 110172241
+Test: atest 'com.android.cts.devicepolicy.DeviceAdminHostSideTestApi24#testRunDeviceOwnerPasswordTest'
+Test: Set credential via DPM.resetPassword(), factory reset device to trigger FRP, verify FRP shows.
+(cherry picked from commit ea8d82c08a9d489a48ef810d7c40a4d20f806aa0)
+(cherry picked from commit b122ae9660526c83d4a7bf1c1f99107afee23001)
+---
+ .../DevicePolicyManagerService.java           | 26 ++++++++-----------
+ 1 file changed, 11 insertions(+), 15 deletions(-)
+
+diff --git a/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java b/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java
+index 123d6159d94..59be585fb8d 100644
+--- a/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java
++++ b/services/devicepolicy/java/com/android/server/devicepolicy/DevicePolicyManagerService.java
+@@ -4787,26 +4787,22 @@ public class DevicePolicyManagerService extends BaseIDevicePolicyManager {
+     private boolean resetPasswordInternal(String password, long tokenHandle, byte[] token,
+             int flags, int callingUid, int userHandle) {
+         int quality;
+-        final int realQuality;
+         synchronized (getLockObject()) {
+             quality = getPasswordQuality(null, userHandle, /* parent */ false);
+             if (quality == DevicePolicyManager.PASSWORD_QUALITY_MANAGED) {
+                 quality = PASSWORD_QUALITY_UNSPECIFIED;
+             }
+             final PasswordMetrics metrics = PasswordMetrics.computeForPassword(password);
+-            realQuality = metrics.quality;
+-            if (quality != PASSWORD_QUALITY_UNSPECIFIED) {
+-
+-                if (realQuality < quality
+-                        && quality != DevicePolicyManager.PASSWORD_QUALITY_COMPLEX) {
+-                    Slog.w(LOG_TAG, "resetPassword: password quality 0x"
+-                            + Integer.toHexString(realQuality)
+-                            + " does not meet required quality 0x"
+-                            + Integer.toHexString(quality));
+-                    return false;
+-                }
+-                quality = Math.max(realQuality, quality);
++            final int realQuality = metrics.quality;
++            if (realQuality < quality
++                    && quality != DevicePolicyManager.PASSWORD_QUALITY_COMPLEX) {
++                Slog.w(LOG_TAG, "resetPassword: password quality 0x"
++                        + Integer.toHexString(realQuality)
++                        + " does not meet required quality 0x"
++                        + Integer.toHexString(quality));
++                return false;
+             }
++            quality = Math.max(realQuality, quality);
+             int length = getPasswordMinimumLength(null, userHandle, /* parent */ false);
+             if (password.length() < length) {
+                 Slog.w(LOG_TAG, "resetPassword: password length " + password.length()
+@@ -4883,7 +4879,7 @@ public class DevicePolicyManagerService extends BaseIDevicePolicyManager {
+         try {
+             if (token == null) {
+                 if (!TextUtils.isEmpty(password)) {
+-                    mLockPatternUtils.saveLockPassword(password, null, realQuality, userHandle);
++                    mLockPatternUtils.saveLockPassword(password, null, quality, userHandle);
+                 } else {
+                     mLockPatternUtils.clearLock(null, userHandle);
+                 }
+@@ -4892,7 +4888,7 @@ public class DevicePolicyManagerService extends BaseIDevicePolicyManager {
+                 result = mLockPatternUtils.setLockCredentialWithToken(password,
+                         TextUtils.isEmpty(password) ? LockPatternUtils.CREDENTIAL_TYPE_NONE
+                                 : LockPatternUtils.CREDENTIAL_TYPE_PASSWORD,
+-                        realQuality, tokenHandle, token, userHandle);
++                        quality, tokenHandle, token, userHandle);
+             }
+             boolean requireEntry = (flags & DevicePolicyManager.RESET_PASSWORD_REQUIRE_ENTRY) != 0;
+             if (requireEntry) {
+-- 
+2.17.1
+

@@ -1,0 +1,32 @@
+From a19b7d4684573f1ace8c406364e128b46f3ec4d5 Mon Sep 17 00:00:00 2001
+From: andychou <andychou@google.com>
+Date: Thu, 13 Dec 2018 12:26:00 +0800
+Subject: [PATCH 56/70] Change USCC EriText for roaming indicator 1 with U.S.
+ Cellular
+
+Per field test result, roaming indicator 1 will be home for USCC
+So we need to display U.S. Cellular for roaming indicator 1 case
+
+Bug: 110808862
+Test: Field test pass
+Change-Id: I9d4f8f5bcd1a037da4545a096c0825c220dab30d
+---
+ assets/eri_311220.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/assets/eri_311220.xml b/assets/eri_311220.xml
+index f32bc4eff..038922eab 100644
+--- a/assets/eri_311220.xml
++++ b/assets/eri_311220.xml
+@@ -42,7 +42,7 @@
+          <EriInfo RoamingIndicator="1"
+                   IconIndex="1"
+                   IconMode="0"
+-                  EriText="Extended"
++                  EriText="U.S. Cellular"
+                   CallPromptId="0"
+                   AlertId="0"
+                   DataServiceSupport="1"/>
+-- 
+2.17.1
+

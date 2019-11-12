@@ -1,0 +1,131 @@
+From 86325fc412704ed6d4850a1a0263b75eb07af5d2 Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Mon, 11 Dec 2017 14:40:07 -0800
+Subject: [PATCH 034/306] Avoid flickering when unlocking with fingerprint
+
+Fixes issue where scrim state could be set to KEYGUARD
+for 1 frame and user would see the notification shade.
+
+Change-Id: I577b969f98573fc481e3d7c283eb5b612b7e5cee
+Fixes: 70210651
+Test: Unlock with fingerprint from AoD
+Test: runtest -x packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
+(cherry picked from commit 311eac8292a03ae95207c250aa48d044f7bc6372)
+---
+ .../systemui/statusbar/phone/StatusBar.java   | 13 +++++++++++--
+ .../statusbar/phone/StatusBarTest.java        | 19 ++++++++++++++++---
+ 2 files changed, 27 insertions(+), 5 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 0cfad1805dd..4114ad4365b 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -5148,7 +5148,15 @@ public class StatusBar extends SystemUI implements DemoMode,
+         Trace.endSection();
+     }
+ 
+-    public void updateScrimController() {
++    @VisibleForTesting
++    void updateScrimController() {
++        Trace.beginSection("StatusBar#updateScrimController");
++
++        // We don't want to end up in KEYGUARD state when we're unlocking with
++        // fingerprint from doze. We should cross fade directly from black.
++        final boolean wakeAndUnlocking = mFingerprintUnlockController.getMode()
++                == FingerprintUnlockController.MODE_WAKE_AND_UNLOCK;
++
+         if (mBouncerShowing) {
+             mScrimController.transitionTo(ScrimState.BOUNCER);
+         } else if (mLaunchCameraOnScreenTurningOn || isInLaunchTransition()) {
+@@ -5159,11 +5167,12 @@ public class StatusBar extends SystemUI implements DemoMode,
+             // Handled in DozeScrimController#setPulsing
+         } else if (mDozing) {
+             mScrimController.transitionTo(ScrimState.AOD);
+-        } else if (mIsKeyguard) {
++        } else if (mIsKeyguard && !wakeAndUnlocking) {
+             mScrimController.transitionTo(ScrimState.KEYGUARD);
+         } else {
+             mScrimController.transitionTo(ScrimState.UNLOCKED, mUnlockScrimCallback);
+         }
++        Trace.endSection();
+     }
+ 
+     public boolean isKeyguardShowing() {
+diff --git a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
+index 5ff90d91b33..e4c33f11221 100644
+--- a/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
++++ b/packages/SystemUI/tests/src/com/android/systemui/statusbar/phone/StatusBarTest.java
+@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyBoolean;
+ import static org.mockito.ArgumentMatchers.anyInt;
+ import static org.mockito.ArgumentMatchers.anyString;
++import static org.mockito.ArgumentMatchers.eq;
+ import static org.mockito.Mockito.doAnswer;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.never;
+@@ -107,6 +108,7 @@ public class StatusBarTest extends SysuiTestCase {
+     ScrimController mScrimController;
+     IStatusBarService mBarService;
+     ArrayList<Entry> mNotificationList;
++    FingerprintUnlockController mFingerprintUnlockController;
+     private DisplayMetrics mDisplayMetrics = new DisplayMetrics();
+ 
+     @Before
+@@ -133,6 +135,7 @@ public class StatusBarTest extends SysuiTestCase {
+         when(mNotificationPanelView.getLayoutParams()).thenReturn(new LayoutParams(0, 0));
+         mNotificationList = mock(ArrayList.class);
+         mScrimController = mock(ScrimController.class);
++        mFingerprintUnlockController = mock(FingerprintUnlockController.class);
+         IPowerManager powerManagerService = mock(IPowerManager.class);
+         HandlerThread handlerThread = new HandlerThread("TestThread");
+         handlerThread.start();
+@@ -145,7 +148,7 @@ public class StatusBarTest extends SysuiTestCase {
+         mStatusBar = new TestableStatusBar(mStatusBarKeyguardViewManager, mUnlockMethodCache,
+                 mKeyguardIndicationController, mStackScroller, mHeadsUpManager,
+                 mNotificationData, mPowerManager, mSystemServicesProxy, mNotificationPanelView,
+-                mBarService, mScrimController);
++                mBarService, mScrimController, mFingerprintUnlockController);
+         mStatusBar.mContext = mContext;
+         mStatusBar.mComponents = mContext.getComponents();
+         doAnswer(invocation -> {
+@@ -538,18 +541,27 @@ public class StatusBarTest extends SysuiTestCase {
+     @Test
+     public void testFingerprintNotification_UpdatesScrims() {
+         mStatusBar.mStatusBarWindowManager = mock(StatusBarWindowManager.class);
+-        mStatusBar.mFingerprintUnlockController = mock(FingerprintUnlockController.class);
+         mStatusBar.mDozeScrimController = mock(DozeScrimController.class);
+         mStatusBar.notifyFpAuthModeChanged();
+         verify(mScrimController).transitionTo(any(), any());
+     }
+ 
++    @Test
++    public void testFingerprintUnlock_UpdatesScrims() {
++        // Simulate unlocking from AoD with fingerprint.
++        when(mFingerprintUnlockController.getMode())
++                .thenReturn(FingerprintUnlockController.MODE_WAKE_AND_UNLOCK);
++        mStatusBar.updateScrimController();
++        verify(mScrimController).transitionTo(eq(ScrimState.UNLOCKED), any());
++    }
++
+     static class TestableStatusBar extends StatusBar {
+         public TestableStatusBar(StatusBarKeyguardViewManager man,
+                 UnlockMethodCache unlock, KeyguardIndicationController key,
+                 NotificationStackScrollLayout stack, HeadsUpManager hum, NotificationData nd,
+                 PowerManager pm, SystemServicesProxy ssp, NotificationPanelView panelView,
+-                IStatusBarService barService, ScrimController scrimController) {
++                IStatusBarService barService, ScrimController scrimController,
++                FingerprintUnlockController fingerprintUnlockController) {
+             mStatusBarKeyguardViewManager = man;
+             mUnlockMethodCache = unlock;
+             mKeyguardIndicationController = key;
+@@ -563,6 +575,7 @@ public class StatusBarTest extends SysuiTestCase {
+             mBarService = barService;
+             mWakefulnessLifecycle = createAwakeWakefulnessLifecycle();
+             mScrimController = scrimController;
++            mFingerprintUnlockController = fingerprintUnlockController;
+         }
+ 
+         private WakefulnessLifecycle createAwakeWakefulnessLifecycle() {
+-- 
+2.17.1
+

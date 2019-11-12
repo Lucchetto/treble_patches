@@ -1,0 +1,38 @@
+From f4e02874b260f85acb7eba2d61fe9af37e290c0f Mon Sep 17 00:00:00 2001
+From: Yiwei Zhang <zzyiwei@google.com>
+Date: Mon, 20 Aug 2018 16:42:23 -0700
+Subject: [PATCH 18/48] Get screenshot to exclude black cutout
+
+Bug: b/112869712
+Test: long press power button to take screenshots && adb shell screencap
+&& apps to take screenshots and check
+Change-Id: Ieb83373c9103f9847775eca5788358b567a05b24
+Merged-In: Ieb83373c9103f9847775eca5788358b567a05b24
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index d1cc3dcd7..f0c35d163 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -4828,6 +4828,16 @@ status_t SurfaceFlinger::captureScreen(const sp<IBinder>& display, sp<GraphicBuf
+     const sp<const DisplayDevice> device(getDisplayDeviceLocked(display));
+     if (CC_UNLIKELY(device == 0)) return BAD_VALUE;
+ 
++    const Rect& dispScissor = device->getScissor();
++    if (!dispScissor.isEmpty()) {
++        sourceCrop.set(dispScissor);
++        // adb shell screencap will default reqWidth and reqHeight to zeros.
++        if (reqWidth == 0 || reqHeight == 0) {
++            reqWidth = uint32_t(dispScissor.width());
++            reqHeight = uint32_t(dispScissor.height());
++        }
++    }
++
+     DisplayRenderArea renderArea(device, sourceCrop, reqHeight, reqWidth, rotation);
+ 
+     auto traverseLayers = std::bind(std::mem_fn(&SurfaceFlinger::traverseLayersInDisplay), this,
+-- 
+2.17.1
+

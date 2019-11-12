@@ -1,0 +1,2986 @@
+From 2fa8ee39620ffaa7105ae356ae92453f7e46061b Mon Sep 17 00:00:00 2001
+From: Jiuyu Sun <jiuyu@google.com>
+Date: Thu, 8 Feb 2018 16:38:26 +0000
+Subject: [PATCH 112/306] Revert "Public EuiccManager APIs."
+
+This reverts commit af6a5fffdc5ef30065f8bc2d1280bbd87eae3c64.
+
+Reason for revert: <INSERT REASONING HERE>
+
+Change-Id: Id3296a91e5c3ad624a6a03f6532b859524a518bf
+(cherry picked from commit d3bb4aed78b75365fc0d18fc31750d86404a1f47)
+---
+ api/current.txt                               |  44 ---
+ api/system-current.txt                        | 259 +----------------
+ .../app/admin/DevicePolicyManager.java        |   3 +
+ core/java/android/content/Context.java        |   8 +-
+ .../android/content/pm/PackageManager.java    |   2 +
+ core/java/android/provider/Settings.java      |   3 +-
+ .../service/euicc/EuiccProfileInfo.java       | 273 +++++++++---------
+ .../android/service/euicc/EuiccService.java   |  67 ++---
+ ...ultDownloadableSubscriptionListResult.java |  38 +--
+ ...ownloadableSubscriptionMetadataResult.java |  34 +--
+ .../euicc/GetEuiccProfileInfoListResult.java  |  53 +---
+ core/res/AndroidManifest.xml                  |  19 +-
+ .../service/euicc/EuiccProfileInfoTest.java   |  48 +--
+ .../android/telephony/SubscriptionInfo.java   |  24 +-
+ .../telephony/SubscriptionManager.java        |  61 +---
+ .../android/telephony/UiccAccessRule.java     |   4 +-
+ .../euicc/DownloadableSubscription.java       | 114 ++------
+ .../telephony/euicc/EuiccCardManager.java     | 145 ++++------
+ .../android/telephony/euicc/EuiccInfo.java    |  14 +-
+ .../android/telephony/euicc/EuiccManager.java |  83 ++----
+ .../telephony/euicc/EuiccNotification.java    |   9 +-
+ .../telephony/euicc/EuiccRulesAuthTable.java  |  14 +-
+ 22 files changed, 388 insertions(+), 931 deletions(-)
+
+diff --git a/api/current.txt b/api/current.txt
+index 449c761b7fe..9e873b2c8dc 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -6705,7 +6705,6 @@ package android.app.admin {
+     field public static final int USER_OPERATION_ERROR_MAX_RUNNING_USERS = 3; // 0x3
+     field public static final int USER_OPERATION_ERROR_UNKNOWN = 1; // 0x1
+     field public static final int USER_OPERATION_SUCCESS = 0; // 0x0
+-    field public static final int WIPE_EUICC = 4; // 0x4
+     field public static final int WIPE_EXTERNAL_STORAGE = 1; // 0x1
+     field public static final int WIPE_RESET_PROTECTION_DATA = 2; // 0x2
+   }
+@@ -9440,7 +9439,6 @@ package android.content {
+     field public static final java.lang.String DISPLAY_SERVICE = "display";
+     field public static final java.lang.String DOWNLOAD_SERVICE = "download";
+     field public static final java.lang.String DROPBOX_SERVICE = "dropbox";
+-    field public static final java.lang.String EUICC_SERVICE = "euicc";
+     field public static final java.lang.String FINGERPRINT_SERVICE = "fingerprint";
+     field public static final java.lang.String HARDWARE_PROPERTIES_SERVICE = "hardware_properties";
+     field public static final java.lang.String INPUT_METHOD_SERVICE = "input_method";
+@@ -11266,7 +11264,6 @@ package android.content.pm {
+     field public static final java.lang.String FEATURE_STRONGBOX_KEYSTORE = "android.hardware.strongbox_keystore";
+     field public static final java.lang.String FEATURE_TELEPHONY = "android.hardware.telephony";
+     field public static final java.lang.String FEATURE_TELEPHONY_CDMA = "android.hardware.telephony.cdma";
+-    field public static final java.lang.String FEATURE_TELEPHONY_EUICC = "android.hardware.telephony.euicc";
+     field public static final java.lang.String FEATURE_TELEPHONY_GSM = "android.hardware.telephony.gsm";
+     field public static final java.lang.String FEATURE_TELEPHONY_MBMS = "android.hardware.telephony.mbms";
+     field public static final deprecated java.lang.String FEATURE_TELEVISION = "android.hardware.type.television";
+@@ -42199,16 +42196,13 @@ package android.telephony {
+     method public java.lang.String getNumber();
+     method public int getSimSlotIndex();
+     method public int getSubscriptionId();
+-    method public boolean isEmbedded();
+     method public void writeToParcel(android.os.Parcel, int);
+     field public static final android.os.Parcelable.Creator<android.telephony.SubscriptionInfo> CREATOR;
+   }
+ 
+   public class SubscriptionManager {
+     method public void addOnSubscriptionsChangedListener(android.telephony.SubscriptionManager.OnSubscriptionsChangedListener);
+-    method public boolean canManageSubscription(android.telephony.SubscriptionInfo);
+     method public static deprecated android.telephony.SubscriptionManager from(android.content.Context);
+-    method public java.util.List<android.telephony.SubscriptionInfo> getAccessibleSubscriptionInfoList();
+     method public android.telephony.SubscriptionInfo getActiveSubscriptionInfo(int);
+     method public int getActiveSubscriptionInfoCount();
+     method public int getActiveSubscriptionInfoCountMax();
+@@ -42593,44 +42587,6 @@ package android.telephony.data {
+ 
+ }
+ 
+-package android.telephony.euicc {
+-
+-  public final class DownloadableSubscription implements android.os.Parcelable {
+-    method public int describeContents();
+-    method public static android.telephony.euicc.DownloadableSubscription forActivationCode(java.lang.String);
+-    method public java.lang.String getConfirmationCode();
+-    method public java.lang.String getEncodedActivationCode();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.telephony.euicc.DownloadableSubscription> CREATOR;
+-  }
+-
+-  public final class EuiccInfo implements android.os.Parcelable {
+-    ctor public EuiccInfo(java.lang.String);
+-    method public int describeContents();
+-    method public java.lang.String getOsVersion();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.telephony.euicc.EuiccInfo> CREATOR;
+-  }
+-
+-  public class EuiccManager {
+-    method public void deleteSubscription(int, android.app.PendingIntent);
+-    method public void downloadSubscription(android.telephony.euicc.DownloadableSubscription, boolean, android.app.PendingIntent);
+-    method public java.lang.String getEid();
+-    method public android.telephony.euicc.EuiccInfo getEuiccInfo();
+-    method public boolean isEnabled();
+-    method public void startResolutionActivity(android.app.Activity, int, android.content.Intent, android.app.PendingIntent) throws android.content.IntentSender.SendIntentException;
+-    method public void switchToSubscription(int, android.app.PendingIntent);
+-    field public static final java.lang.String ACTION_MANAGE_EMBEDDED_SUBSCRIPTIONS = "android.telephony.euicc.action.MANAGE_EMBEDDED_SUBSCRIPTIONS";
+-    field public static final java.lang.String ACTION_NOTIFY_CARRIER_SETUP_INCOMPLETE = "android.telephony.euicc.action.NOTIFY_CARRIER_SETUP_INCOMPLETE";
+-    field public static final int EMBEDDED_SUBSCRIPTION_RESULT_ERROR = 2; // 0x2
+-    field public static final int EMBEDDED_SUBSCRIPTION_RESULT_OK = 0; // 0x0
+-    field public static final int EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR = 1; // 0x1
+-    field public static final java.lang.String EXTRA_EMBEDDED_SUBSCRIPTION_DETAILED_CODE = "android.telephony.euicc.extra.EMBEDDED_SUBSCRIPTION_DETAILED_CODE";
+-    field public static final java.lang.String META_DATA_CARRIER_ICON = "android.telephony.euicc.carriericon";
+-  }
+-
+-}
+-
+ package android.telephony.gsm {
+ 
+   public class GsmCellLocation extends android.telephony.CellLocation {
+diff --git a/api/system-current.txt b/api/system-current.txt
+index 7211500e576..f7e7d60d26b 100644
+--- a/api/system-current.txt
++++ b/api/system-current.txt
+@@ -20,7 +20,6 @@ package android {
+     field public static final java.lang.String BIND_APPWIDGET = "android.permission.BIND_APPWIDGET";
+     field public static final deprecated java.lang.String BIND_CONNECTION_SERVICE = "android.permission.BIND_CONNECTION_SERVICE";
+     field public static final java.lang.String BIND_DIRECTORY_SEARCH = "android.permission.BIND_DIRECTORY_SEARCH";
+-    field public static final java.lang.String BIND_EUICC_SERVICE = "android.permission.BIND_EUICC_SERVICE";
+     field public static final java.lang.String BIND_IMS_SERVICE = "android.permission.BIND_IMS_SERVICE";
+     field public static final java.lang.String BIND_KEYGUARD_APPWIDGET = "android.permission.BIND_KEYGUARD_APPWIDGET";
+     field public static final java.lang.String BIND_NETWORK_RECOMMENDATION_SERVICE = "android.permission.BIND_NETWORK_RECOMMENDATION_SERVICE";
+@@ -31,8 +30,8 @@ package android {
+     field public static final java.lang.String BIND_RUNTIME_PERMISSION_PRESENTER_SERVICE = "android.permission.BIND_RUNTIME_PERMISSION_PRESENTER_SERVICE";
+     field public static final java.lang.String BIND_SETTINGS_SUGGESTIONS_SERVICE = "android.permission.BIND_SETTINGS_SUGGESTIONS_SERVICE";
+     field public static final java.lang.String BIND_TELEPHONY_DATA_SERVICE = "android.permission.BIND_TELEPHONY_DATA_SERVICE";
+-    field public static final java.lang.String BIND_TELEPHONY_NETWORK_SERVICE = "android.permission.BIND_TELEPHONY_NETWORK_SERVICE";
+     field public static final java.lang.String BIND_TEXTCLASSIFIER_SERVICE = "android.permission.BIND_TEXTCLASSIFIER_SERVICE";
++    field public static final java.lang.String BIND_TELEPHONY_NETWORK_SERVICE = "android.permission.BIND_TELEPHONY_NETWORK_SERVICE";
+     field public static final java.lang.String BIND_TRUST_AGENT = "android.permission.BIND_TRUST_AGENT";
+     field public static final java.lang.String BIND_TV_REMOTE_SERVICE = "android.permission.BIND_TV_REMOTE_SERVICE";
+     field public static final java.lang.String BLUETOOTH_PRIVILEGED = "android.permission.BLUETOOTH_PRIVILEGED";
+@@ -187,7 +186,6 @@ package android {
+     field public static final java.lang.String USE_RESERVED_DISK = "android.permission.USE_RESERVED_DISK";
+     field public static final java.lang.String WRITE_APN_SETTINGS = "android.permission.WRITE_APN_SETTINGS";
+     field public static final java.lang.String WRITE_DREAM_STATE = "android.permission.WRITE_DREAM_STATE";
+-    field public static final java.lang.String WRITE_EMBEDDED_SUBSCRIPTIONS = "android.permission.WRITE_EMBEDDED_SUBSCRIPTIONS";
+     field public static final java.lang.String WRITE_GSERVICES = "android.permission.WRITE_GSERVICES";
+     field public static final java.lang.String WRITE_MEDIA_STORAGE = "android.permission.WRITE_MEDIA_STORAGE";
+     field public static final java.lang.String WRITE_SECURE_SETTINGS = "android.permission.WRITE_SECURE_SETTINGS";
+@@ -785,7 +783,6 @@ package android.content {
+     method public abstract void sendOrderedBroadcast(android.content.Intent, java.lang.String, android.os.Bundle, android.content.BroadcastReceiver, android.os.Handler, int, java.lang.String, android.os.Bundle);
+     field public static final java.lang.String BACKUP_SERVICE = "backup";
+     field public static final java.lang.String CONTEXTHUB_SERVICE = "contexthub";
+-    field public static final java.lang.String EUICC_CARD_SERVICE = "euicc_card";
+     field public static final java.lang.String HDMI_CONTROL_SERVICE = "hdmi_control";
+     field public static final java.lang.String NETWORK_SCORE_SERVICE = "network_score";
+     field public static final java.lang.String OEM_LOCK_SERVICE = "oem_lock";
+@@ -4127,7 +4124,6 @@ package android.provider {
+     method public static boolean putString(android.content.ContentResolver, java.lang.String, java.lang.String, java.lang.String, boolean);
+     method public static void resetToDefaults(android.content.ContentResolver, java.lang.String);
+     field public static final java.lang.String AUTOFILL_COMPAT_ALLOWED_PACKAGES = "autofill_compat_allowed_packages";
+-    field public static final java.lang.String DEFAULT_SM_DP_PLUS = "default_sm_dp_plus";
+     field public static final java.lang.String OTA_DISABLE_AUTOMATIC_UPDATE = "ota_disable_automatic_update";
+     field public static final java.lang.String THEATER_MODE_ON = "theater_mode_on";
+     field public static final java.lang.String WEBVIEW_MULTIPROCESS = "webview_multiprocess";
+@@ -4301,124 +4297,6 @@ package android.service.autofill {
+ 
+ }
+ 
+-package android.service.euicc {
+-
+-  public final class EuiccProfileInfo implements android.os.Parcelable {
+-    method public int describeContents();
+-    method public android.service.carrier.CarrierIdentifier getCarrierIdentifier();
+-    method public java.lang.String getIccid();
+-    method public java.lang.String getNickname();
+-    method public int getPolicyRules();
+-    method public int getProfileClass();
+-    method public java.lang.String getProfileName();
+-    method public java.lang.String getServiceProviderName();
+-    method public int getState();
+-    method public java.util.List<android.telephony.UiccAccessRule> getUiccAccessRules();
+-    method public boolean hasPolicyRule(int);
+-    method public boolean hasPolicyRules();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.service.euicc.EuiccProfileInfo> CREATOR;
+-    field public static final int POLICY_RULE_DELETE_AFTER_DISABLING = 4; // 0x4
+-    field public static final int POLICY_RULE_DO_NOT_DELETE = 2; // 0x2
+-    field public static final int POLICY_RULE_DO_NOT_DISABLE = 1; // 0x1
+-    field public static final int PROFILE_CLASS_OPERATIONAL = 2; // 0x2
+-    field public static final int PROFILE_CLASS_PROVISIONING = 1; // 0x1
+-    field public static final int PROFILE_CLASS_TESTING = 0; // 0x0
+-    field public static final int PROFILE_STATE_DISABLED = 0; // 0x0
+-    field public static final int PROFILE_STATE_ENABLED = 1; // 0x1
+-  }
+-
+-  public static final class EuiccProfileInfo.Builder {
+-    ctor public EuiccProfileInfo.Builder(java.lang.String);
+-    ctor public EuiccProfileInfo.Builder(android.service.euicc.EuiccProfileInfo);
+-    method public android.service.euicc.EuiccProfileInfo build();
+-    method public android.service.euicc.EuiccProfileInfo.Builder setCarrierIdentifier(android.service.carrier.CarrierIdentifier);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setIccid(java.lang.String);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setNickname(java.lang.String);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setPolicyRules(int);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setProfileClass(int);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setProfileName(java.lang.String);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setServiceProviderName(java.lang.String);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setState(int);
+-    method public android.service.euicc.EuiccProfileInfo.Builder setUiccAccessRule(java.util.List<android.telephony.UiccAccessRule>);
+-  }
+-
+-  public static abstract class EuiccProfileInfo.PolicyRule implements java.lang.annotation.Annotation {
+-  }
+-
+-  public static abstract class EuiccProfileInfo.ProfileClass implements java.lang.annotation.Annotation {
+-  }
+-
+-  public static abstract class EuiccProfileInfo.ProfileState implements java.lang.annotation.Annotation {
+-  }
+-
+-  public abstract class EuiccService extends android.app.Service {
+-    ctor public EuiccService();
+-    method public android.os.IBinder onBind(android.content.Intent);
+-    method public abstract int onDeleteSubscription(int, java.lang.String);
+-    method public abstract int onDownloadSubscription(int, android.telephony.euicc.DownloadableSubscription, boolean, boolean);
+-    method public abstract int onEraseSubscriptions(int);
+-    method public abstract android.service.euicc.GetDefaultDownloadableSubscriptionListResult onGetDefaultDownloadableSubscriptionList(int, boolean);
+-    method public abstract android.service.euicc.GetDownloadableSubscriptionMetadataResult onGetDownloadableSubscriptionMetadata(int, android.telephony.euicc.DownloadableSubscription, boolean);
+-    method public abstract java.lang.String onGetEid(int);
+-    method public abstract android.telephony.euicc.EuiccInfo onGetEuiccInfo(int);
+-    method public abstract android.service.euicc.GetEuiccProfileInfoListResult onGetEuiccProfileInfoList(int);
+-    method public abstract int onGetOtaStatus(int);
+-    method public abstract int onRetainSubscriptionsForFactoryReset(int);
+-    method public abstract void onStartOtaIfNecessary(int, android.service.euicc.EuiccService.OtaStatusChangedCallback);
+-    method public abstract int onSwitchToSubscription(int, java.lang.String, boolean);
+-    method public abstract int onUpdateSubscriptionNickname(int, java.lang.String, java.lang.String);
+-    field public static final java.lang.String ACTION_MANAGE_EMBEDDED_SUBSCRIPTIONS = "android.service.euicc.action.MANAGE_EMBEDDED_SUBSCRIPTIONS";
+-    field public static final java.lang.String ACTION_PROVISION_EMBEDDED_SUBSCRIPTION = "android.service.euicc.action.PROVISION_EMBEDDED_SUBSCRIPTION";
+-    field public static final java.lang.String ACTION_RESOLVE_CONFIRMATION_CODE = "android.service.euicc.action.RESOLVE_CONFIRMATION_CODE";
+-    field public static final java.lang.String ACTION_RESOLVE_DEACTIVATE_SIM = "android.service.euicc.action.RESOLVE_DEACTIVATE_SIM";
+-    field public static final java.lang.String ACTION_RESOLVE_NO_PRIVILEGES = "android.service.euicc.action.RESOLVE_NO_PRIVILEGES";
+-    field public static final java.lang.String CATEGORY_EUICC_UI = "android.service.euicc.category.EUICC_UI";
+-    field public static final java.lang.String EUICC_SERVICE_INTERFACE = "android.service.euicc.EuiccService";
+-    field public static final java.lang.String EXTRA_RESOLUTION_CALLING_PACKAGE = "android.service.euicc.extra.RESOLUTION_CALLING_PACKAGE";
+-    field public static final java.lang.String EXTRA_RESOLUTION_CONFIRMATION_CODE = "android.service.euicc.extra.RESOLUTION_CONFIRMATION_CODE";
+-    field public static final java.lang.String EXTRA_RESOLUTION_CONFIRMATION_CODE_RETRIED = "android.service.euicc.extra.RESOLUTION_CONFIRMATION_CODE_RETRIED";
+-    field public static final java.lang.String EXTRA_RESOLUTION_CONSENT = "android.service.euicc.extra.RESOLUTION_CONSENT";
+-    field public static final int RESULT_FIRST_USER = 1; // 0x1
+-    field public static final int RESULT_MUST_DEACTIVATE_SIM = -1; // 0xffffffff
+-    field public static final int RESULT_NEED_CONFIRMATION_CODE = -2; // 0xfffffffe
+-    field public static final int RESULT_OK = 0; // 0x0
+-  }
+-
+-  public static abstract class EuiccService.OtaStatusChangedCallback {
+-    ctor public EuiccService.OtaStatusChangedCallback();
+-  }
+-
+-  public final class GetDefaultDownloadableSubscriptionListResult implements android.os.Parcelable {
+-    ctor public GetDefaultDownloadableSubscriptionListResult(int, android.telephony.euicc.DownloadableSubscription[]);
+-    method public int describeContents();
+-    method public java.util.List<android.telephony.euicc.DownloadableSubscription> getDownloadableSubscriptions();
+-    method public int getResult();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.service.euicc.GetDefaultDownloadableSubscriptionListResult> CREATOR;
+-  }
+-
+-  public final class GetDownloadableSubscriptionMetadataResult implements android.os.Parcelable {
+-    ctor public GetDownloadableSubscriptionMetadataResult(int, android.telephony.euicc.DownloadableSubscription);
+-    method public int describeContents();
+-    method public android.telephony.euicc.DownloadableSubscription getDownloadableSubscription();
+-    method public int getResult();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.service.euicc.GetDownloadableSubscriptionMetadataResult> CREATOR;
+-  }
+-
+-  public final class GetEuiccProfileInfoListResult implements android.os.Parcelable {
+-    ctor public GetEuiccProfileInfoListResult(int, android.service.euicc.EuiccProfileInfo[], boolean);
+-    method public int describeContents();
+-    method public boolean getIsRemovable();
+-    method public java.util.List<android.service.euicc.EuiccProfileInfo> getProfiles();
+-    method public int getResult();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.service.euicc.GetEuiccProfileInfoListResult> CREATOR;
+-  }
+-
+-}
+-
+ package android.service.notification {
+ 
+   public final class Adjustment implements android.os.Parcelable {
+@@ -5019,14 +4897,8 @@ package android.telephony {
+     field public static final int RESULT_SYSTEM_ERROR = 15; // 0xf
+   }
+ 
+-  public class SubscriptionInfo implements android.os.Parcelable {
+-    method public java.util.List<android.telephony.UiccAccessRule> getAccessRules();
+-  }
+-
+   public class SubscriptionManager {
+-    method public java.util.List<android.telephony.SubscriptionInfo> getAvailableSubscriptionInfoList();
+     method public java.util.List<android.telephony.SubscriptionPlan> getSubscriptionPlans(int);
+-    method public void requestEmbeddedSubscriptionInfoListRefresh();
+     method public void setSubscriptionOverrideCongested(int, boolean, long);
+     method public void setSubscriptionOverrideUnmetered(int, boolean, long);
+     method public void setSubscriptionPlans(int, java.util.List<android.telephony.SubscriptionPlan>);
+@@ -5162,16 +5034,6 @@ package android.telephony {
+     field public static final int SIM_STATE_PRESENT = 11; // 0xb
+   }
+ 
+-  public final class UiccAccessRule implements android.os.Parcelable {
+-    ctor public UiccAccessRule(byte[], java.lang.String, long);
+-    method public int describeContents();
+-    method public int getCarrierPrivilegeStatus(android.content.pm.PackageInfo);
+-    method public int getCarrierPrivilegeStatus(android.content.pm.Signature, java.lang.String);
+-    method public java.lang.String getPackageName();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.telephony.UiccAccessRule> CREATOR;
+-  }
+-
+   public class UiccSlotInfo implements android.os.Parcelable {
+     ctor public UiccSlotInfo(boolean, boolean, java.lang.String, int, int);
+     method public int describeContents();
+@@ -5282,125 +5144,6 @@ package android.telephony.data {
+ 
+ }
+ 
+-package android.telephony.euicc {
+-
+-  public final class DownloadableSubscription implements android.os.Parcelable {
+-    method public java.util.List<android.telephony.UiccAccessRule> getAccessRules();
+-    method public java.lang.String getCarrierName();
+-  }
+-
+-  public static final class DownloadableSubscription.Builder {
+-    ctor public DownloadableSubscription.Builder();
+-    ctor public DownloadableSubscription.Builder(android.telephony.euicc.DownloadableSubscription);
+-    method public android.telephony.euicc.DownloadableSubscription build();
+-    method public android.telephony.euicc.DownloadableSubscription.Builder setAccessRules(java.util.List<android.telephony.UiccAccessRule>);
+-    method public android.telephony.euicc.DownloadableSubscription.Builder setCarrierName(java.lang.String);
+-    method public android.telephony.euicc.DownloadableSubscription.Builder setConfirmationCode(java.lang.String);
+-    method public android.telephony.euicc.DownloadableSubscription.Builder setEncodedActivationCode(java.lang.String);
+-  }
+-
+-  public class EuiccCardManager {
+-    method public void authenticateServer(java.lang.String, java.lang.String, byte[], byte[], byte[], byte[], java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void cancelSession(java.lang.String, byte[], int, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void deleteProfile(java.lang.String, java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.Void>);
+-    method public void disableProfile(java.lang.String, java.lang.String, boolean, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.Void>);
+-    method public void listNotifications(java.lang.String, int, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.telephony.euicc.EuiccNotification[]>);
+-    method public void loadBoundProfilePackage(java.lang.String, byte[], java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void prepareDownload(java.lang.String, byte[], byte[], byte[], byte[], java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void removeNotificationFromList(java.lang.String, int, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.Void>);
+-    method public void requestAllProfiles(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.service.euicc.EuiccProfileInfo[]>);
+-    method public void requestDefaultSmdpAddress(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.String>);
+-    method public void requestEuiccChallenge(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void requestEuiccInfo1(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void requestEuiccInfo2(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<byte[]>);
+-    method public void requestProfile(java.lang.String, java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.service.euicc.EuiccProfileInfo>);
+-    method public void requestRulesAuthTable(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.telephony.euicc.EuiccRulesAuthTable>);
+-    method public void requestSmdsAddress(java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.String>);
+-    method public void resetMemory(java.lang.String, int, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.Void>);
+-    method public void retrieveNotification(java.lang.String, int, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.telephony.euicc.EuiccNotification>);
+-    method public void retrieveNotificationList(java.lang.String, int, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.telephony.euicc.EuiccNotification[]>);
+-    method public void setDefaultSmdpAddress(java.lang.String, java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.Void>);
+-    method public void setNickname(java.lang.String, java.lang.String, java.lang.String, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<java.lang.Void>);
+-    method public void switchToProfile(java.lang.String, java.lang.String, boolean, java.util.concurrent.Executor, android.telephony.euicc.EuiccCardManager.ResultCallback<android.service.euicc.EuiccProfileInfo>);
+-    field public static final int CANCEL_REASON_END_USER_REJECTED = 0; // 0x0
+-    field public static final int CANCEL_REASON_POSTPONED = 1; // 0x1
+-    field public static final int CANCEL_REASON_PPR_NOT_ALLOWED = 3; // 0x3
+-    field public static final int CANCEL_REASON_TIMEOUT = 2; // 0x2
+-    field public static final int RESET_OPTION_DELETE_FIELD_LOADED_TEST_PROFILES = 2; // 0x2
+-    field public static final int RESET_OPTION_DELETE_OPERATIONAL_PROFILES = 1; // 0x1
+-    field public static final int RESET_OPTION_RESET_DEFAULT_SMDP_ADDRESS = 4; // 0x4
+-    field public static final int RESULT_OK = 0; // 0x0
+-    field public static final int RESULT_UNKNOWN_ERROR = -1; // 0xffffffff
+-  }
+-
+-  public static abstract class EuiccCardManager.CancelReason implements java.lang.annotation.Annotation {
+-  }
+-
+-  public static abstract class EuiccCardManager.ResetOption implements java.lang.annotation.Annotation {
+-  }
+-
+-  public static abstract interface EuiccCardManager.ResultCallback<T> {
+-    method public abstract void onComplete(int, T);
+-  }
+-
+-  public class EuiccManager {
+-    method public void continueOperation(android.content.Intent, android.os.Bundle);
+-    method public void getDefaultDownloadableSubscriptionList(android.app.PendingIntent);
+-    method public void getDownloadableSubscriptionMetadata(android.telephony.euicc.DownloadableSubscription, android.app.PendingIntent);
+-    method public int getOtaStatus();
+-    field public static final java.lang.String ACTION_OTA_STATUS_CHANGED = "android.telephony.euicc.action.OTA_STATUS_CHANGED";
+-    field public static final java.lang.String ACTION_PROVISION_EMBEDDED_SUBSCRIPTION = "android.telephony.euicc.action.PROVISION_EMBEDDED_SUBSCRIPTION";
+-    field public static final int EUICC_OTA_FAILED = 2; // 0x2
+-    field public static final int EUICC_OTA_IN_PROGRESS = 1; // 0x1
+-    field public static final int EUICC_OTA_NOT_NEEDED = 4; // 0x4
+-    field public static final int EUICC_OTA_STATUS_UNAVAILABLE = 5; // 0x5
+-    field public static final int EUICC_OTA_SUCCEEDED = 3; // 0x3
+-    field public static final java.lang.String EXTRA_EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTION = "android.telephony.euicc.extra.EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTION";
+-    field public static final java.lang.String EXTRA_EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTIONS = "android.telephony.euicc.extra.EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTIONS";
+-  }
+-
+-  public static abstract class EuiccManager.OtaStatus implements java.lang.annotation.Annotation {
+-  }
+-
+-  public final class EuiccNotification implements android.os.Parcelable {
+-    ctor public EuiccNotification(int, java.lang.String, int, byte[]);
+-    method public int describeContents();
+-    method public byte[] getData();
+-    method public int getEvent();
+-    method public int getSeq();
+-    method public java.lang.String getTargetAddr();
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final int ALL_EVENTS = 15; // 0xf
+-    field public static final android.os.Parcelable.Creator<android.telephony.euicc.EuiccNotification> CREATOR;
+-    field public static final int EVENT_DELETE = 8; // 0x8
+-    field public static final int EVENT_DISABLE = 4; // 0x4
+-    field public static final int EVENT_ENABLE = 2; // 0x2
+-    field public static final int EVENT_INSTALL = 1; // 0x1
+-  }
+-
+-  public static abstract class EuiccNotification.Event implements java.lang.annotation.Annotation {
+-  }
+-
+-  public final class EuiccRulesAuthTable implements android.os.Parcelable {
+-    method public int describeContents();
+-    method public int findIndex(int, android.service.carrier.CarrierIdentifier);
+-    method public boolean hasPolicyRuleFlag(int, int);
+-    method public void writeToParcel(android.os.Parcel, int);
+-    field public static final android.os.Parcelable.Creator<android.telephony.euicc.EuiccRulesAuthTable> CREATOR;
+-    field public static final int POLICY_RULE_FLAG_CONSENT_REQUIRED = 1; // 0x1
+-  }
+-
+-  public static final class EuiccRulesAuthTable.Builder {
+-    ctor public EuiccRulesAuthTable.Builder(int);
+-    method public android.telephony.euicc.EuiccRulesAuthTable.Builder add(int, java.util.List<android.service.carrier.CarrierIdentifier>, int);
+-    method public android.telephony.euicc.EuiccRulesAuthTable build();
+-  }
+-
+-  public static abstract class EuiccRulesAuthTable.PolicyRuleFlag implements java.lang.annotation.Annotation {
+-  }
+-
+-}
+-
+ package android.telephony.ims {
+ 
+   public final class ImsCallForwardInfo implements android.os.Parcelable {
+diff --git a/core/java/android/app/admin/DevicePolicyManager.java b/core/java/android/app/admin/DevicePolicyManager.java
+index b29644bcf32..77e118ccb1b 100644
+--- a/core/java/android/app/admin/DevicePolicyManager.java
++++ b/core/java/android/app/admin/DevicePolicyManager.java
+@@ -3444,6 +3444,9 @@ public class DevicePolicyManager {
+ 
+     /**
+      * Flag for {@link #wipeData(int)}: also erase the device's eUICC data.
++     *
++     * TODO(b/35851809): make this public.
++     * @hide
+      */
+     public static final int WIPE_EUICC = 0x0004;
+ 
+diff --git a/core/java/android/content/Context.java b/core/java/android/content/Context.java
+index 7b406dfeda8..b85a3199881 100644
+--- a/core/java/android/content/Context.java
++++ b/core/java/android/content/Context.java
+@@ -3671,8 +3671,10 @@ public abstract class Context {
+      *
+      * @see #getSystemService(String)
+      * @see android.telephony.euicc.EuiccManager
++     * TODO(b/35851809): Unhide this API.
++     * @hide
+      */
+-    public static final String EUICC_SERVICE = "euicc";
++    public static final String EUICC_SERVICE = "euicc_service";
+ 
+     /**
+      * Use with {@link #getSystemService(String)} to retrieve a
+@@ -3680,10 +3682,10 @@ public abstract class Context {
+      *
+      * @see #getSystemService(String)
+      * @see android.telephony.euicc.EuiccCardManager
++     * TODO(b/35851809): Make this a SystemApi.
+      * @hide
+      */
+-    @SystemApi
+-    public static final String EUICC_CARD_SERVICE = "euicc_card";
++    public static final String EUICC_CARD_SERVICE = "euicc_card_service";
+ 
+     /**
+      * Use with {@link #getSystemService(String)} to retrieve a
+diff --git a/core/java/android/content/pm/PackageManager.java b/core/java/android/content/pm/PackageManager.java
+index 08fccab6a5b..486c86cedba 100644
+--- a/core/java/android/content/pm/PackageManager.java
++++ b/core/java/android/content/pm/PackageManager.java
+@@ -2108,6 +2108,8 @@ public abstract class PackageManager {
+     /**
+      * Feature for {@link #getSystemAvailableFeatures} and {@link #hasSystemFeature}: The device
+      * supports embedded subscriptions on eUICCs.
++     * TODO(b/35851809): Make this public.
++     * @hide
+      */
+     @SdkConstant(SdkConstantType.FEATURE)
+     public static final String FEATURE_TELEPHONY_EUICC = "android.hardware.telephony.euicc";
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index d14ac208ab2..84996e03a64 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -8563,8 +8563,9 @@ public final class Settings {
+          *
+          * @see android.service.euicc.EuiccService
+          * @hide
++         *
++         * TODO(b/35851809): Make this a SystemApi.
+          */
+-        @SystemApi
+         public static final String DEFAULT_SM_DP_PLUS = "default_sm_dp_plus";
+ 
+         /**
+diff --git a/core/java/android/service/euicc/EuiccProfileInfo.java b/core/java/android/service/euicc/EuiccProfileInfo.java
+index cb4f10455ec..8e752d1c6c1 100644
+--- a/core/java/android/service/euicc/EuiccProfileInfo.java
++++ b/core/java/android/service/euicc/EuiccProfileInfo.java
+@@ -17,7 +17,6 @@ package android.service.euicc;
+ 
+ import android.annotation.IntDef;
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ import android.service.carrier.CarrierIdentifier;
+@@ -27,15 +26,15 @@ import android.text.TextUtils;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+ import java.util.Arrays;
+-import java.util.List;
+ import java.util.Objects;
+ 
+ /**
+  * Information about an embedded profile (subscription) on an eUICC.
+  *
+  * @hide
++ *
++ * TODO(b/35851809): Make this a SystemApi.
+  */
+-@SystemApi
+ public final class EuiccProfileInfo implements Parcelable {
+ 
+     /** Profile policy rules (bit mask) */
+@@ -45,7 +44,6 @@ public final class EuiccProfileInfo implements Parcelable {
+             POLICY_RULE_DO_NOT_DELETE,
+             POLICY_RULE_DELETE_AFTER_DISABLING
+     })
+-    /** @hide */
+     public @interface PolicyRule {}
+     /** Once this profile is enabled, it cannot be disabled. */
+     public static final int POLICY_RULE_DO_NOT_DISABLE = 1;
+@@ -62,7 +60,6 @@ public final class EuiccProfileInfo implements Parcelable {
+             PROFILE_CLASS_OPERATIONAL,
+             PROFILE_CLASS_UNSET
+     })
+-    /** @hide */
+     public @interface ProfileClass {}
+     /** Testing profiles */
+     public static final int PROFILE_CLASS_TESTING = 0;
+@@ -83,7 +80,6 @@ public final class EuiccProfileInfo implements Parcelable {
+             PROFILE_STATE_ENABLED,
+             PROFILE_STATE_UNSET
+     })
+-    /** @hide */
+     public @interface ProfileState {}
+     /** Disabled profiles */
+     public static final int PROFILE_STATE_DISABLED = 0;
+@@ -96,34 +92,34 @@ public final class EuiccProfileInfo implements Parcelable {
+     public static final int PROFILE_STATE_UNSET = -1;
+ 
+     /** The iccid of the subscription. */
+-    private final String mIccid;
++    public final String iccid;
+ 
+     /** An optional nickname for the subscription. */
+-    private final @Nullable String mNickname;
++    public final @Nullable String nickname;
+ 
+     /** The service provider name for the subscription. */
+-    private final String mServiceProviderName;
++    public final String serviceProviderName;
+ 
+     /** The profile name for the subscription. */
+-    private final String mProfileName;
++    public final String profileName;
+ 
+     /** Profile class for the subscription. */
+-    @ProfileClass private final int mProfileClass;
++    @ProfileClass public final int profileClass;
+ 
+     /** The profile state of the subscription. */
+-    @ProfileState private final int mState;
++    @ProfileState public final int state;
+ 
+     /** The operator Id of the subscription. */
+-    private final CarrierIdentifier mCarrierIdentifier;
++    public final CarrierIdentifier carrierIdentifier;
+ 
+     /** The policy rules of the subscription. */
+-    @PolicyRule private final int mPolicyRules;
++    @PolicyRule public final int policyRules;
+ 
+     /**
+      * Optional access rules defining which apps can manage this subscription. If unset, only the
+      * platform can manage it.
+      */
+-    private final @Nullable UiccAccessRule[] mAccessRules;
++    public final @Nullable UiccAccessRule[] accessRules;
+ 
+     public static final Creator<EuiccProfileInfo> CREATOR = new Creator<EuiccProfileInfo>() {
+         @Override
+@@ -148,51 +144,51 @@ public final class EuiccProfileInfo implements Parcelable {
+         if (!TextUtils.isDigitsOnly(iccid)) {
+             throw new IllegalArgumentException("iccid contains invalid characters: " + iccid);
+         }
+-        this.mIccid = iccid;
+-        this.mAccessRules = accessRules;
+-        this.mNickname = nickname;
+-
+-        this.mServiceProviderName = null;
+-        this.mProfileName = null;
+-        this.mProfileClass = PROFILE_CLASS_UNSET;
+-        this.mState = PROFILE_STATE_UNSET;
+-        this.mCarrierIdentifier = null;
+-        this.mPolicyRules = 0;
++        this.iccid = iccid;
++        this.accessRules = accessRules;
++        this.nickname = nickname;
++
++        this.serviceProviderName = null;
++        this.profileName = null;
++        this.profileClass = PROFILE_CLASS_UNSET;
++        this.state = PROFILE_CLASS_UNSET;
++        this.carrierIdentifier = null;
++        this.policyRules = 0;
+     }
+ 
+     private EuiccProfileInfo(Parcel in) {
+-        mIccid = in.readString();
+-        mNickname = in.readString();
+-        mServiceProviderName = in.readString();
+-        mProfileName = in.readString();
+-        mProfileClass = in.readInt();
+-        mState = in.readInt();
++        iccid = in.readString();
++        nickname = in.readString();
++        serviceProviderName = in.readString();
++        profileName = in.readString();
++        profileClass = in.readInt();
++        state = in.readInt();
+         byte exist = in.readByte();
+         if (exist == (byte) 1) {
+-            mCarrierIdentifier = CarrierIdentifier.CREATOR.createFromParcel(in);
++            carrierIdentifier = CarrierIdentifier.CREATOR.createFromParcel(in);
+         } else {
+-            mCarrierIdentifier = null;
++            carrierIdentifier = null;
+         }
+-        mPolicyRules = in.readInt();
+-        mAccessRules = in.createTypedArray(UiccAccessRule.CREATOR);
++        policyRules = in.readInt();
++        accessRules = in.createTypedArray(UiccAccessRule.CREATOR);
+     }
+ 
+     @Override
+     public void writeToParcel(Parcel dest, int flags) {
+-        dest.writeString(mIccid);
+-        dest.writeString(mNickname);
+-        dest.writeString(mServiceProviderName);
+-        dest.writeString(mProfileName);
+-        dest.writeInt(mProfileClass);
+-        dest.writeInt(mState);
+-        if (mCarrierIdentifier != null) {
++        dest.writeString(iccid);
++        dest.writeString(nickname);
++        dest.writeString(serviceProviderName);
++        dest.writeString(profileName);
++        dest.writeInt(profileClass);
++        dest.writeInt(state);
++        if (carrierIdentifier != null) {
+             dest.writeByte((byte) 1);
+-            mCarrierIdentifier.writeToParcel(dest, flags);
++            carrierIdentifier.writeToParcel(dest, flags);
+         } else {
+             dest.writeByte((byte) 0);
+         }
+-        dest.writeInt(mPolicyRules);
+-        dest.writeTypedArray(mAccessRules, flags);
++        dest.writeInt(policyRules);
++        dest.writeTypedArray(accessRules, flags);
+     }
+ 
+     @Override
+@@ -202,50 +198,45 @@ public final class EuiccProfileInfo implements Parcelable {
+ 
+     /** The builder to build a new {@link EuiccProfileInfo} instance. */
+     public static final class Builder {
+-        private String mIccid;
+-        private List<UiccAccessRule> mAccessRules;
+-        private String mNickname;
+-        private String mServiceProviderName;
+-        private String mProfileName;
+-        @ProfileClass private int mProfileClass;
+-        @ProfileState private int mState;
+-        private CarrierIdentifier mCarrierIdentifier;
+-        @PolicyRule private int mPolicyRules;
+-
+-        public Builder(String value) {
+-            if (!TextUtils.isDigitsOnly(value)) {
+-                throw new IllegalArgumentException("iccid contains invalid characters: " + value);
+-            }
+-            mIccid = value;
+-        }
++        public String iccid;
++        public UiccAccessRule[] accessRules;
++        public String nickname;
++        public String serviceProviderName;
++        public String profileName;
++        @ProfileClass public int profileClass;
++        @ProfileState public int state;
++        public CarrierIdentifier carrierIdentifier;
++        @PolicyRule public int policyRules;
++
++        public Builder() {}
+ 
+         public Builder(EuiccProfileInfo baseProfile) {
+-            mIccid = baseProfile.mIccid;
+-            mNickname = baseProfile.mNickname;
+-            mServiceProviderName = baseProfile.mServiceProviderName;
+-            mProfileName = baseProfile.mProfileName;
+-            mProfileClass = baseProfile.mProfileClass;
+-            mState = baseProfile.mState;
+-            mCarrierIdentifier = baseProfile.mCarrierIdentifier;
+-            mPolicyRules = baseProfile.mPolicyRules;
+-            mAccessRules = Arrays.asList(baseProfile.mAccessRules);
++            iccid = baseProfile.iccid;
++            nickname = baseProfile.nickname;
++            serviceProviderName = baseProfile.serviceProviderName;
++            profileName = baseProfile.profileName;
++            profileClass = baseProfile.profileClass;
++            state = baseProfile.state;
++            carrierIdentifier = baseProfile.carrierIdentifier;
++            policyRules = baseProfile.policyRules;
++            accessRules = baseProfile.accessRules;
+         }
+ 
+         /** Builds the profile instance. */
+         public EuiccProfileInfo build() {
+-            if (mIccid == null) {
++            if (iccid == null) {
+                 throw new IllegalStateException("ICCID must be set for a profile.");
+             }
+             return new EuiccProfileInfo(
+-                    mIccid,
+-                    mNickname,
+-                    mServiceProviderName,
+-                    mProfileName,
+-                    mProfileClass,
+-                    mState,
+-                    mCarrierIdentifier,
+-                    mPolicyRules,
+-                    mAccessRules);
++                    iccid,
++                    nickname,
++                    serviceProviderName,
++                    profileName,
++                    profileClass,
++                    state,
++                    carrierIdentifier,
++                    policyRules,
++                    accessRules);
+         }
+ 
+         /** Sets the iccId of the subscription. */
+@@ -253,55 +244,55 @@ public final class EuiccProfileInfo implements Parcelable {
+             if (!TextUtils.isDigitsOnly(value)) {
+                 throw new IllegalArgumentException("iccid contains invalid characters: " + value);
+             }
+-            mIccid = value;
++            iccid = value;
+             return this;
+         }
+ 
+         /** Sets the nickname of the subscription. */
+         public Builder setNickname(String value) {
+-            mNickname = value;
++            nickname = value;
+             return this;
+         }
+ 
+         /** Sets the service provider name of the subscription. */
+         public Builder setServiceProviderName(String value) {
+-            mServiceProviderName = value;
++            serviceProviderName = value;
+             return this;
+         }
+ 
+         /** Sets the profile name of the subscription. */
+         public Builder setProfileName(String value) {
+-            mProfileName = value;
++            profileName = value;
+             return this;
+         }
+ 
+         /** Sets the profile class of the subscription. */
+         public Builder setProfileClass(@ProfileClass int value) {
+-            mProfileClass = value;
++            profileClass = value;
+             return this;
+         }
+ 
+         /** Sets the state of the subscription. */
+         public Builder setState(@ProfileState int value) {
+-            mState = value;
++            state = value;
+             return this;
+         }
+ 
+         /** Sets the carrier identifier of the subscription. */
+         public Builder setCarrierIdentifier(CarrierIdentifier value) {
+-            mCarrierIdentifier = value;
++            carrierIdentifier = value;
+             return this;
+         }
+ 
+         /** Sets the policy rules of the subscription. */
+         public Builder setPolicyRules(@PolicyRule int value) {
+-            mPolicyRules = value;
++            policyRules = value;
+             return this;
+         }
+ 
+         /** Sets the access rules of the subscription. */
+-        public Builder setUiccAccessRule(@Nullable List<UiccAccessRule> value) {
+-            mAccessRules = value;
++        public Builder setUiccAccessRule(@Nullable UiccAccessRule[] value) {
++            accessRules = value;
+             return this;
+         }
+     }
+@@ -315,81 +306,75 @@ public final class EuiccProfileInfo implements Parcelable {
+             @ProfileState int state,
+             CarrierIdentifier carrierIdentifier,
+             @PolicyRule int policyRules,
+-            @Nullable List<UiccAccessRule> accessRules) {
+-        this.mIccid = iccid;
+-        this.mNickname = nickname;
+-        this.mServiceProviderName = serviceProviderName;
+-        this.mProfileName = profileName;
+-        this.mProfileClass = profileClass;
+-        this.mState = state;
+-        this.mCarrierIdentifier = carrierIdentifier;
+-        this.mPolicyRules = policyRules;
+-        if (accessRules != null && accessRules.size() > 0) {
+-            this.mAccessRules = accessRules.toArray(new UiccAccessRule[accessRules.size()]);
+-        } else {
+-            this.mAccessRules = null;
+-        }
++            @Nullable UiccAccessRule[] accessRules) {
++        this.iccid = iccid;
++        this.nickname = nickname;
++        this.serviceProviderName = serviceProviderName;
++        this.profileName = profileName;
++        this.profileClass = profileClass;
++        this.state = state;
++        this.carrierIdentifier = carrierIdentifier;
++        this.policyRules = policyRules;
++        this.accessRules = accessRules;
+     }
+ 
+     /** Gets the ICCID string. */
+     public String getIccid() {
+-        return mIccid;
++        return iccid;
+     }
+ 
+     /** Gets the access rules. */
+     @Nullable
+-    public List<UiccAccessRule> getUiccAccessRules() {
+-        if (mAccessRules == null) return null;
+-        return Arrays.asList(mAccessRules);
++    public UiccAccessRule[] getUiccAccessRules() {
++        return accessRules;
+     }
+ 
+     /** Gets the nickname. */
+-    @Nullable
+     public String getNickname() {
+-        return mNickname;
++        return nickname;
+     }
+ 
+     /** Gets the service provider name. */
+     public String getServiceProviderName() {
+-        return mServiceProviderName;
++        return serviceProviderName;
+     }
+ 
+     /** Gets the profile name. */
+     public String getProfileName() {
+-        return mProfileName;
++        return profileName;
+     }
+ 
+     /** Gets the profile class. */
+     @ProfileClass
+     public int getProfileClass() {
+-        return mProfileClass;
++        return profileClass;
+     }
+ 
+     /** Gets the state of the subscription. */
+     @ProfileState
+     public int getState() {
+-        return mState;
++        return state;
+     }
+ 
+     /** Gets the carrier identifier. */
+     public CarrierIdentifier getCarrierIdentifier() {
+-        return mCarrierIdentifier;
++        return carrierIdentifier;
+     }
+ 
+     /** Gets the policy rules. */
+     @PolicyRule
+     public int getPolicyRules() {
+-        return mPolicyRules;
++        return policyRules;
+     }
+ 
+     /** Returns whether any policy rule exists. */
+     public boolean hasPolicyRules() {
+-        return mPolicyRules != 0;
++        return policyRules != 0;
+     }
+ 
+     /** Checks whether a certain policy rule exists. */
+     public boolean hasPolicyRule(@PolicyRule int policy) {
+-        return (mPolicyRules & policy) != 0;
++        return (policyRules & policy) != 0;
+     }
+ 
+     @Override
+@@ -402,50 +387,50 @@ public final class EuiccProfileInfo implements Parcelable {
+         }
+ 
+         EuiccProfileInfo that = (EuiccProfileInfo) obj;
+-        return Objects.equals(mIccid, that.mIccid)
+-                && Objects.equals(mNickname, that.mNickname)
+-                && Objects.equals(mServiceProviderName, that.mServiceProviderName)
+-                && Objects.equals(mProfileName, that.mProfileName)
+-                && mProfileClass == that.mProfileClass
+-                && mState == that.mState
+-                && Objects.equals(mCarrierIdentifier, that.mCarrierIdentifier)
+-                && mPolicyRules == that.mPolicyRules
+-                && Arrays.equals(mAccessRules, that.mAccessRules);
++        return Objects.equals(iccid, that.iccid)
++                && Objects.equals(nickname, that.nickname)
++                && Objects.equals(serviceProviderName, that.serviceProviderName)
++                && Objects.equals(profileName, that.profileName)
++                && profileClass == that.profileClass
++                && state == that.state
++                && Objects.equals(carrierIdentifier, that.carrierIdentifier)
++                && policyRules == that.policyRules
++                && Arrays.equals(accessRules, that.accessRules);
+     }
+ 
+     @Override
+     public int hashCode() {
+         int result = 1;
+-        result = 31 * result + Objects.hashCode(mIccid);
+-        result = 31 * result + Objects.hashCode(mNickname);
+-        result = 31 * result + Objects.hashCode(mServiceProviderName);
+-        result = 31 * result + Objects.hashCode(mProfileName);
+-        result = 31 * result + mProfileClass;
+-        result = 31 * result + mState;
+-        result = 31 * result + Objects.hashCode(mCarrierIdentifier);
+-        result = 31 * result + mPolicyRules;
+-        result = 31 * result + Arrays.hashCode(mAccessRules);
++        result = 31 * result + Objects.hashCode(iccid);
++        result = 31 * result + Objects.hashCode(nickname);
++        result = 31 * result + Objects.hashCode(serviceProviderName);
++        result = 31 * result + Objects.hashCode(profileName);
++        result = 31 * result + profileClass;
++        result = 31 * result + state;
++        result = 31 * result + Objects.hashCode(carrierIdentifier);
++        result = 31 * result + policyRules;
++        result = 31 * result + Arrays.hashCode(accessRules);
+         return result;
+     }
+ 
+     @Override
+     public String toString() {
+         return "EuiccProfileInfo (nickname="
+-                + mNickname
++                + nickname
+                 + ", serviceProviderName="
+-                + mServiceProviderName
++                + serviceProviderName
+                 + ", profileName="
+-                + mProfileName
++                + profileName
+                 + ", profileClass="
+-                + mProfileClass
++                + profileClass
+                 + ", state="
+-                + mState
++                + state
+                 + ", CarrierIdentifier="
+-                + mCarrierIdentifier.toString()
++                + carrierIdentifier.toString()
+                 + ", policyRules="
+-                + mPolicyRules
++                + policyRules
+                 + ", accessRules="
+-                + Arrays.toString(mAccessRules)
++                + Arrays.toString(accessRules)
+                 + ")";
+     }
+ }
+diff --git a/core/java/android/service/euicc/EuiccService.java b/core/java/android/service/euicc/EuiccService.java
+index ce6b2855037..be8580074f7 100644
+--- a/core/java/android/service/euicc/EuiccService.java
++++ b/core/java/android/service/euicc/EuiccService.java
+@@ -17,7 +17,6 @@ package android.service.euicc;
+ 
+ import android.annotation.CallSuper;
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.app.Service;
+ import android.content.Intent;
+ import android.os.IBinder;
+@@ -42,11 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
+  * <p>To implement the LPA backend, you must extend this class and declare this service in your
+  * manifest file. The service must require the
+  * {@link android.Manifest.permission#BIND_EUICC_SERVICE} permission and include an intent filter
+- * with the {@link #EUICC_SERVICE_INTERFACE} action. It's suggested that the priority of the intent
+- * filter to be set to a non-zero value in case multiple implementations are present on the device.
+- * See the below example. Note that there will be problem if two LPAs are present and they have the
+- * same priority.
+- * Example:
++ * with the {@link #EUICC_SERVICE_INTERFACE} action. The priority of the intent filter must be set
++ * to a non-zero value in case multiple implementations are present on the device. For example:
+  *
+  * <pre>{@code
+  * <service android:name=".MyEuiccService"
+@@ -69,9 +65,9 @@ import java.util.concurrent.atomic.AtomicInteger;
+  * filter with the appropriate action, the {@link #CATEGORY_EUICC_UI} category, and a non-zero
+  * priority.
+  *
++ * TODO(b/35851809): Make this a SystemApi.
+  * @hide
+  */
+-@SystemApi
+ public abstract class EuiccService extends Service {
+     /** Action which must be included in this service's intent filter. */
+     public static final String EUICC_SERVICE_INTERFACE = "android.service.euicc.EuiccService";
+@@ -81,10 +77,7 @@ public abstract class EuiccService extends Service {
+ 
+     // LUI actions. These are passthroughs of the corresponding EuiccManager actions.
+ 
+-    /**
+-     * @see android.telephony.euicc.EuiccManager#ACTION_MANAGE_EMBEDDED_SUBSCRIPTIONS
+-     * The difference is this one is used by system to bring up the LUI.
+-     */
++    /** @see android.telephony.euicc.EuiccManager#ACTION_MANAGE_EMBEDDED_SUBSCRIPTIONS */
+     public static final String ACTION_MANAGE_EMBEDDED_SUBSCRIPTIONS =
+             "android.service.euicc.action.MANAGE_EMBEDDED_SUBSCRIPTIONS";
+     /** @see android.telephony.euicc.EuiccManager#ACTION_PROVISION_EMBEDDED_SUBSCRIPTION */
+@@ -95,10 +88,7 @@ public abstract class EuiccService extends Service {
+     // require user interaction.
+     // TODO(b/33075886): Define extras for any input parameters to these dialogs once they are
+     // more scoped out.
+-    /**
+-     * Alert the user that this action will result in an active SIM being deactivated.
+-     * To implement the LUI triggered by the system, you need to define this in AndroidManifest.xml.
+-     */
++    /** Alert the user that this action will result in an active SIM being deactivated. */
+     public static final String ACTION_RESOLVE_DEACTIVATE_SIM =
+             "android.service.euicc.action.RESOLVE_DEACTIVATE_SIM";
+     /**
+@@ -112,11 +102,7 @@ public abstract class EuiccService extends Service {
+     public static final String ACTION_RESOLVE_CONFIRMATION_CODE =
+             "android.service.euicc.action.RESOLVE_CONFIRMATION_CODE";
+ 
+-    /**
+-     * Intent extra set for resolution requests containing the package name of the calling app.
+-     * This is used by the above actions including ACTION_RESOLVE_DEACTIVATE_SIM,
+-     * ACTION_RESOLVE_NO_PRIVILEGES and ACTION_RESOLVE_CONFIRMATION_CODE.
+-     */
++    /** Intent extra set for resolution requests containing the package name of the calling app. */
+     public static final String EXTRA_RESOLUTION_CALLING_PACKAGE =
+             "android.service.euicc.extra.RESOLUTION_CALLING_PACKAGE";
+ 
+@@ -150,18 +136,10 @@ public abstract class EuiccService extends Service {
+         RESOLUTION_ACTIONS.add(EuiccService.ACTION_RESOLVE_CONFIRMATION_CODE);
+     }
+ 
+-    /**
+-     * Boolean extra for resolution actions indicating whether the user granted consent.
+-     * This is used and set by the implementation and used in {@code EuiccOperation}.
+-     */
+-    public static final String EXTRA_RESOLUTION_CONSENT =
+-            "android.service.euicc.extra.RESOLUTION_CONSENT";
+-    /**
+-     * String extra for resolution actions indicating the carrier confirmation code.
+-     * This is used and set by the implementation and used in {@code EuiccOperation}.
+-     */
+-    public static final String EXTRA_RESOLUTION_CONFIRMATION_CODE =
+-            "android.service.euicc.extra.RESOLUTION_CONFIRMATION_CODE";
++    /** Boolean extra for resolution actions indicating whether the user granted consent. */
++    public static final String RESOLUTION_EXTRA_CONSENT = "consent";
++    /** String extra for resolution actions indicating the carrier confirmation code. */
++    public static final String RESOLUTION_EXTRA_CONFIRMATION_CODE = "confirmation_code";
+ 
+     private final IEuiccService.Stub mStubWrapper;
+ 
+@@ -221,9 +199,9 @@ public abstract class EuiccService extends Service {
+      *
+      * @see IEuiccService#startOtaIfNecessary
+      */
+-    public abstract static class OtaStatusChangedCallback {
++    public interface OtaStatusChangedCallback {
+         /** Called when OTA status is changed. */
+-        abstract void onOtaStatusChanged(int status);
++        void onOtaStatusChanged(int status);
+     }
+ 
+     /**
+@@ -260,7 +238,8 @@ public abstract class EuiccService extends Service {
+     /**
+      * Populate {@link DownloadableSubscription} metadata for the given downloadable subscription.
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @param subscription A subscription whose metadata needs to be populated.
+      * @param forceDeactivateSim If true, and if an active SIM must be deactivated to access the
+      *     eUICC, perform this action automatically. Otherwise, {@link #RESULT_MUST_DEACTIVATE_SIM)}
+@@ -288,7 +267,8 @@ public abstract class EuiccService extends Service {
+     /**
+      * Download the given subscription.
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @param subscription The subscription to download.
+      * @param switchAfterDownload If true, the subscription should be enabled upon successful
+      *     download.
+@@ -306,7 +286,8 @@ public abstract class EuiccService extends Service {
+     /**
+      * Return a list of all @link EuiccProfileInfo}s.
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @return The result of the operation.
+      * @see android.telephony.SubscriptionManager#getAvailableSubscriptionInfoList
+      * @see android.telephony.SubscriptionManager#getAccessibleSubscriptionInfoList
+@@ -316,7 +297,8 @@ public abstract class EuiccService extends Service {
+     /**
+      * Return info about the eUICC chip/device.
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @return the {@link EuiccInfo} for the eUICC chip/device.
+      * @see android.telephony.euicc.EuiccManager#getEuiccInfo
+      */
+@@ -328,7 +310,8 @@ public abstract class EuiccService extends Service {
+      * <p>If the subscription is currently active, it should be deactivated first (equivalent to a
+      * physical SIM being ejected).
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @param iccid the ICCID of the subscription to delete.
+      * @return the result of the delete operation. May be one of the predefined {@code RESULT_}
+      *     constants or any implementation-specific code starting with {@link #RESULT_FIRST_USER}.
+@@ -339,7 +322,8 @@ public abstract class EuiccService extends Service {
+     /**
+      * Switch to the given subscription.
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @param iccid the ICCID of the subscription to enable. May be null, in which case the current
+      *     profile should be deactivated and no profile should be activated to replace it - this is
+      *     equivalent to a physical SIM being ejected.
+@@ -356,7 +340,8 @@ public abstract class EuiccService extends Service {
+     /**
+      * Update the nickname of the given subscription.
+      *
+-     * @param slotId ID of the SIM slot to use for the operation.
++     * @param slotId ID of the SIM slot to use for the operation. This is currently not populated
++     *     but is here to future-proof the APIs.
+      * @param iccid the ICCID of the subscription to update.
+      * @param nickname the new nickname to apply.
+      * @return the result of the update operation. May be one of the predefined {@code RESULT_}
+diff --git a/core/java/android/service/euicc/GetDefaultDownloadableSubscriptionListResult.java b/core/java/android/service/euicc/GetDefaultDownloadableSubscriptionListResult.java
+index e2171ae6bc7..5a24492007f 100644
+--- a/core/java/android/service/euicc/GetDefaultDownloadableSubscriptionListResult.java
++++ b/core/java/android/service/euicc/GetDefaultDownloadableSubscriptionListResult.java
+@@ -16,19 +16,16 @@
+ package android.service.euicc;
+ 
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ import android.telephony.euicc.DownloadableSubscription;
+ 
+-import java.util.Arrays;
+-import java.util.List;
+-
+ /**
+  * Result of a {@link EuiccService#onGetDefaultDownloadableSubscriptionList} operation.
+  * @hide
++ *
++ * TODO(b/35851809): Make this a SystemApi.
+  */
+-@SystemApi
+ public final class GetDefaultDownloadableSubscriptionListResult implements Parcelable {
+ 
+     public static final Creator<GetDefaultDownloadableSubscriptionListResult> CREATOR =
+@@ -45,35 +42,20 @@ public final class GetDefaultDownloadableSubscriptionListResult implements Parce
+     };
+ 
+     /**
+-     * @hide
+-     * @deprecated - Do no use. Use getResult() instead.
+-     */
+-    @Deprecated
+-    public final int result;
+-
+-    @Nullable
+-    private final DownloadableSubscription[] mSubscriptions;
+-
+-    /**
+-     * Gets the result of the operation.
++     * Result of the operation.
+      *
+      * <p>May be one of the predefined {@code RESULT_} constants in EuiccService or any
+      * implementation-specific code starting with {@link EuiccService#RESULT_FIRST_USER}.
+      */
+-    public int getResult() {
+-        return result;
+-    }
++    public final int result;
+ 
+     /**
+-     * Gets the available {@link DownloadableSubscription}s (with filled-in metadata).
++     * The available {@link DownloadableSubscription}s (with filled-in metadata).
+      *
+      * <p>Only non-null if {@link #result} is {@link EuiccService#RESULT_OK}.
+      */
+     @Nullable
+-    public List<DownloadableSubscription> getDownloadableSubscriptions() {
+-        if (mSubscriptions == null) return null;
+-        return Arrays.asList(mSubscriptions);
+-    }
++    public final DownloadableSubscription[] subscriptions;
+ 
+     /**
+      * Construct a new {@link GetDefaultDownloadableSubscriptionListResult}.
+@@ -88,25 +70,25 @@ public final class GetDefaultDownloadableSubscriptionListResult implements Parce
+             @Nullable DownloadableSubscription[] subscriptions) {
+         this.result = result;
+         if (this.result == EuiccService.RESULT_OK) {
+-            this.mSubscriptions = subscriptions;
++            this.subscriptions = subscriptions;
+         } else {
+             if (subscriptions != null) {
+                 throw new IllegalArgumentException(
+                         "Error result with non-null subscriptions: " + result);
+             }
+-            this.mSubscriptions = null;
++            this.subscriptions = null;
+         }
+     }
+ 
+     private GetDefaultDownloadableSubscriptionListResult(Parcel in) {
+         this.result = in.readInt();
+-        this.mSubscriptions = in.createTypedArray(DownloadableSubscription.CREATOR);
++        this.subscriptions = in.createTypedArray(DownloadableSubscription.CREATOR);
+     }
+ 
+     @Override
+     public void writeToParcel(Parcel dest, int flags) {
+         dest.writeInt(result);
+-        dest.writeTypedArray(mSubscriptions, flags);
++        dest.writeTypedArray(subscriptions, flags);
+     }
+ 
+     @Override
+diff --git a/core/java/android/service/euicc/GetDownloadableSubscriptionMetadataResult.java b/core/java/android/service/euicc/GetDownloadableSubscriptionMetadataResult.java
+index 1edb5398add..de8a3070694 100644
+--- a/core/java/android/service/euicc/GetDownloadableSubscriptionMetadataResult.java
++++ b/core/java/android/service/euicc/GetDownloadableSubscriptionMetadataResult.java
+@@ -16,7 +16,6 @@
+ package android.service.euicc;
+ 
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ import android.telephony.euicc.DownloadableSubscription;
+@@ -24,8 +23,9 @@ import android.telephony.euicc.DownloadableSubscription;
+ /**
+  * Result of a {@link EuiccService#onGetDownloadableSubscriptionMetadata} operation.
+  * @hide
++ *
++ * TODO(b/35851809): Make this a SystemApi.
+  */
+-@SystemApi
+ public final class GetDownloadableSubscriptionMetadataResult implements Parcelable {
+ 
+     public static final Creator<GetDownloadableSubscriptionMetadataResult> CREATOR =
+@@ -42,34 +42,20 @@ public final class GetDownloadableSubscriptionMetadataResult implements Parcelab
+     };
+ 
+     /**
+-     * @hide
+-     * @deprecated - Do no use. Use getResult() instead.
+-     */
+-    @Deprecated
+-    public final int result;
+-
+-    @Nullable
+-    private final DownloadableSubscription mSubscription;
+-
+-    /**
+-     * Gets the result of the operation.
++     * Result of the operation.
+      *
+      * <p>May be one of the predefined {@code RESULT_} constants in EuiccService or any
+      * implementation-specific code starting with {@link EuiccService#RESULT_FIRST_USER}.
+      */
+-    public int getResult() {
+-        return result;
+-    }
++    public final int result;
+ 
+     /**
+-     * Gets the {@link DownloadableSubscription} with filled-in metadata.
++     * The {@link DownloadableSubscription} with filled-in metadata.
+      *
+      * <p>Only non-null if {@link #result} is {@link EuiccService#RESULT_OK}.
+      */
+     @Nullable
+-    public DownloadableSubscription getDownloadableSubscription() {
+-        return mSubscription;
+-    }
++    public final DownloadableSubscription subscription;
+ 
+     /**
+      * Construct a new {@link GetDownloadableSubscriptionMetadataResult}.
+@@ -84,25 +70,25 @@ public final class GetDownloadableSubscriptionMetadataResult implements Parcelab
+             @Nullable DownloadableSubscription subscription) {
+         this.result = result;
+         if (this.result == EuiccService.RESULT_OK) {
+-            this.mSubscription = subscription;
++            this.subscription = subscription;
+         } else {
+             if (subscription != null) {
+                 throw new IllegalArgumentException(
+                         "Error result with non-null subscription: " + result);
+             }
+-            this.mSubscription = null;
++            this.subscription = null;
+         }
+     }
+ 
+     private GetDownloadableSubscriptionMetadataResult(Parcel in) {
+         this.result = in.readInt();
+-        this.mSubscription = in.readTypedObject(DownloadableSubscription.CREATOR);
++        this.subscription = in.readTypedObject(DownloadableSubscription.CREATOR);
+     }
+ 
+     @Override
+     public void writeToParcel(Parcel dest, int flags) {
+         dest.writeInt(result);
+-        dest.writeTypedObject(this.mSubscription, flags);
++        dest.writeTypedObject(this.subscription, flags);
+     }
+ 
+     @Override
+diff --git a/core/java/android/service/euicc/GetEuiccProfileInfoListResult.java b/core/java/android/service/euicc/GetEuiccProfileInfoListResult.java
+index 464d136e70e..7ad84888dc8 100644
+--- a/core/java/android/service/euicc/GetEuiccProfileInfoListResult.java
++++ b/core/java/android/service/euicc/GetEuiccProfileInfoListResult.java
+@@ -16,18 +16,15 @@
+ package android.service.euicc;
+ 
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ 
+-import java.util.Arrays;
+-import java.util.List;
+-
+ /**
+  * Result of a {@link EuiccService#onGetEuiccProfileInfoList} operation.
+  * @hide
++ *
++ * TODO(b/35851809): Make this a SystemApi.
+  */
+-@SystemApi
+ public final class GetEuiccProfileInfoListResult implements Parcelable {
+ 
+     public static final Creator<GetEuiccProfileInfoListResult> CREATOR =
+@@ -44,38 +41,19 @@ public final class GetEuiccProfileInfoListResult implements Parcelable {
+             };
+ 
+     /**
+-     * @hide
+-     * @deprecated - Do no use. Use getResult() instead.
+-     */
+-    @Deprecated
+-    public final int result;
+-
+-    @Nullable
+-    private final EuiccProfileInfo[] mProfiles;
+-
+-    private final boolean mIsRemovable;
+-
+-    /**
+-     * Gets the result of the operation.
++     * Result of the operation.
+      *
+      * <p>May be one of the predefined {@code RESULT_} constants in EuiccService or any
+      * implementation-specific code starting with {@link EuiccService#RESULT_FIRST_USER}.
+      */
+-    public int getResult() {
+-        return result;
+-    }
++    public final int result;
+ 
+-    /** Gets the profile list (only upon success). */
++    /** The profile list (only upon success). */
+     @Nullable
+-    public List<EuiccProfileInfo> getProfiles() {
+-        if (mProfiles == null) return null;
+-        return Arrays.asList(mProfiles);
+-    }
++    public final EuiccProfileInfo[] profiles;
+ 
+-    /** Gets whether the eUICC is removable. */
+-    public boolean getIsRemovable() {
+-        return mIsRemovable;
+-    }
++    /** Whether the eUICC is removable. */
++    public final boolean isRemovable;
+ 
+     /**
+      * Construct a new {@link GetEuiccProfileInfoListResult}.
+@@ -93,29 +71,30 @@ public final class GetEuiccProfileInfoListResult implements Parcelable {
+     public GetEuiccProfileInfoListResult(
+             int result, @Nullable EuiccProfileInfo[] profiles, boolean isRemovable) {
+         this.result = result;
+-        this.mIsRemovable = isRemovable;
++        this.isRemovable = isRemovable;
+         if (this.result == EuiccService.RESULT_OK) {
+-            this.mProfiles = profiles;
++            this.profiles = profiles;
+         } else {
+             if (profiles != null) {
+                 throw new IllegalArgumentException(
+                         "Error result with non-null profiles: " + result);
+             }
+-            this.mProfiles = null;
++            this.profiles = null;
+         }
++
+     }
+ 
+     private GetEuiccProfileInfoListResult(Parcel in) {
+         this.result = in.readInt();
+-        this.mProfiles = in.createTypedArray(EuiccProfileInfo.CREATOR);
+-        this.mIsRemovable = in.readBoolean();
++        this.profiles = in.createTypedArray(EuiccProfileInfo.CREATOR);
++        this.isRemovable = in.readBoolean();
+     }
+ 
+     @Override
+     public void writeToParcel(Parcel dest, int flags) {
+         dest.writeInt(result);
+-        dest.writeTypedArray(mProfiles, flags);
+-        dest.writeBoolean(mIsRemovable);
++        dest.writeTypedArray(profiles, flags);
++        dest.writeBoolean(isRemovable);
+     }
+ 
+     @Override
+diff --git a/core/res/AndroidManifest.xml b/core/res/AndroidManifest.xml
+index a71844254b3..deefddbf5f7 100644
+--- a/core/res/AndroidManifest.xml
++++ b/core/res/AndroidManifest.xml
+@@ -1811,20 +1811,19 @@
+     <permission android:name="android.permission.BIND_TELEPHONY_NETWORK_SERVICE"
+                 android:protectionLevel="signature" />
+ 
+-    <!-- @SystemApi Allows an application to manage embedded subscriptions (those on a eUICC)
+-         through EuiccManager APIs.
++    <!-- Allows an application to manage embedded subscriptions (those on a eUICC) through
++         EuiccManager APIs.
+          <p>Protection level: signature|privileged|development
+-         @hide
+-    -->
+-    <permission android:name="android.permission.WRITE_EMBEDDED_SUBSCRIPTIONS"
++         TODO(b/35851809): Mark this as a SystemApi and remove com. prefix.
++         @hide -->
++    <permission android:name="com.android.permission.WRITE_EMBEDDED_SUBSCRIPTIONS"
+                 android:protectionLevel="signature|privileged|development" />
+ 
+-    <!-- @SystemApi Must be required by an EuiccService to ensure that only the system can bind to
+-         it.
++    <!-- Must be required by an EuiccService to ensure that only the system can bind to it.
+          <p>Protection level: signature
+-         @hide
+-    -->
+-    <permission android:name="android.permission.BIND_EUICC_SERVICE"
++         TODO(b/35851809): Mark this as a SystemApi and remove com. prefix.
++         @hide -->
++    <permission android:name="com.android.permission.BIND_EUICC_SERVICE"
+                 android:protectionLevel="signature" />
+ 
+     <!-- ================================== -->
+diff --git a/core/tests/coretests/src/android/service/euicc/EuiccProfileInfoTest.java b/core/tests/coretests/src/android/service/euicc/EuiccProfileInfoTest.java
+index e69d1e7505d..1e3ddf3226a 100644
+--- a/core/tests/coretests/src/android/service/euicc/EuiccProfileInfoTest.java
++++ b/core/tests/coretests/src/android/service/euicc/EuiccProfileInfoTest.java
+@@ -30,15 +30,14 @@ import android.telephony.UiccAccessRule;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ 
+-import java.util.Arrays;
+-
+ @SmallTest
+ @RunWith(AndroidJUnit4.class)
+ public class EuiccProfileInfoTest {
+     @Test
+     public void testWriteToParcel() {
+         EuiccProfileInfo p =
+-                new EuiccProfileInfo.Builder("21430000000000006587")
++                new EuiccProfileInfo.Builder()
++                        .setIccid("21430000000000006587")
+                         .setNickname("profile nickname")
+                         .setServiceProviderName("service provider")
+                         .setProfileName("profile name")
+@@ -51,7 +50,9 @@ public class EuiccProfileInfoTest {
+                                         "45"))
+                         .setPolicyRules(EuiccProfileInfo.POLICY_RULE_DO_NOT_DELETE)
+                         .setUiccAccessRule(
+-                                Arrays.asList(new UiccAccessRule(new byte[] {}, "package", 12345L)))
++                                new UiccAccessRule[] {
++                                        new UiccAccessRule(new byte[] {}, "package", 12345L)
++                                })
+                         .build();
+ 
+         Parcel parcel = Parcel.obtain();
+@@ -67,7 +68,8 @@ public class EuiccProfileInfoTest {
+     @Test
+     public void testWriteToParcelNullCarrierId() {
+         EuiccProfileInfo p =
+-                new EuiccProfileInfo.Builder("21430000000000006587")
++                new EuiccProfileInfo.Builder()
++                        .setIccid("21430000000000006587")
+                         .setNickname("profile nickname")
+                         .setServiceProviderName("service provider")
+                         .setProfileName("profile name")
+@@ -75,8 +77,9 @@ public class EuiccProfileInfoTest {
+                         .setState(EuiccProfileInfo.PROFILE_STATE_ENABLED)
+                         .setPolicyRules(EuiccProfileInfo.POLICY_RULE_DO_NOT_DELETE)
+                         .setUiccAccessRule(
+-                                Arrays.asList(new UiccAccessRule(new byte[] {}, "package", 12345L))
+-                        )
++                                new UiccAccessRule[] {
++                                        new UiccAccessRule(new byte[] {}, "package", 12345L)
++                                })
+                         .build();
+ 
+         Parcel parcel = Parcel.obtain();
+@@ -92,7 +95,8 @@ public class EuiccProfileInfoTest {
+     @Test
+     public void testBuilderAndGetters() {
+         EuiccProfileInfo p =
+-                new EuiccProfileInfo.Builder("21430000000000006587")
++                new EuiccProfileInfo.Builder()
++                        .setIccid("21430000000000006587")
+                         .setNickname("profile nickname")
+                         .setProfileName("profile name")
+                         .setServiceProviderName("service provider")
+@@ -104,7 +108,10 @@ public class EuiccProfileInfoTest {
+                         .setState(EuiccProfileInfo.PROFILE_STATE_ENABLED)
+                         .setProfileClass(EuiccProfileInfo.PROFILE_CLASS_OPERATIONAL)
+                         .setPolicyRules(EuiccProfileInfo.POLICY_RULE_DO_NOT_DELETE)
+-                        .setUiccAccessRule(Arrays.asList(new UiccAccessRule(new byte[0], null, 0)))
++                        .setUiccAccessRule(
++                                new UiccAccessRule[] {
++                                        new UiccAccessRule(new byte[0], null, 0)
++                                })
+                         .build();
+ 
+         assertEquals("21430000000000006587", p.getIccid());
+@@ -123,13 +130,14 @@ public class EuiccProfileInfoTest {
+         assertFalse(p.hasPolicyRule(EuiccProfileInfo.POLICY_RULE_DO_NOT_DISABLE));
+         assertArrayEquals(
+                 new UiccAccessRule[] {new UiccAccessRule(new byte[0], null, 0)},
+-                p.getUiccAccessRules().toArray());
++                p.getUiccAccessRules());
+     }
+ 
+     @Test
+     public void testBuilder_BasedOnAnotherProfile() {
+         EuiccProfileInfo p =
+-                new EuiccProfileInfo.Builder("21430000000000006587")
++                new EuiccProfileInfo.Builder()
++                        .setIccid("21430000000000006587")
+                         .setNickname("profile nickname")
+                         .setProfileName("profile name")
+                         .setServiceProviderName("service provider")
+@@ -142,7 +150,9 @@ public class EuiccProfileInfoTest {
+                         .setProfileClass(EuiccProfileInfo.PROFILE_CLASS_OPERATIONAL)
+                         .setPolicyRules(EuiccProfileInfo.POLICY_RULE_DO_NOT_DELETE)
+                         .setUiccAccessRule(
+-                                Arrays.asList(new UiccAccessRule(new byte[] {}, "package", 12345L)))
++                                new UiccAccessRule[] {
++                                        new UiccAccessRule(new byte[0], null, 0)
++                                })
+                         .build();
+ 
+         EuiccProfileInfo copied = new EuiccProfileInfo.Builder(p).build();
+@@ -154,7 +164,8 @@ public class EuiccProfileInfoTest {
+     @Test
+     public void testEqualsHashCode() {
+         EuiccProfileInfo p =
+-                new EuiccProfileInfo.Builder("21430000000000006587")
++                new EuiccProfileInfo.Builder()
++                        .setIccid("21430000000000006587")
+                         .setNickname("profile nickname")
+                         .setProfileName("profile name")
+                         .setServiceProviderName("service provider")
+@@ -166,7 +177,10 @@ public class EuiccProfileInfoTest {
+                         .setState(EuiccProfileInfo.PROFILE_STATE_ENABLED)
+                         .setProfileClass(EuiccProfileInfo.PROFILE_STATE_ENABLED)
+                         .setPolicyRules(EuiccProfileInfo.POLICY_RULE_DO_NOT_DELETE)
+-                        .setUiccAccessRule(Arrays.asList(new UiccAccessRule(new byte[0], null, 0)))
++                        .setUiccAccessRule(
++                                new UiccAccessRule[] {
++                                        new UiccAccessRule(new byte[0], null, 0)
++                                })
+                         .build();
+ 
+         assertTrue(p.equals(p));
+@@ -215,13 +229,13 @@ public class EuiccProfileInfoTest {
+     }
+ 
+     @Test(expected = IllegalStateException.class)
+-    public void testBuilderBuild_IllegalIccid() {
+-        new EuiccProfileInfo.Builder("abc").build();
++    public void testBuilderBuild_NoIccid() {
++        new EuiccProfileInfo.Builder().build();
+     }
+ 
+     @Test(expected = IllegalArgumentException.class)
+     public void testBuilderSetOperatorMccMnc_Illegal() {
+-        new EuiccProfileInfo.Builder("21430000000000006587")
++        new EuiccProfileInfo.Builder()
+                 .setCarrierIdentifier(new CarrierIdentifier(new byte[] {1, 2, 3, 4}, null, null));
+     }
+ 
+diff --git a/telephony/java/android/telephony/SubscriptionInfo.java b/telephony/java/android/telephony/SubscriptionInfo.java
+index 77413d9c730..38408fe3d0f 100644
+--- a/telephony/java/android/telephony/SubscriptionInfo.java
++++ b/telephony/java/android/telephony/SubscriptionInfo.java
+@@ -17,7 +17,6 @@
+ package android.telephony;
+ 
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.content.Context;
+ import android.content.pm.PackageInfo;
+ import android.content.pm.PackageManager;
+@@ -35,8 +34,6 @@ import android.os.Parcelable;
+ import android.util.DisplayMetrics;
+ 
+ import java.util.Arrays;
+-import java.util.ArrayList;
+-import java.util.List;
+ 
+ /**
+  * A Parcelable class for Subscription Information.
+@@ -335,7 +332,12 @@ public class SubscriptionInfo implements Parcelable {
+         return this.mCountryIso;
+     }
+ 
+-    /** @return whether the subscription is an embedded one. */
++    /**
++     * @return whether the subscription is an embedded one.
++     * @hide
++     *
++     * TODO(b/35851809): Make this public.
++     */
+     public boolean isEmbedded() {
+         return this.mIsEmbedded;
+     }
+@@ -349,9 +351,9 @@ public class SubscriptionInfo implements Parcelable {
+      * @return whether the app is authorized to manage this subscription per its metadata.
+      * @throws UnsupportedOperationException if this subscription is not embedded.
+      * @hide
+-     * @deprecated - Do not use.
++     *
++     * TODO(b/35851809): Make this public.
+      */
+-    @Deprecated
+     public boolean canManageSubscription(Context context) {
+         return canManageSubscription(context, context.getPackageName());
+     }
+@@ -365,9 +367,7 @@ public class SubscriptionInfo implements Parcelable {
+      * @return whether the app is authorized to manage this subscription per its metadata.
+      * @throws UnsupportedOperationException if this subscription is not embedded.
+      * @hide
+-     * @deprecated - Do not use.
+      */
+-    @Deprecated
+     public boolean canManageSubscription(Context context, String packageName) {
+         if (!isEmbedded()) {
+             throw new UnsupportedOperationException("Not an embedded subscription");
+@@ -395,14 +395,14 @@ public class SubscriptionInfo implements Parcelable {
+      * @return the {@link UiccAccessRule}s dictating who is authorized to manage this subscription.
+      * @throws UnsupportedOperationException if this subscription is not embedded.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+-    public @Nullable List<UiccAccessRule> getAccessRules() {
++    public @Nullable UiccAccessRule[] getAccessRules() {
+         if (!isEmbedded()) {
+             throw new UnsupportedOperationException("Not an embedded subscription");
+         }
+-        if (mAccessRules == null) return null;
+-        return Arrays.asList(mAccessRules);
++        return mAccessRules;
+     }
+ 
+     /**
+diff --git a/telephony/java/android/telephony/SubscriptionManager.java b/telephony/java/android/telephony/SubscriptionManager.java
+index 11a1984e893..debf43da79b 100644
+--- a/telephony/java/android/telephony/SubscriptionManager.java
++++ b/telephony/java/android/telephony/SubscriptionManager.java
+@@ -30,7 +30,6 @@ import android.annotation.SystemService;
+ import android.app.BroadcastOptions;
+ import android.content.Context;
+ import android.content.Intent;
+-import android.content.pm.PackageInfo;
+ import android.content.pm.PackageManager;
+ import android.content.res.Configuration;
+ import android.content.res.Resources;
+@@ -823,13 +822,10 @@ public class SubscriptionManager {
+      * if the list is non-empty the list is sorted by {@link SubscriptionInfo#getSimSlotIndex}
+      * then by {@link SubscriptionInfo#getSubscriptionId}.
+      * </ul>
+-     *
+-     * <p>
+-     * Permissions android.Manifest.permission.READ_PRIVILEGED_PHONE_STATE is required
+-     * for #getAvailableSubscriptionInfoList to be invoked.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public List<SubscriptionInfo> getAvailableSubscriptionInfoList() {
+         List<SubscriptionInfo> result = null;
+ 
+@@ -867,6 +863,9 @@ public class SubscriptionManager {
+      * if the list is non-empty the list is sorted by {@link SubscriptionInfo#getSimSlotIndex}
+      * then by {@link SubscriptionInfo#getSubscriptionId}.
+      * </ul>
++     * @hide
++     *
++     * TODO(b/35851809): Make this public.
+      */
+     public List<SubscriptionInfo> getAccessibleSubscriptionInfoList() {
+         List<SubscriptionInfo> result = null;
+@@ -892,8 +891,9 @@ public class SubscriptionManager {
+      *
+      * <p>Requires the {@link android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public void requestEmbeddedSubscriptionInfoListRefresh() {
+         try {
+             ISub iSub = ISub.Stub.asInterface(ServiceManager.getService("isub"));
+@@ -1892,51 +1892,4 @@ public class SubscriptionManager {
+         options.setTemporaryAppWhitelistDuration(TimeUnit.MINUTES.toMillis(1));
+         mContext.sendBroadcast(intent, null, options.toBundle());
+     }
+-
+-    /**
+-     * Checks whether the app with the given context is authorized to manage the given subscription
+-     * according to its metadata. Only supported for embedded subscriptions (if
+-     * {@code SubscriptionInfo#isEmbedded} returns true).
+-     *
+-     * @param info The subscription to check.
+-     * @return whether the app is authorized to manage this subscription per its metadata.
+-     * @throws UnsupportedOperationException if this subscription is not embedded.
+-     */
+-    public boolean canManageSubscription(SubscriptionInfo info) {
+-        return canManageSubscription(info, mContext.getPackageName());
+-    }
+-
+-    /**
+-     * Checks whether the given app is authorized to manage the given subscription according to its
+-     * metadata. Only supported for embedded subscriptions (if {@code SubscriptionInfo#isEmbedded}
+-     * returns true).
+-     *
+-     * @param info The subscription to check.
+-     * @param packageName Package name of the app to check.
+-     * @return whether the app is authorized to manage this subscription per its metadata.
+-     * @throws UnsupportedOperationException if this subscription is not embedded.
+-     * @hide
+-     */
+-    public boolean canManageSubscription(SubscriptionInfo info, String packageName) {
+-        if (!info.isEmbedded()) {
+-            throw new UnsupportedOperationException("Not an embedded subscription");
+-        }
+-        if (info.getAccessRules() == null) {
+-            return false;
+-        }
+-        PackageManager packageManager = mContext.getPackageManager();
+-        PackageInfo packageInfo;
+-        try {
+-            packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES);
+-        } catch (PackageManager.NameNotFoundException e) {
+-            throw new IllegalArgumentException("Unknown package: " + packageName, e);
+-        }
+-        for (UiccAccessRule rule : info.getAccessRules()) {
+-            if (rule.getCarrierPrivilegeStatus(packageInfo)
+-                    == TelephonyManager.CARRIER_PRIVILEGE_STATUS_HAS_ACCESS) {
+-                return true;
+-            }
+-        }
+-        return false;
+-    }
+ }
+diff --git a/telephony/java/android/telephony/UiccAccessRule.java b/telephony/java/android/telephony/UiccAccessRule.java
+index c3f8a193040..39372019c20 100644
+--- a/telephony/java/android/telephony/UiccAccessRule.java
++++ b/telephony/java/android/telephony/UiccAccessRule.java
+@@ -16,7 +16,6 @@
+ package android.telephony;
+ 
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.content.pm.PackageInfo;
+ import android.content.pm.Signature;
+ import android.os.Parcel;
+@@ -40,8 +39,9 @@ import java.util.Objects;
+  * specification.
+  *
+  * @hide
++ *
++ * TODO(b/35851809): Make this a SystemApi.
+  */
+-@SystemApi
+ public final class UiccAccessRule implements Parcelable {
+     private static final String TAG = "UiccAccessRule";
+ 
+diff --git a/telephony/java/android/telephony/euicc/DownloadableSubscription.java b/telephony/java/android/telephony/euicc/DownloadableSubscription.java
+index 88db22b82c5..01041c8b136 100644
+--- a/telephony/java/android/telephony/euicc/DownloadableSubscription.java
++++ b/telephony/java/android/telephony/euicc/DownloadableSubscription.java
+@@ -16,17 +16,18 @@
+ package android.telephony.euicc;
+ 
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ import android.telephony.UiccAccessRule;
+-import java.util.ArrayList;
+-import java.util.Arrays;
+-import java.util.List;
+ 
+ import com.android.internal.util.Preconditions;
+ 
+-/** Information about a subscription which is available for download. */
++/**
++ * Information about a subscription which is available for download.
++ *
++ * TODO(b/35851809): Make this public.
++ * @hide
++ */
+ public final class DownloadableSubscription implements Parcelable {
+ 
+     public static final Creator<DownloadableSubscription> CREATOR =
+@@ -45,12 +46,11 @@ public final class DownloadableSubscription implements Parcelable {
+     /**
+      * Activation code. May be null for subscriptions which are not based on activation codes, e.g.
+      * to download a default subscription assigned to this device.
+-     * Should use getEncodedActivationCode() instead.
+      * @hide
+-     * @deprecated - Do not use. This will be private. Use getEncodedActivationCode() instead.
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+     @Nullable
+-    @Deprecated
+     public final String encodedActivationCode;
+ 
+     @Nullable private String confirmationCode;
+@@ -58,16 +58,8 @@ public final class DownloadableSubscription implements Parcelable {
+     // see getCarrierName and setCarrierName
+     @Nullable
+     private String carrierName;
+-
+     // see getAccessRules and setAccessRules
+-    @Nullable
+-    private List<UiccAccessRule> accessRules;
+-
+-    /** Gets the activation code. */
+-    @Nullable
+-    public String getEncodedActivationCode() {
+-        return encodedActivationCode;
+-    }
++    private UiccAccessRule[] accessRules;
+ 
+     /** @hide */
+     private DownloadableSubscription(String encodedActivationCode) {
+@@ -78,59 +70,7 @@ public final class DownloadableSubscription implements Parcelable {
+         encodedActivationCode = in.readString();
+         confirmationCode = in.readString();
+         carrierName = in.readString();
+-        accessRules = new ArrayList<UiccAccessRule>();
+-        in.readTypedList(accessRules, UiccAccessRule.CREATOR);
+-    }
+-
+-    private DownloadableSubscription(String encodedActivationCode, String confirmationCode,
+-            String carrierName, List<UiccAccessRule> accessRules) {
+-        this.encodedActivationCode = encodedActivationCode;
+-        this.confirmationCode = confirmationCode;
+-        this.carrierName = carrierName;
+-        this.accessRules = accessRules;
+-    }
+-
+-    /** @hide */
+-    @SystemApi
+-    public static final class Builder {
+-        @Nullable private String encodedActivationCode;
+-        @Nullable private String confirmationCode;
+-        @Nullable private String carrierName;
+-        List<UiccAccessRule> accessRules;
+-
+-        public Builder() {}
+-
+-        public Builder(DownloadableSubscription baseSubscription) {
+-            encodedActivationCode = baseSubscription.getEncodedActivationCode();
+-            confirmationCode = baseSubscription.getConfirmationCode();
+-            carrierName = baseSubscription.getCarrierName();
+-            accessRules = baseSubscription.getAccessRules();
+-        }
+-
+-        public DownloadableSubscription build() {
+-            return new DownloadableSubscription(encodedActivationCode, confirmationCode,
+-                    carrierName, accessRules);
+-        }
+-
+-        public Builder setEncodedActivationCode(String value) {
+-            encodedActivationCode = value;
+-            return this;
+-        }
+-
+-        public Builder setConfirmationCode(String value) {
+-            confirmationCode = value;
+-            return this;
+-        }
+-
+-        public Builder setCarrierName(String value) {
+-            carrierName = value;
+-            return this;
+-        }
+-
+-        public Builder setAccessRules(List<UiccAccessRule> value) {
+-            accessRules = value;
+-            return this;
+-        }
++        accessRules = in.createTypedArray(UiccAccessRule.CREATOR);
+     }
+ 
+     /**
+@@ -147,10 +87,7 @@ public final class DownloadableSubscription implements Parcelable {
+ 
+     /**
+      * Sets the confirmation code.
+-     * @hide
+-     * @deprecated - Do not use.
+      */
+-    @Deprecated
+     public void setConfirmationCode(String confirmationCode) {
+         this.confirmationCode = confirmationCode;
+     }
+@@ -166,9 +103,9 @@ public final class DownloadableSubscription implements Parcelable {
+     /**
+      * Set the user-visible carrier name.
+      * @hide
+-     * @deprecated - Do not use.
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @Deprecated
+     public void setCarrierName(String carrierName) {
+         this.carrierName = carrierName;
+     }
+@@ -180,43 +117,36 @@ public final class DownloadableSubscription implements Parcelable {
+      * those created with {@link #forActivationCode}). May be populated with
+      * {@link EuiccManager#getDownloadableSubscriptionMetadata}.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     @Nullable
+     public String getCarrierName() {
+         return carrierName;
+     }
+ 
+     /**
+-     * Returns the {@link UiccAccessRule}s in list dictating access to this subscription.
++     * Returns the {@link UiccAccessRule}s dictating access to this subscription.
+      *
+      * <p>Only present for downloadable subscriptions that were queried from a server (as opposed to
+      * those created with {@link #forActivationCode}). May be populated with
+      * {@link EuiccManager#getDownloadableSubscriptionMetadata}.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+-    public List<UiccAccessRule> getAccessRules() {
++    public UiccAccessRule[] getAccessRules() {
+         return accessRules;
+     }
+ 
+     /**
+      * Set the {@link UiccAccessRule}s dictating access to this subscription.
+      * @hide
+-     * @deprecated - Do not use.
+-     */
+-    @Deprecated
+-    public void setAccessRules(List<UiccAccessRule> accessRules) {
+-        this.accessRules = accessRules;
+-    }
+-
+-    /**
+-     * @hide
+-     * @deprecated - Do not use.
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @Deprecated
+     public void setAccessRules(UiccAccessRule[] accessRules) {
+-        this.accessRules = Arrays.asList(accessRules);
++        this.accessRules = accessRules;
+     }
+ 
+     @Override
+@@ -224,7 +154,7 @@ public final class DownloadableSubscription implements Parcelable {
+         dest.writeString(encodedActivationCode);
+         dest.writeString(confirmationCode);
+         dest.writeString(carrierName);
+-        dest.writeTypedList(accessRules);
++        dest.writeTypedArray(accessRules, flags);
+     }
+ 
+     @Override
+diff --git a/telephony/java/android/telephony/euicc/EuiccCardManager.java b/telephony/java/android/telephony/euicc/EuiccCardManager.java
+index c3f40074308..a1a6a5a4d5b 100644
+--- a/telephony/java/android/telephony/euicc/EuiccCardManager.java
++++ b/telephony/java/android/telephony/euicc/EuiccCardManager.java
+@@ -17,7 +17,6 @@ package android.telephony.euicc;
+ 
+ import android.annotation.IntDef;
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.content.Context;
+ import android.os.RemoteException;
+ import android.os.ServiceManager;
+@@ -50,14 +49,14 @@ import com.android.internal.telephony.euicc.ISwitchToProfileCallback;
+ 
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+-import android.annotation.CallbackExecutor;
+-import java.util.concurrent.Executor;
+ 
+ /**
+  * EuiccCardManager is the application interface to an eSIM card.
++ *
+  * @hide
++ *
++ * TODO(b/35851809): Make this a SystemApi.
+  */
+-@SystemApi
+ public class EuiccCardManager {
+     private static final String TAG = "EuiccCardManager";
+ 
+@@ -69,7 +68,6 @@ public class EuiccCardManager {
+             CANCEL_REASON_TIMEOUT,
+             CANCEL_REASON_PPR_NOT_ALLOWED
+     })
+-    /** @hide */
+     public @interface CancelReason {}
+ 
+     /**
+@@ -98,7 +96,6 @@ public class EuiccCardManager {
+             RESET_OPTION_DELETE_FIELD_LOADED_TEST_PROFILES,
+             RESET_OPTION_RESET_DEFAULT_SMDP_ADDRESS
+     })
+-    /** @hide */
+     public @interface ResetOption {}
+ 
+     /** Deletes all operational profiles. */
+@@ -146,20 +143,18 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests all the profiles on eUicc.
++     * Gets all the profiles on eUicc.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code and all the profiles.
+      */
+-    public void requestAllProfiles(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<EuiccProfileInfo[]> callback) {
++    public void getAllProfiles(String cardId, ResultCallback<EuiccProfileInfo[]> callback) {
+         try {
+             getIEuiccCardController().getAllProfiles(mContext.getOpPackageName(), cardId,
+                     new IGetAllProfilesCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccProfileInfo[] profiles) {
+-                            executor.execute(() -> callback.onComplete(resultCode, profiles));
++                            callback.onComplete(resultCode, profiles);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -169,21 +164,19 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests the profile of the given iccid.
++     * Gets the profile of the given iccid.
+      *
+      * @param cardId The Id of the eUICC.
+      * @param iccid The iccid of the profile.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code and profile.
+      */
+-    public void requestProfile(String cardId, String iccid, @CallbackExecutor Executor executor,
+-            ResultCallback<EuiccProfileInfo> callback) {
++    public void getProfile(String cardId, String iccid, ResultCallback<EuiccProfileInfo> callback) {
+         try {
+             getIEuiccCardController().getProfile(mContext.getOpPackageName(), cardId, iccid,
+                     new IGetProfileCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccProfileInfo profile) {
+-                            executor.execute(() -> callback.onComplete(resultCode, profile));
++                            callback.onComplete(resultCode, profile);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -198,17 +191,16 @@ public class EuiccCardManager {
+      * @param cardId The Id of the eUICC.
+      * @param iccid The iccid of the profile.
+      * @param refresh Whether sending the REFRESH command to modem.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code.
+      */
+     public void disableProfile(String cardId, String iccid, boolean refresh,
+-            @CallbackExecutor Executor executor, ResultCallback<Void> callback) {
++            ResultCallback<Void> callback) {
+         try {
+             getIEuiccCardController().disableProfile(mContext.getOpPackageName(), cardId, iccid,
+                     refresh, new IDisableProfileCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode) {
+-                            executor.execute(() -> callback.onComplete(resultCode, null));
++                            callback.onComplete(resultCode, null);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -224,17 +216,16 @@ public class EuiccCardManager {
+      * @param cardId The Id of the eUICC.
+      * @param iccid The iccid of the profile to switch to.
+      * @param refresh Whether sending the REFRESH command to modem.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code and the EuiccProfileInfo enabled.
+      */
+     public void switchToProfile(String cardId, String iccid, boolean refresh,
+-            @CallbackExecutor Executor executor, ResultCallback<EuiccProfileInfo> callback) {
++            ResultCallback<EuiccProfileInfo> callback) {
+         try {
+             getIEuiccCardController().switchToProfile(mContext.getOpPackageName(), cardId, iccid,
+                     refresh, new ISwitchToProfileCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccProfileInfo profile) {
+-                            executor.execute(() -> callback.onComplete(resultCode, profile));
++                            callback.onComplete(resultCode, profile);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -249,17 +240,16 @@ public class EuiccCardManager {
+      * @param cardId The Id of the eUICC.
+      * @param iccid The iccid of the profile.
+      * @param nickname The nickname of the profile.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code.
+      */
+     public void setNickname(String cardId, String iccid, String nickname,
+-            @CallbackExecutor Executor executor, ResultCallback<Void> callback) {
++            ResultCallback<Void> callback) {
+         try {
+             getIEuiccCardController().setNickname(mContext.getOpPackageName(), cardId, iccid,
+                     nickname, new ISetNicknameCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode) {
+-                            executor.execute(() -> callback.onComplete(resultCode, null));
++                            callback.onComplete(resultCode, null);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -273,17 +263,15 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param iccid The iccid of the profile.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code.
+      */
+-    public void deleteProfile(String cardId, String iccid, @CallbackExecutor Executor executor,
+-            ResultCallback<Void> callback) {
++    public void deleteProfile(String cardId, String iccid, ResultCallback<Void> callback) {
+         try {
+             getIEuiccCardController().deleteProfile(mContext.getOpPackageName(), cardId, iccid,
+                     new IDeleteProfileCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode) {
+-                            executor.execute(() -> callback.onComplete(resultCode, null));
++                            callback.onComplete(resultCode, null);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -298,17 +286,15 @@ public class EuiccCardManager {
+      * @param cardId The Id of the eUICC.
+      * @param options Bits of the options of resetting which parts of the eUICC memory. See
+      *     EuiccCard for details.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code.
+      */
+-    public void resetMemory(String cardId, @ResetOption int options,
+-            @CallbackExecutor Executor executor, ResultCallback<Void> callback) {
++    public void resetMemory(String cardId, @ResetOption int options, ResultCallback<Void> callback) {
+         try {
+             getIEuiccCardController().resetMemory(mContext.getOpPackageName(), cardId, options,
+                     new IResetMemoryCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode) {
+-                            executor.execute(() -> callback.onComplete(resultCode, null));
++                            callback.onComplete(resultCode, null);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -318,20 +304,18 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests the default SM-DP+ address from eUICC.
++     * Gets the default SM-DP+ address from eUICC.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code and the default SM-DP+ address.
+      */
+-    public void requestDefaultSmdpAddress(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<String> callback) {
++    public void getDefaultSmdpAddress(String cardId, ResultCallback<String> callback) {
+         try {
+             getIEuiccCardController().getDefaultSmdpAddress(mContext.getOpPackageName(), cardId,
+                     new IGetDefaultSmdpAddressCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, String address) {
+-                            executor.execute(() -> callback.onComplete(resultCode, address));
++                            callback.onComplete(resultCode, address);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -341,20 +325,18 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests the SM-DS address from eUICC.
++     * Gets the SM-DS address from eUICC.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code and the SM-DS address.
+      */
+-    public void requestSmdsAddress(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<String> callback) {
++    public void getSmdsAddress(String cardId, ResultCallback<String> callback) {
+         try {
+             getIEuiccCardController().getSmdsAddress(mContext.getOpPackageName(), cardId,
+                     new IGetSmdsAddressCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, String address) {
+-                            executor.execute(() -> callback.onComplete(resultCode, address));
++                            callback.onComplete(resultCode, address);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -368,18 +350,16 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param defaultSmdpAddress The default SM-DP+ address to set.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback The callback to get the result code.
+      */
+-    public void setDefaultSmdpAddress(String cardId, String defaultSmdpAddress,
+-            @CallbackExecutor Executor executor, ResultCallback<Void> callback) {
++    public void setDefaultSmdpAddress(String cardId, String defaultSmdpAddress, ResultCallback<Void> callback) {
+         try {
+             getIEuiccCardController().setDefaultSmdpAddress(mContext.getOpPackageName(), cardId,
+                     defaultSmdpAddress,
+                     new ISetDefaultSmdpAddressCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode) {
+-                            executor.execute(() -> callback.onComplete(resultCode, null));
++                            callback.onComplete(resultCode, null);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -389,20 +369,18 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests Rules Authorisation Table.
++     * Gets Rules Authorisation Table.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the rule authorisation table.
+      */
+-    public void requestRulesAuthTable(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<EuiccRulesAuthTable> callback) {
++    public void getRulesAuthTable(String cardId, ResultCallback<EuiccRulesAuthTable> callback) {
+         try {
+             getIEuiccCardController().getRulesAuthTable(mContext.getOpPackageName(), cardId,
+                     new IGetRulesAuthTableCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccRulesAuthTable rat) {
+-                            executor.execute(() -> callback.onComplete(resultCode, rat));
++                            callback.onComplete(resultCode, rat);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -412,20 +390,18 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests the eUICC challenge for new profile downloading.
++     * Gets the eUICC challenge for new profile downloading.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the challenge.
+      */
+-    public void requestEuiccChallenge(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<byte[]> callback) {
++    public void getEuiccChallenge(String cardId, ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().getEuiccChallenge(mContext.getOpPackageName(), cardId,
+                     new IGetEuiccChallengeCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] challenge) {
+-                            executor.execute(() -> callback.onComplete(resultCode, challenge));
++                            callback.onComplete(resultCode, challenge);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -435,20 +411,18 @@ public class EuiccCardManager {
+     }
+ 
+     /**
+-     * Requests the eUICC info1 defined in GSMA RSP v2.0+ for new profile downloading.
++     * Gets the eUICC info1 defined in GSMA RSP v2.0+ for new profile downloading.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the info1.
+      */
+-    public void requestEuiccInfo1(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<byte[]> callback) {
++    public void getEuiccInfo1(String cardId, ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().getEuiccInfo1(mContext.getOpPackageName(), cardId,
+                     new IGetEuiccInfo1Callback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] info) {
+-                            executor.execute(() -> callback.onComplete(resultCode, info));
++                            callback.onComplete(resultCode, info);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -461,17 +435,15 @@ public class EuiccCardManager {
+      * Gets the eUICC info2 defined in GSMA RSP v2.0+ for new profile downloading.
+      *
+      * @param cardId The Id of the eUICC.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the info2.
+      */
+-    public void requestEuiccInfo2(String cardId, @CallbackExecutor Executor executor,
+-            ResultCallback<byte[]> callback) {
++    public void getEuiccInfo2(String cardId, ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().getEuiccInfo2(mContext.getOpPackageName(), cardId,
+                     new IGetEuiccInfo2Callback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] info) {
+-                            executor.execute(() -> callback.onComplete(resultCode, info));
++                            callback.onComplete(resultCode, info);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -494,13 +466,12 @@ public class EuiccCardManager {
+      *     GSMA RSP v2.0+.
+      * @param serverCertificate ASN.1 data in byte array indicating SM-DP+ Certificate returned by
+      *     SM-DP+ server.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and a byte array which represents a
+      *     {@code AuthenticateServerResponse} defined in GSMA RSP v2.0+.
+      */
+     public void authenticateServer(String cardId, String matchingId, byte[] serverSigned1,
+             byte[] serverSignature1, byte[] euiccCiPkIdToBeUsed, byte[] serverCertificate,
+-            @CallbackExecutor Executor executor, ResultCallback<byte[]> callback) {
++            ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().authenticateServer(
+                     mContext.getOpPackageName(),
+@@ -513,7 +484,7 @@ public class EuiccCardManager {
+                     new IAuthenticateServerCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] response) {
+-                            executor.execute(() -> callback.onComplete(resultCode, response));
++                            callback.onComplete(resultCode, response);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -534,13 +505,11 @@ public class EuiccCardManager {
+      *     SM-DP+ server.
+      * @param smdpCertificate ASN.1 data in byte array indicating the SM-DP+ Certificate returned
+      *     by SM-DP+ server.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and a byte array which represents a
+      *     {@code PrepareDownloadResponse} defined in GSMA RSP v2.0+
+      */
+     public void prepareDownload(String cardId, @Nullable byte[] hashCc, byte[] smdpSigned2,
+-            byte[] smdpSignature2, byte[] smdpCertificate, @CallbackExecutor Executor executor,
+-            ResultCallback<byte[]> callback) {
++            byte[] smdpSignature2, byte[] smdpCertificate, ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().prepareDownload(
+                     mContext.getOpPackageName(),
+@@ -552,7 +521,7 @@ public class EuiccCardManager {
+                     new IPrepareDownloadCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] response) {
+-                            executor.execute(() -> callback.onComplete(resultCode, response));
++                            callback.onComplete(resultCode, response);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -566,12 +535,11 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param boundProfilePackage the Bound Profile Package data returned by SM-DP+ server.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and a byte array which represents a
+      *     {@code LoadBoundProfilePackageResponse} defined in GSMA RSP v2.0+.
+      */
+     public void loadBoundProfilePackage(String cardId, byte[] boundProfilePackage,
+-            @CallbackExecutor Executor executor, ResultCallback<byte[]> callback) {
++            ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().loadBoundProfilePackage(
+                     mContext.getOpPackageName(),
+@@ -580,7 +548,7 @@ public class EuiccCardManager {
+                     new ILoadBoundProfilePackageCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] response) {
+-                            executor.execute(() -> callback.onComplete(resultCode, response));
++                            callback.onComplete(resultCode, response);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -595,12 +563,11 @@ public class EuiccCardManager {
+      * @param cardId The Id of the eUICC.
+      * @param transactionId the transaction ID returned by SM-DP+ server.
+      * @param reason the cancel reason.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and an byte[] which represents a
+      *     {@code CancelSessionResponse} defined in GSMA RSP v2.0+.
+      */
+     public void cancelSession(String cardId, byte[] transactionId, @CancelReason int reason,
+-            @CallbackExecutor Executor executor, ResultCallback<byte[]> callback) {
++            ResultCallback<byte[]> callback) {
+         try {
+             getIEuiccCardController().cancelSession(
+                     mContext.getOpPackageName(),
+@@ -610,7 +577,7 @@ public class EuiccCardManager {
+                     new ICancelSessionCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, byte[] response) {
+-                            executor.execute(() -> callback.onComplete(resultCode, response));
++                            callback.onComplete(resultCode, response);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -624,17 +591,16 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param events bits of the event types ({@link EuiccNotification.Event}) to list.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the list of notifications.
+      */
+     public void listNotifications(String cardId, @EuiccNotification.Event int events,
+-            @CallbackExecutor Executor executor, ResultCallback<EuiccNotification[]> callback) {
++            ResultCallback<EuiccNotification[]> callback) {
+         try {
+             getIEuiccCardController().listNotifications(mContext.getOpPackageName(), cardId, events,
+                     new IListNotificationsCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccNotification[] notifications) {
+-                            executor.execute(() -> callback.onComplete(resultCode, notifications));
++                            callback.onComplete(resultCode, notifications);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -648,17 +614,16 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param events bits of the event types ({@link EuiccNotification.Event}) to list.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the list of notifications.
+      */
+     public void retrieveNotificationList(String cardId, @EuiccNotification.Event int events,
+-            @CallbackExecutor Executor executor, ResultCallback<EuiccNotification[]> callback) {
++            ResultCallback<EuiccNotification[]> callback) {
+         try {
+             getIEuiccCardController().retrieveNotificationList(mContext.getOpPackageName(), cardId,
+                     events, new IRetrieveNotificationListCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccNotification[] notifications) {
+-                            executor.execute(() -> callback.onComplete(resultCode, notifications));
++                            callback.onComplete(resultCode, notifications);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -672,17 +637,16 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param seqNumber the sequence number of the notification.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code and the notification.
+      */
+     public void retrieveNotification(String cardId, int seqNumber,
+-            @CallbackExecutor Executor executor, ResultCallback<EuiccNotification> callback) {
++            ResultCallback<EuiccNotification> callback) {
+         try {
+             getIEuiccCardController().retrieveNotification(mContext.getOpPackageName(), cardId,
+                     seqNumber, new IRetrieveNotificationCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode, EuiccNotification notification) {
+-                            executor.execute(() -> callback.onComplete(resultCode, notification));
++                            callback.onComplete(resultCode, notification);
+                         }
+                     });
+         } catch (RemoteException e) {
+@@ -696,11 +660,10 @@ public class EuiccCardManager {
+      *
+      * @param cardId The Id of the eUICC.
+      * @param seqNumber the sequence number of the notification.
+-     * @param executor The executor through which the callback should be invode.
+      * @param callback the callback to get the result code.
+      */
+     public void removeNotificationFromList(String cardId, int seqNumber,
+-            @CallbackExecutor Executor executor, ResultCallback<Void> callback) {
++            ResultCallback<Void> callback) {
+         try {
+             getIEuiccCardController().removeNotificationFromList(
+                     mContext.getOpPackageName(),
+@@ -709,7 +672,7 @@ public class EuiccCardManager {
+                     new IRemoveNotificationFromListCallback.Stub() {
+                         @Override
+                         public void onComplete(int resultCode) {
+-                            executor.execute(() -> callback.onComplete(resultCode, null));
++                            callback.onComplete(resultCode, null);
+                         }
+                     });
+         } catch (RemoteException e) {
+diff --git a/telephony/java/android/telephony/euicc/EuiccInfo.java b/telephony/java/android/telephony/euicc/EuiccInfo.java
+index a4adf0591a0..5bfff08f8d4 100644
+--- a/telephony/java/android/telephony/euicc/EuiccInfo.java
++++ b/telephony/java/android/telephony/euicc/EuiccInfo.java
+@@ -23,6 +23,9 @@ import android.os.Parcelable;
+  * Information about an eUICC chip/device.
+  *
+  * @see EuiccManager#getEuiccInfo
++ * @hide
++ *
++ * TODO(b/35851809): Make this public.
+  */
+ // WARNING: Do not add any privacy-sensitive fields to this class (such as an eUICC identifier)!
+ // This API is accessible to all applications. Privacy-sensitive fields should be returned in their
+@@ -42,17 +45,12 @@ public final class EuiccInfo implements Parcelable {
+                 }
+             };
+ 
+-    @Nullable
+-    private final String osVersion;
+-
+     /**
+-     * Gets the version of the operating system running on the eUICC. This field is
+-     * hardware-specific and is not guaranteed to match any particular format.
++     * Version of the operating system running on the eUICC. This field is hardware-specific and is
++     * not guaranteed to match any particular format.
+      */
+     @Nullable
+-    public String getOsVersion() {
+-        return osVersion;
+-    }
++    public final String osVersion;
+ 
+     public EuiccInfo(@Nullable String osVersion) {
+         this.osVersion = osVersion;
+diff --git a/telephony/java/android/telephony/euicc/EuiccManager.java b/telephony/java/android/telephony/euicc/EuiccManager.java
+index 1637c55c0ad..7f913ceb816 100644
+--- a/telephony/java/android/telephony/euicc/EuiccManager.java
++++ b/telephony/java/android/telephony/euicc/EuiccManager.java
+@@ -42,6 +42,9 @@ import java.lang.annotation.RetentionPolicy;
+  * {@link Context#getSystemService(String)} and {@link Context#EUICC_SERVICE}.
+  *
+  * <p>See {@link #isEnabled} before attempting to use these APIs.
++ *
++ * TODO(b/35851809): Make this public.
++ * @hide
+  */
+ public class EuiccManager {
+ 
+@@ -53,8 +56,6 @@ public class EuiccManager {
+      *
+      * <p>The activity will immediately finish with {@link android.app.Activity#RESULT_CANCELED} if
+      * {@link #isEnabled} is false.
+-     *
+-     * This is ued by non-LPA app to bring up LUI.
+      */
+     @SdkConstant(SdkConstant.SdkConstantType.ACTIVITY_INTENT_ACTION)
+     public static final String ACTION_MANAGE_EMBEDDED_SUBSCRIPTIONS =
+@@ -68,10 +69,8 @@ public class EuiccManager {
+      *
+      * <p class="note">This is a protected intent that can only be sent
+      * by the system.
+-     *
+-     * @hide
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     @SdkConstant(SdkConstant.SdkConstantType.BROADCAST_INTENT_ACTION)
+     public static final String ACTION_OTA_STATUS_CHANGED =
+             "android.telephony.euicc.action.OTA_STATUS_CHANGED";
+@@ -79,10 +78,12 @@ public class EuiccManager {
+     /**
+      * Broadcast Action: The action sent to carrier app so it knows the carrier setup is not
+      * completed.
++     *
++     * TODO(b/35851809): Make this a public API.
+      */
+     @SdkConstant(SdkConstant.SdkConstantType.BROADCAST_INTENT_ACTION)
+-    public static final String ACTION_NOTIFY_CARRIER_SETUP_INCOMPLETE =
+-            "android.telephony.euicc.action.NOTIFY_CARRIER_SETUP_INCOMPLETE";
++    public static final String ACTION_NOTIFY_CARRIER_SETUP =
++            "android.telephony.euicc.action.NOTIFY_CARRIER_SETUP";
+ 
+     /**
+      * Intent action to provision an embedded subscription.
+@@ -94,9 +95,8 @@ public class EuiccManager {
+      * <p>The activity will immediately finish with {@link android.app.Activity#RESULT_CANCELED} if
+      * {@link #isEnabled} is false.
+      *
+-     * @hide
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     @SdkConstant(SdkConstant.SdkConstantType.ACTIVITY_INTENT_ACTION)
+     public static final String ACTION_PROVISION_EMBEDDED_SUBSCRIPTION =
+             "android.telephony.euicc.action.PROVISION_EMBEDDED_SUBSCRIPTION";
+@@ -143,8 +143,9 @@ public class EuiccManager {
+      * Key for an extra set on {@link #getDownloadableSubscriptionMetadata} PendingIntent result
+      * callbacks providing the downloadable subscription metadata.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public static final String EXTRA_EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTION =
+             "android.telephony.euicc.extra.EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTION";
+ 
+@@ -152,8 +153,9 @@ public class EuiccManager {
+      * Key for an extra set on {@link #getDefaultDownloadableSubscriptionList} PendingIntent result
+      * callbacks providing the list of available downloadable subscriptions.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public static final String EXTRA_EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTIONS =
+             "android.telephony.euicc.extra.EMBEDDED_SUBSCRIPTION_DOWNLOADABLE_SUBSCRIPTIONS";
+ 
+@@ -199,7 +201,6 @@ public class EuiccManager {
+      * Euicc OTA update status which can be got by {@link #getOtaStatus}
+      * @hide
+      */
+-    @SystemApi
+     @Retention(RetentionPolicy.SOURCE)
+     @IntDef(prefix = {"EUICC_OTA_"}, value = {
+             EUICC_OTA_IN_PROGRESS,
+@@ -214,37 +215,15 @@ public class EuiccManager {
+     /**
+      * An OTA is in progress. During this time, the eUICC is not available and the user may lose
+      * network access.
+-     * @hide
+      */
+-    @SystemApi
+     public static final int EUICC_OTA_IN_PROGRESS = 1;
+-
+-    /**
+-     * The OTA update failed.
+-     * @hide
+-     */
+-    @SystemApi
++    /** The OTA update failed. */
+     public static final int EUICC_OTA_FAILED = 2;
+-
+-    /**
+-     * The OTA update finished successfully.
+-     * @hide
+-     */
+-    @SystemApi
++    /** The OTA update finished successfully. */
+     public static final int EUICC_OTA_SUCCEEDED = 3;
+-
+-    /**
+-     * The OTA update not needed since current eUICC OS is latest.
+-     * @hide
+-     */
+-    @SystemApi
++    /** The OTA update not needed since current eUICC OS is latest. */
+     public static final int EUICC_OTA_NOT_NEEDED = 4;
+-
+-    /**
+-     * The OTA status is unavailable since eUICC service is unavailable.
+-     * @hide
+-     */
+-    @SystemApi
++    /** The OTA status is unavailable since eUICC service is unavailable. */
+     public static final int EUICC_OTA_STATUS_UNAVAILABLE = 5;
+ 
+     private final Context mContext;
+@@ -297,10 +276,8 @@ public class EuiccManager {
+      *
+      * @return the status of eUICC OTA. If {@link #isEnabled()} is false or the eUICC is not ready,
+      *     {@link OtaStatus#EUICC_OTA_STATUS_UNAVAILABLE} will be returned.
+-     *
+-     * @hide
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public int getOtaStatus() {
+         if (!isEnabled()) {
+             return EUICC_OTA_STATUS_UNAVAILABLE;
+@@ -315,7 +292,7 @@ public class EuiccManager {
+     /**
+      * Attempt to download the given {@link DownloadableSubscription}.
+      *
+-     * <p>Requires the {@code android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission,
++     * <p>Requires the {@link android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission,
+      * or the calling app must be authorized to manage both the currently-active subscription and
+      * the subscription to be downloaded according to the subscription metadata. Without the former,
+      * an {@link #EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR} will be returned in the callback
+@@ -377,16 +354,14 @@ public class EuiccManager {
+      *
+      * <p>To be called by the LUI upon completion of a resolvable error flow.
+      *
+-     * <p>Requires that the calling app has the
+-     * {@link android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission.
+-     *
+      * @param resolutionIntent The original intent used to start the LUI.
+      * @param resolutionExtras Resolution-specific extras depending on the result of the resolution.
+      *     For example, this may indicate whether the user has consented or may include the input
+      *     they provided.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public void continueOperation(Intent resolutionIntent, Bundle resolutionExtras) {
+         if (!isEnabled()) {
+             PendingIntent callbackIntent =
+@@ -420,8 +395,9 @@ public class EuiccManager {
+      * @param subscription the subscription which needs metadata filled in
+      * @param callbackIntent a PendingIntent to launch when the operation completes.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public void getDownloadableSubscriptionMetadata(
+             DownloadableSubscription subscription, PendingIntent callbackIntent) {
+         if (!isEnabled()) {
+@@ -450,8 +426,9 @@ public class EuiccManager {
+      *
+      * @param callbackIntent a PendingIntent to launch when the operation completes.
+      * @hide
++     *
++     * TODO(b/35851809): Make this a SystemApi.
+      */
+-    @SystemApi
+     public void getDefaultDownloadableSubscriptionList(PendingIntent callbackIntent) {
+         if (!isEnabled()) {
+             sendUnavailableError(callbackIntent);
+@@ -491,7 +468,7 @@ public class EuiccManager {
+      *
+      * <p>Requires that the calling app has carrier privileges according to the metadata of the
+      * profile to be deleted, or the
+-     * {@code android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission.
++     * {@link android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission.
+      *
+      * @param subscriptionId the ID of the subscription to delete.
+      * @param callbackIntent a PendingIntent to launch when the operation completes.
+@@ -512,7 +489,7 @@ public class EuiccManager {
+     /**
+      * Switch to (enable) the given subscription.
+      *
+-     * <p>Requires the {@code android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission,
++     * <p>Requires the {@link android.Manifest.permission#WRITE_EMBEDDED_SUBSCRIPTIONS} permission,
+      * or the calling app must be authorized to manage both the currently-active subscription and
+      * the subscription to be enabled according to the subscription metadata. Without the former,
+      * an {@link #EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR} will be returned in the callback
+@@ -622,7 +599,11 @@ public class EuiccManager {
+         }
+     }
+ 
+-    private static IEuiccController getIEuiccController() {
++    /**
++     * @hide
++     */
++    @TestApi
++    protected IEuiccController getIEuiccController() {
+         return IEuiccController.Stub.asInterface(ServiceManager.getService("econtroller"));
+     }
+ }
+diff --git a/telephony/java/android/telephony/euicc/EuiccNotification.java b/telephony/java/android/telephony/euicc/EuiccNotification.java
+index 43a77074826..ef3c1ce8cf3 100644
+--- a/telephony/java/android/telephony/euicc/EuiccNotification.java
++++ b/telephony/java/android/telephony/euicc/EuiccNotification.java
+@@ -17,7 +17,6 @@ package android.telephony.euicc;
+ 
+ import android.annotation.IntDef;
+ import android.annotation.Nullable;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ 
+@@ -32,9 +31,10 @@ import java.util.Objects;
+  * disabling, or deleting).
+  *
+  * @hide
++ *
++ * TODO(b/35851809): Make this a @SystemApi.
+  */
+-@SystemApi
+-public final class EuiccNotification implements Parcelable {
++public class EuiccNotification implements Parcelable {
+     /** Event */
+     @Retention(RetentionPolicy.SOURCE)
+     @IntDef(flag = true, prefix = { "EVENT_" }, value = {
+@@ -43,7 +43,6 @@ public final class EuiccNotification implements Parcelable {
+             EVENT_DISABLE,
+             EVENT_DELETE
+     })
+-    /** @hide */
+     public @interface Event {}
+ 
+     /** A profile is downloaded and installed. */
+@@ -58,7 +57,7 @@ public final class EuiccNotification implements Parcelable {
+     /** A profile is deleted. */
+     public static final int EVENT_DELETE = 1 << 3;
+ 
+-    /** Value of the bits of all the events including install, enable, disable and delete. */
++    /** Value of the bits of all above events */
+     @Event
+     public static final int ALL_EVENTS =
+             EVENT_INSTALL | EVENT_ENABLE | EVENT_DISABLE | EVENT_DELETE;
+diff --git a/telephony/java/android/telephony/euicc/EuiccRulesAuthTable.java b/telephony/java/android/telephony/euicc/EuiccRulesAuthTable.java
+index 67ae983efeb..7efe0436428 100644
+--- a/telephony/java/android/telephony/euicc/EuiccRulesAuthTable.java
++++ b/telephony/java/android/telephony/euicc/EuiccRulesAuthTable.java
+@@ -16,7 +16,6 @@
+ package android.telephony.euicc;
+ 
+ import android.annotation.IntDef;
+-import android.annotation.SystemApi;
+ import android.os.Parcel;
+ import android.os.Parcelable;
+ import android.service.carrier.CarrierIdentifier;
+@@ -28,21 +27,20 @@ import com.android.internal.annotations.VisibleForTesting;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+ import java.util.Arrays;
+-import java.util.ArrayList;
+-import java.util.List;
+ 
+ /**
+  * This represents the RAT (Rules Authorisation Table) stored on eUICC.
++ *
+  * @hide
++ *
++ * TODO(b/35851809): Make this a @SystemApi.
+  */
+-@SystemApi
+ public final class EuiccRulesAuthTable implements Parcelable {
+     /** Profile policy rule flags */
+     @Retention(RetentionPolicy.SOURCE)
+     @IntDef(flag = true, prefix = { "POLICY_RULE_FLAG_" }, value = {
+             POLICY_RULE_FLAG_CONSENT_REQUIRED
+     })
+-    /** @hide */
+     public @interface PolicyRuleFlag {}
+ 
+     /** User consent is required to install the profile. */
+@@ -91,14 +89,12 @@ public final class EuiccRulesAuthTable implements Parcelable {
+          * @throws ArrayIndexOutOfBoundsException If the {@code mPosition} is larger than the size
+          *     this table.
+          */
+-        public Builder add(int policyRules, List<CarrierIdentifier> carrierId, int policyRuleFlags) {
++        public Builder add(int policyRules, CarrierIdentifier[] carrierId, int policyRuleFlags) {
+             if (mPosition >= mPolicyRules.length) {
+                 throw new ArrayIndexOutOfBoundsException(mPosition);
+             }
+             mPolicyRules[mPosition] = policyRules;
+-            if (carrierId != null && carrierId.size() > 0) {
+-                mCarrierIds[mPosition] = carrierId.toArray(new CarrierIdentifier[carrierId.size()]);
+-            }
++            mCarrierIds[mPosition] = carrierId;
+             mPolicyRuleFlags[mPosition] = policyRuleFlags;
+             mPosition++;
+             return this;
+-- 
+2.17.1
+

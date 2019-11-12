@@ -1,0 +1,60 @@
+From f27c74d908bb6db0f58f3a0388a69ba17dfbade0 Mon Sep 17 00:00:00 2001
+From: Shaotang Li <shaotangli@google.com>
+Date: Thu, 19 Jul 2018 17:32:42 +0800
+Subject: [PATCH 33/70] Add extra data when making call through emergency
+ dialer
+
+This data is used in telecom metrics to determine the call source.
+
+Bug: 112168722
+Bug: 111818008
+
+Test: manual and check the result of
+'adb shell dumpsys telecom' for metrics data
+Change-Id: Id3b18fa38df490f9428c6f6aa51a35c890541243
+Merged-In: Id3b18fa38df490f9428c6f6aa51a35c890541243
+---
+ src/com/android/phone/EmergencyDialer.java | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/phone/EmergencyDialer.java b/src/com/android/phone/EmergencyDialer.java
+index 5d948970e..79928a636 100644
+--- a/src/com/android/phone/EmergencyDialer.java
++++ b/src/com/android/phone/EmergencyDialer.java
+@@ -38,6 +38,7 @@ import android.os.AsyncTask;
+ import android.os.Bundle;
+ import android.os.PersistableBundle;
+ import android.provider.Settings;
++import android.telecom.ParcelableCallAnalytics;
+ import android.telecom.PhoneAccount;
+ import android.telecom.TelecomManager;
+ import android.telephony.CarrierConfigManager;
+@@ -466,8 +467,11 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+ 
+         if (!TextUtils.isEmpty(phoneNumber)) {
+             if (DBG) Log.d(LOG_TAG, "dial emergency number: " + Rlog.pii(LOG_TAG, phoneNumber));
++            Bundle extras = new Bundle();
++            extras.putInt(TelecomManager.EXTRA_CALL_SOURCE,
++                    ParcelableCallAnalytics.CALL_SOURCE_EMERGENCY_SHORTCUT);
+             TelecomManager tm = (TelecomManager) getSystemService(TELECOM_SERVICE);
+-            tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, phoneNumber, null), null);
++            tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, phoneNumber, null), extras);
+         } else {
+             Log.d(LOG_TAG, "emergency number is empty");
+         }
+@@ -725,8 +729,11 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+                 playTone(ToneGenerator.TONE_PROP_NACK);
+                 return;
+             }
++            Bundle extras = new Bundle();
++            extras.putInt(TelecomManager.EXTRA_CALL_SOURCE,
++                    ParcelableCallAnalytics.CALL_SOURCE_EMERGENCY_DIALPAD);
+             TelecomManager tm = (TelecomManager) getSystemService(TELECOM_SERVICE);
+-            tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, mLastNumber, null), null);
++            tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_TEL, mLastNumber, null), extras);
+         } else {
+             if (DBG) Log.d(LOG_TAG, "rejecting bad requested number " + mLastNumber);
+ 
+-- 
+2.17.1
+

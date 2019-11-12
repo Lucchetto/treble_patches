@@ -1,0 +1,246 @@
+From cb68db7d4f798a659dccf010c16ff34eba3adb7f Mon Sep 17 00:00:00 2001
+From: Doris Ling <dling@google.com>
+Date: Wed, 1 Aug 2018 17:24:34 -0700
+Subject: [PATCH 25/71] DO NOT MERGE Disable changing lock when device is not
+ provisioned.
+
+When the device is not yet provisioned and settings is launched:
+- disable the entry point for changing device lock
+- set display search menu to false
+- disallow update to display the search menu
+
+Bug: 110034419
+Test: make RunSettingsRoboTests
+Change-Id: Ieb7eb0e8699229ec0824ccc19d7b958ac44965a2
+Merged-In: Ieb7eb0e8699229ec0824ccc19d7b958ac44965a2
+---
+ .../android/settings/ChooseLockGeneric.java   |  9 ++
+ .../android/settings/SettingsActivity.java    |  4 +-
+ .../settings/SetupChooseLockGeneric.java      |  5 +
+ .../settings/ChooseLockGenericTest.java       | 95 +++++++++++++++++++
+ .../settings/SettingsActivityTest.java        | 31 +++++-
+ 5 files changed, 141 insertions(+), 3 deletions(-)
+ create mode 100644 tests/robotests/src/com/android/settings/ChooseLockGenericTest.java
+
+diff --git a/src/com/android/settings/ChooseLockGeneric.java b/src/com/android/settings/ChooseLockGeneric.java
+index 49784f6813..ac064eab46 100644
+--- a/src/com/android/settings/ChooseLockGeneric.java
++++ b/src/com/android/settings/ChooseLockGeneric.java
+@@ -141,6 +141,11 @@ public class ChooseLockGeneric extends SettingsActivity {
+         @Override
+         public void onCreate(Bundle savedInstanceState) {
+             super.onCreate(savedInstanceState);
++            final Activity activity = getActivity();
++            if (!Utils.isDeviceProvisioned(activity) && !canRunBeforeDeviceProvisioned()) {
++                activity.finish();
++                return;
++            }
+ 
+             String chooseLockAction = getActivity().getIntent().getAction();
+             mFingerprintManager = Utils.getFingerprintManagerOrNull(getActivity());
+@@ -218,6 +223,10 @@ public class ChooseLockGeneric extends SettingsActivity {
+             addHeaderView();
+         }
+ 
++        protected boolean canRunBeforeDeviceProvisioned() {
++            return false;
++        }
++
+         protected void addHeaderView() {
+             if (mForFingerprint) {
+                 setHeaderView(R.layout.choose_lock_generic_fingerprint_header);
+diff --git a/src/com/android/settings/SettingsActivity.java b/src/com/android/settings/SettingsActivity.java
+index 4045fd2afd..ea7874c625 100644
+--- a/src/com/android/settings/SettingsActivity.java
++++ b/src/com/android/settings/SettingsActivity.java
+@@ -435,7 +435,7 @@ public class SettingsActivity extends SettingsDrawerActivity
+             // No UP affordance if we are displaying the main Dashboard
+             mDisplayHomeAsUpEnabled = false;
+             // Show Search affordance
+-            mDisplaySearch = true;
++            mDisplaySearch = Utils.isDeviceProvisioned(this);
+             mInitialTitleResId = R.string.dashboard_title;
+ 
+             switchToFragment(DashboardSummary.class.getName(), null /* args */, false, false,
+@@ -444,7 +444,7 @@ public class SettingsActivity extends SettingsDrawerActivity
+     }
+ 
+     public void setDisplaySearchMenu(boolean displaySearch) {
+-        if (displaySearch != mDisplaySearch) {
++        if (Utils.isDeviceProvisioned(this) && displaySearch != mDisplaySearch) {
+             mDisplaySearch = displaySearch;
+             invalidateOptionsMenu();
+         }
+diff --git a/src/com/android/settings/SetupChooseLockGeneric.java b/src/com/android/settings/SetupChooseLockGeneric.java
+index 2c8195d707..0f516547e8 100644
+--- a/src/com/android/settings/SetupChooseLockGeneric.java
++++ b/src/com/android/settings/SetupChooseLockGeneric.java
+@@ -131,6 +131,11 @@ public class SetupChooseLockGeneric extends ChooseLockGeneric {
+             return layout.onCreateRecyclerView(inflater, parent, savedInstanceState);
+         }
+ 
++        @Override
++        protected boolean canRunBeforeDeviceProvisioned() {
++            return true;
++        }
++
+         /***
+          * Disables preferences that are less secure than required quality and shows only secure
+          * screen lock options here.
+diff --git a/tests/robotests/src/com/android/settings/ChooseLockGenericTest.java b/tests/robotests/src/com/android/settings/ChooseLockGenericTest.java
+new file mode 100644
+index 0000000000..e63d960b50
+--- /dev/null
++++ b/tests/robotests/src/com/android/settings/ChooseLockGenericTest.java
+@@ -0,0 +1,95 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License
++ */
++
++package com.android.settings;
++
++import static org.mockito.Mockito.spy;
++import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.when;
++
++import android.app.Activity;
++import android.app.FragmentHostCallback;
++import android.content.Context;
++import android.os.Bundle;
++import android.provider.Settings.Global;
++
++import com.android.settings.ChooseLockGeneric.ChooseLockGenericFragment;
++import com.android.settings.testutils.shadow.SettingsShadowResources;
++
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Test;
++import org.junit.runner.RunWith;
++import org.mockito.Mock;
++import org.mockito.MockitoAnnotations;
++import org.robolectric.RuntimeEnvironment;
++import org.robolectric.annotation.Config;
++import org.robolectric.util.ReflectionHelpers;
++
++@RunWith(SettingsRobolectricTestRunner.class)
++@Config(
++    manifest = TestConfig.MANIFEST_PATH,
++    sdk = TestConfig.SDK_VERSION,
++    shadows = {
++        SettingsShadowResources.class,
++        SettingsShadowResources.SettingsShadowTheme.class
++    })
++public class ChooseLockGenericTest {
++
++    @Mock
++    private ChooseLockGeneric mActivity;
++
++    private Context mContext;
++
++    @Before
++    public void setUp() {
++        MockitoAnnotations.initMocks(this);
++        mContext = RuntimeEnvironment.application;
++        when(mActivity.getContentResolver()).thenReturn(mContext.getContentResolver());
++        when(mActivity.getTheme()).thenReturn(mContext.getTheme());
++        when(mActivity.getResources()).thenReturn(mContext.getResources());
++    }
++
++    @After
++    public void tearDown() {
++        Global.putInt(mContext.getContentResolver(), Global.DEVICE_PROVISIONED, 1);
++    }
++
++    @Test
++    public void onCreate_deviceNotProvisioned_shouldFinishActivity() {
++        Global.putInt(mContext.getContentResolver(), Global.DEVICE_PROVISIONED, 0);
++        final ChooseLockGenericFragment fragment = spy(new ChooseLockGenericFragment());
++        when(fragment.getActivity()).thenReturn(mActivity);
++        ReflectionHelpers.setField(fragment, "mHost", new TestHostCallbacks());
++
++        fragment.onCreate(Bundle.EMPTY);
++
++        verify(mActivity).finish();
++    }
++
++    public class TestHostCallbacks extends FragmentHostCallback<Activity> {
++
++        public TestHostCallbacks() {
++            super(mActivity, null /* handler */, 0 /* windowAnimations */);
++        }
++
++        @Override
++        public Activity onGetHost() {
++          return mActivity;
++        }
++    }
++
++}
+diff --git a/tests/robotests/src/com/android/settings/SettingsActivityTest.java b/tests/robotests/src/com/android/settings/SettingsActivityTest.java
+index 65e9708395..ba926a017a 100644
+--- a/tests/robotests/src/com/android/settings/SettingsActivityTest.java
++++ b/tests/robotests/src/com/android/settings/SettingsActivityTest.java
+@@ -25,6 +25,7 @@ import android.content.Intent;
+ import android.graphics.Bitmap;
+ 
+ import android.os.Bundle;
++import android.provider.Settings.Global;
+ import android.view.Menu;
+ import com.android.settings.testutils.FakeFeatureFactory;
+ import org.junit.Before;
+@@ -80,11 +81,39 @@ public class SettingsActivityTest {
+         when(mActivity.getFragmentManager()).thenReturn(mFragmentManager);
+         when(mFragmentManager.beginTransaction()).thenReturn(mock(FragmentTransaction.class));
+ 
+-        doReturn(RuntimeEnvironment.application.getClassLoader()).when(mActivity).getClassLoader();
++        final Context context = RuntimeEnvironment.application;
++        doReturn(context.getClassLoader()).when(mActivity).getClassLoader();
++        doReturn(context.getContentResolver()).when(mActivity).getContentResolver();
+ 
+         mActivity.launchSettingFragment(null, true, mock(Intent.class));
+     }
+ 
++    @Test
++    public void launchSettingFragment_deviceNotProvisioned_shouldNotShowSearch() {
++        final Context context = RuntimeEnvironment.application;
++        Global.putInt(context.getContentResolver(), Global.DEVICE_PROVISIONED, 0);
++        when(mActivity.getFragmentManager()).thenReturn(mFragmentManager);
++        when(mFragmentManager.beginTransaction()).thenReturn(mock(FragmentTransaction.class));
++        doReturn(context.getClassLoader()).when(mActivity).getClassLoader();
++        doReturn(context.getContentResolver()).when(mActivity).getContentResolver();
++
++        mActivity.launchSettingFragment(null, true, mock(Intent.class));
++
++        assertThat(mActivity.mDisplaySearch).isFalse();
++    }
++
++    @Test
++    public void setDisplaySearchMenu_deviceNotProvisioned_shouldNotUpdate() {
++        final Context context = RuntimeEnvironment.application;
++        Global.putInt(context.getContentResolver(), Global.DEVICE_PROVISIONED, 0);
++        doReturn(context.getContentResolver()).when(mActivity).getContentResolver();
++        mActivity.mDisplaySearch = false;
++
++        mActivity.setDisplaySearchMenu(true);
++
++        assertThat(mActivity.mDisplaySearch).isFalse();
++    }
++
+     @Test
+     public void testSetTaskDescription_IconChanged() {
+         mActivity.setTaskDescription(mTaskDescription);
+-- 
+2.17.1
+

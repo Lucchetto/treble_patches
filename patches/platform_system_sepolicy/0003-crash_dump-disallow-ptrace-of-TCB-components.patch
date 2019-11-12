@@ -1,0 +1,56 @@
+From f0e6a70ab554c8e9fc80aa0f4ff5833ddd90d61b Mon Sep 17 00:00:00 2001
+From: Jeff Vander Stoep <jeffv@google.com>
+Date: Wed, 13 Jun 2018 22:10:37 -0700
+Subject: [PATCH 03/33] crash_dump: disallow ptrace of TCB components
+
+Remove permissions and add neverallow assertion.
+
+Bug: 110107376
+Test: kill -6 <components excluded from ptrace>
+Change-Id: If8b9c932af03a551e40e786d591544ecdd4e5c98
+Merged-In: If8b9c932af03a551e40e786d591544ecdd4e5c98
+(cherry picked from commit f1554f1588eab05eca7eb7ccba41d5955a563837)
+---
+ private/crash_dump.te | 11 +++++++++++
+ public/crash_dump.te  |  8 --------
+ 2 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/private/crash_dump.te b/private/crash_dump.te
+index fb73f08a9..56693fdaa 100644
+--- a/private/crash_dump.te
++++ b/private/crash_dump.te
+@@ -1 +1,12 @@
+ typeattribute crash_dump coredomain;
++
++allow crash_dump {
++  domain
++  -crash_dump
++  -init
++  -kernel
++  -keystore
++  -logd
++  -ueventd
++  -vold
++}:process { ptrace signal sigchld sigstop sigkill };
+diff --git a/public/crash_dump.te b/public/crash_dump.te
+index ee617a171..9ff6439dc 100644
+--- a/public/crash_dump.te
++++ b/public/crash_dump.te
+@@ -1,14 +1,6 @@
+ type crash_dump, domain;
+ type crash_dump_exec, exec_type, file_type;
+ 
+-allow crash_dump {
+-  domain
+-  -init
+-  -crash_dump
+-  -keystore
+-  -logd
+-}:process { ptrace signal sigchld sigstop sigkill };
+-
+ # crash_dump might inherit CAP_SYS_PTRACE from a privileged process,
+ # which will result in an audit log even when it's allowed to trace.
+ dontaudit crash_dump self:capability { sys_ptrace };
+-- 
+2.17.1
+

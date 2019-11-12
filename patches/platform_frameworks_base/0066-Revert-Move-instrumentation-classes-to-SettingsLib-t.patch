@@ -1,0 +1,1261 @@
+From 8a7f03d06956bce87a94604f88e967d5628ce254 Mon Sep 17 00:00:00 2001
+From: Leif Wilden <leifhendrik@google.com>
+Date: Mon, 22 Jan 2018 20:21:33 +0000
+Subject: [PATCH 066/306] Revert "Move instrumentation classes to SettingsLib
+ to share between mobile/TV."
+
+This reverts commit 58dccbe1e23c7ecb77c5716fe31d5c9d549124ff.
+
+Reason for revert: Broke fingerprint setup flow. b/72267201
+
+Change-Id: I9901d0ec077ff0a5b50f59a9f1b1c6156f6f09bd
+(cherry picked from commit 2e9781034f796826727a55ad36f8213a8d7452fb)
+---
+ .../core/instrumentation/EventLogWriter.java  | 110 --------
+ .../core/instrumentation/Instrumentable.java  |  28 --
+ .../core/instrumentation/LogWriter.java       |  84 ------
+ .../MetricsFeatureProvider.java               | 159 -----------
+ .../SharedPreferencesLogger.java              | 259 ------------------
+ .../VisibilityLoggerMixin.java                |  96 -------
+ .../MetricsFeatureProviderTest.java           | 132 ---------
+ .../SharedPreferenceLoggerTest.java           | 181 ------------
+ .../VisibilityLoggerMixinTest.java            | 122 ---------
+ 9 files changed, 1171 deletions(-)
+ delete mode 100644 packages/SettingsLib/src/com/android/settingslib/core/instrumentation/EventLogWriter.java
+ delete mode 100644 packages/SettingsLib/src/com/android/settingslib/core/instrumentation/Instrumentable.java
+ delete mode 100644 packages/SettingsLib/src/com/android/settingslib/core/instrumentation/LogWriter.java
+ delete mode 100644 packages/SettingsLib/src/com/android/settingslib/core/instrumentation/MetricsFeatureProvider.java
+ delete mode 100644 packages/SettingsLib/src/com/android/settingslib/core/instrumentation/SharedPreferencesLogger.java
+ delete mode 100644 packages/SettingsLib/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixin.java
+ delete mode 100644 packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/MetricsFeatureProviderTest.java
+ delete mode 100644 packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/SharedPreferenceLoggerTest.java
+ delete mode 100644 packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixinTest.java
+
+diff --git a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/EventLogWriter.java b/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/EventLogWriter.java
+deleted file mode 100644
+index 72273046ef2..00000000000
+--- a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/EventLogWriter.java
++++ /dev/null
+@@ -1,110 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.settingslib.core.instrumentation;
+-
+-import android.content.Context;
+-import android.metrics.LogMaker;
+-import android.util.Log;
+-import android.util.Pair;
+-
+-import com.android.internal.logging.MetricsLogger;
+-import com.android.internal.logging.nano.MetricsProto;
+-
+-/**
+- * {@link LogWriter} that writes data to eventlog.
+- */
+-public class EventLogWriter implements LogWriter {
+-
+-    private final MetricsLogger mMetricsLogger = new MetricsLogger();
+-
+-    public void visible(Context context, int source, int category) {
+-        final LogMaker logMaker = new LogMaker(category)
+-                .setType(MetricsProto.MetricsEvent.TYPE_OPEN)
+-                .addTaggedData(MetricsProto.MetricsEvent.FIELD_CONTEXT, source);
+-        MetricsLogger.action(logMaker);
+-    }
+-
+-    public void hidden(Context context, int category) {
+-        MetricsLogger.hidden(context, category);
+-    }
+-
+-    public void action(int category, int value, Pair<Integer, Object>... taggedData) {
+-        if (taggedData == null || taggedData.length == 0) {
+-            mMetricsLogger.action(category, value);
+-        } else {
+-            final LogMaker logMaker = new LogMaker(category)
+-                    .setType(MetricsProto.MetricsEvent.TYPE_ACTION)
+-                    .setSubtype(value);
+-            for (Pair<Integer, Object> pair : taggedData) {
+-                logMaker.addTaggedData(pair.first, pair.second);
+-            }
+-            mMetricsLogger.write(logMaker);
+-        }
+-    }
+-
+-    public void action(int category, boolean value, Pair<Integer, Object>... taggedData) {
+-        action(category, value ? 1 : 0, taggedData);
+-    }
+-
+-    public void action(Context context, int category, Pair<Integer, Object>... taggedData) {
+-        action(context, category, "", taggedData);
+-    }
+-
+-    public void actionWithSource(Context context, int source, int category) {
+-        final LogMaker logMaker = new LogMaker(category)
+-                .setType(MetricsProto.MetricsEvent.TYPE_ACTION);
+-        if (source != MetricsProto.MetricsEvent.VIEW_UNKNOWN) {
+-            logMaker.addTaggedData(MetricsProto.MetricsEvent.FIELD_CONTEXT, source);
+-        }
+-        MetricsLogger.action(logMaker);
+-    }
+-
+-    /** @deprecated use {@link #action(int, int, Pair[])} */
+-    @Deprecated
+-    public void action(Context context, int category, int value) {
+-        MetricsLogger.action(context, category, value);
+-    }
+-
+-    /** @deprecated use {@link #action(int, boolean, Pair[])} */
+-    @Deprecated
+-    public void action(Context context, int category, boolean value) {
+-        MetricsLogger.action(context, category, value);
+-    }
+-
+-    public void action(Context context, int category, String pkg,
+-            Pair<Integer, Object>... taggedData) {
+-        if (taggedData == null || taggedData.length == 0) {
+-            MetricsLogger.action(context, category, pkg);
+-        } else {
+-            final LogMaker logMaker = new LogMaker(category)
+-                    .setType(MetricsProto.MetricsEvent.TYPE_ACTION)
+-                    .setPackageName(pkg);
+-            for (Pair<Integer, Object> pair : taggedData) {
+-                logMaker.addTaggedData(pair.first, pair.second);
+-            }
+-            MetricsLogger.action(logMaker);
+-        }
+-    }
+-
+-    public void count(Context context, String name, int value) {
+-        MetricsLogger.count(context, name, value);
+-    }
+-
+-    public void histogram(Context context, String name, int bucket) {
+-        MetricsLogger.histogram(context, name, bucket);
+-    }
+-}
+diff --git a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/Instrumentable.java b/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/Instrumentable.java
+deleted file mode 100644
+index dbc61c26e82..00000000000
+--- a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/Instrumentable.java
++++ /dev/null
+@@ -1,28 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.settingslib.core.instrumentation;
+-
+-public interface Instrumentable {
+-
+-    int METRICS_CATEGORY_UNKNOWN = 0;
+-
+-    /**
+-     * Instrumented name for a view as defined in
+-     * {@link com.android.internal.logging.nano.MetricsProto.MetricsEvent}.
+-     */
+-    int getMetricsCategory();
+-}
+diff --git a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/LogWriter.java b/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/LogWriter.java
+deleted file mode 100644
+index 4b9f5727208..00000000000
+--- a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/LogWriter.java
++++ /dev/null
+@@ -1,84 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.settingslib.core.instrumentation;
+-
+-import android.content.Context;
+-import android.util.Pair;
+-
+-/**
+- * Generic log writer interface.
+- */
+-public interface LogWriter {
+-
+-    /**
+-     * Logs a visibility event when view becomes visible.
+-     */
+-    void visible(Context context, int source, int category);
+-
+-    /**
+-     * Logs a visibility event when view becomes hidden.
+-     */
+-    void hidden(Context context, int category);
+-
+-    /**
+-     * Logs a user action.
+-     */
+-    void action(int category, int value, Pair<Integer, Object>... taggedData);
+-
+-    /**
+-     * Logs a user action.
+-     */
+-    void action(int category, boolean value, Pair<Integer, Object>... taggedData);
+-
+-    /**
+-     * Logs an user action.
+-     */
+-    void action(Context context, int category, Pair<Integer, Object>... taggedData);
+-
+-    /**
+-     * Logs an user action.
+-     */
+-    void actionWithSource(Context context, int source, int category);
+-
+-    /**
+-     * Logs an user action.
+-     * @deprecated use {@link #action(int, int, Pair[])}
+-     */
+-    @Deprecated
+-    void action(Context context, int category, int value);
+-
+-    /**
+-     * Logs an user action.
+-     * @deprecated use {@link #action(int, boolean, Pair[])}
+-     */
+-    @Deprecated
+-    void action(Context context, int category, boolean value);
+-
+-    /**
+-     * Logs an user action.
+-     */
+-    void action(Context context, int category, String pkg, Pair<Integer, Object>... taggedData);
+-
+-    /**
+-     * Logs a count.
+-     */
+-    void count(Context context, String name, int value);
+-
+-    /**
+-     * Logs a histogram event.
+-     */
+-    void histogram(Context context, String name, int bucket);
+-}
+diff --git a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/MetricsFeatureProvider.java b/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/MetricsFeatureProvider.java
+deleted file mode 100644
+index 1e5b378e931..00000000000
+--- a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/MetricsFeatureProvider.java
++++ /dev/null
+@@ -1,159 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.settingslib.core.instrumentation;
+-
+-import android.content.ComponentName;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.text.TextUtils;
+-import android.util.Pair;
+-
+-import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+-
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-/**
+- * FeatureProvider for metrics.
+- */
+-public class MetricsFeatureProvider {
+-    private List<LogWriter> mLoggerWriters;
+-
+-    public MetricsFeatureProvider() {
+-        mLoggerWriters = new ArrayList<>();
+-        installLogWriters();
+-    }
+-
+-    protected void installLogWriters() {
+-        mLoggerWriters.add(new EventLogWriter());
+-    }
+-
+-    public void visible(Context context, int source, int category) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.visible(context, source, category);
+-        }
+-    }
+-
+-    public void hidden(Context context, int category) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.hidden(context, category);
+-        }
+-    }
+-
+-    public void actionWithSource(Context context, int source, int category) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.actionWithSource(context, source, category);
+-        }
+-    }
+-
+-    /**
+-     * Logs a user action. Includes the elapsed time since the containing
+-     * fragment has been visible.
+-     */
+-    public void action(VisibilityLoggerMixin visibilityLogger, int category, int value) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.action(category, value,
+-                    sinceVisibleTaggedData(visibilityLogger.elapsedTimeSinceVisible()));
+-        }
+-    }
+-
+-    /**
+-     * Logs a user action. Includes the elapsed time since the containing
+-     * fragment has been visible.
+-     */
+-    public void action(VisibilityLoggerMixin visibilityLogger, int category, boolean value) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.action(category, value,
+-                    sinceVisibleTaggedData(visibilityLogger.elapsedTimeSinceVisible()));
+-        }
+-    }
+-
+-    public void action(Context context, int category, Pair<Integer, Object>... taggedData) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.action(context, category, taggedData);
+-        }
+-    }
+-
+-    /** @deprecated use {@link #action(VisibilityLoggerMixin, int, int)} */
+-    @Deprecated
+-    public void action(Context context, int category, int value) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.action(context, category, value);
+-        }
+-    }
+-
+-    /** @deprecated use {@link #action(VisibilityLoggerMixin, int, boolean)} */
+-    @Deprecated
+-    public void action(Context context, int category, boolean value) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.action(context, category, value);
+-        }
+-    }
+-
+-    public void action(Context context, int category, String pkg,
+-            Pair<Integer, Object>... taggedData) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.action(context, category, pkg, taggedData);
+-        }
+-    }
+-
+-    public void count(Context context, String name, int value) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.count(context, name, value);
+-        }
+-    }
+-
+-    public void histogram(Context context, String name, int bucket) {
+-        for (LogWriter writer : mLoggerWriters) {
+-            writer.histogram(context, name, bucket);
+-        }
+-    }
+-
+-    public int getMetricsCategory(Object object) {
+-        if (object == null || !(object instanceof Instrumentable)) {
+-            return MetricsEvent.VIEW_UNKNOWN;
+-        }
+-        return ((Instrumentable) object).getMetricsCategory();
+-    }
+-
+-    public void logDashboardStartIntent(Context context, Intent intent,
+-            int sourceMetricsCategory) {
+-        if (intent == null) {
+-            return;
+-        }
+-        final ComponentName cn = intent.getComponent();
+-        if (cn == null) {
+-            final String action = intent.getAction();
+-            if (TextUtils.isEmpty(action)) {
+-                // Not loggable
+-                return;
+-            }
+-            action(context, MetricsEvent.ACTION_SETTINGS_TILE_CLICK, action,
+-                    Pair.create(MetricsEvent.FIELD_CONTEXT, sourceMetricsCategory));
+-            return;
+-        } else if (TextUtils.equals(cn.getPackageName(), context.getPackageName())) {
+-            // Going to a Setting internal page, skip click logging in favor of page's own
+-            // visibility logging.
+-            return;
+-        }
+-        action(context, MetricsEvent.ACTION_SETTINGS_TILE_CLICK, cn.flattenToString(),
+-                Pair.create(MetricsEvent.FIELD_CONTEXT, sourceMetricsCategory));
+-    }
+-
+-    private Pair<Integer, Object> sinceVisibleTaggedData(long timestamp) {
+-        return Pair.create(MetricsEvent.NOTIFICATION_SINCE_VISIBLE_MILLIS, timestamp);
+-    }
+-}
+diff --git a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/SharedPreferencesLogger.java b/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/SharedPreferencesLogger.java
+deleted file mode 100644
+index facce4e0bcb..00000000000
+--- a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/SharedPreferencesLogger.java
++++ /dev/null
+@@ -1,259 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+- * except in compliance with the License. You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software distributed under the
+- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+- * KIND, either express or implied. See the License for the specific language governing
+- * permissions and limitations under the License.
+- */
+-
+-package com.android.settingslib.core.instrumentation;
+-
+-import android.annotation.Nullable;
+-import android.content.ComponentName;
+-import android.content.Context;
+-import android.content.SharedPreferences;
+-import android.content.pm.PackageManager;
+-import android.os.AsyncTask;
+-import android.support.annotation.VisibleForTesting;
+-import android.text.TextUtils;
+-import android.util.Log;
+-import android.util.Pair;
+-
+-import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+-
+-import java.util.Map;
+-import java.util.Set;
+-import java.util.concurrent.ConcurrentSkipListSet;
+-
+-public class SharedPreferencesLogger implements SharedPreferences {
+-
+-    private static final String LOG_TAG = "SharedPreferencesLogger";
+-
+-    private final String mTag;
+-    private final Context mContext;
+-    private final MetricsFeatureProvider mMetricsFeature;
+-    private final Set<String> mPreferenceKeySet;
+-
+-    public SharedPreferencesLogger(Context context, String tag,
+-            MetricsFeatureProvider metricsFeature) {
+-        mContext = context;
+-        mTag = tag;
+-        mMetricsFeature = metricsFeature;
+-        mPreferenceKeySet = new ConcurrentSkipListSet<>();
+-    }
+-
+-    @Override
+-    public Map<String, ?> getAll() {
+-        return null;
+-    }
+-
+-    @Override
+-    public String getString(String key, @Nullable String defValue) {
+-        return defValue;
+-    }
+-
+-    @Override
+-    public Set<String> getStringSet(String key, @Nullable Set<String> defValues) {
+-        return defValues;
+-    }
+-
+-    @Override
+-    public int getInt(String key, int defValue) {
+-        return defValue;
+-    }
+-
+-    @Override
+-    public long getLong(String key, long defValue) {
+-        return defValue;
+-    }
+-
+-    @Override
+-    public float getFloat(String key, float defValue) {
+-        return defValue;
+-    }
+-
+-    @Override
+-    public boolean getBoolean(String key, boolean defValue) {
+-        return defValue;
+-    }
+-
+-    @Override
+-    public boolean contains(String key) {
+-        return false;
+-    }
+-
+-    @Override
+-    public Editor edit() {
+-        return new EditorLogger();
+-    }
+-
+-    @Override
+-    public void registerOnSharedPreferenceChangeListener(
+-            OnSharedPreferenceChangeListener listener) {
+-    }
+-
+-    @Override
+-    public void unregisterOnSharedPreferenceChangeListener(
+-            OnSharedPreferenceChangeListener listener) {
+-    }
+-
+-    private void logValue(String key, Object value) {
+-        logValue(key, value, false /* forceLog */);
+-    }
+-
+-    private void logValue(String key, Object value, boolean forceLog) {
+-        final String prefKey = buildPrefKey(mTag, key);
+-        if (!forceLog && !mPreferenceKeySet.contains(prefKey)) {
+-            // Pref key doesn't exist in set, this is initial display so we skip metrics but
+-            // keeps track of this key.
+-            mPreferenceKeySet.add(prefKey);
+-            return;
+-        }
+-        // TODO: Remove count logging to save some resource.
+-        mMetricsFeature.count(mContext, buildCountName(prefKey, value), 1);
+-
+-        final Pair<Integer, Object> valueData;
+-        if (value instanceof Long) {
+-            final Long longVal = (Long) value;
+-            final int intVal;
+-            if (longVal > Integer.MAX_VALUE) {
+-                intVal = Integer.MAX_VALUE;
+-            } else if (longVal < Integer.MIN_VALUE) {
+-                intVal = Integer.MIN_VALUE;
+-            } else {
+-                intVal = longVal.intValue();
+-            }
+-            valueData = Pair.create(MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE,
+-                    intVal);
+-        } else if (value instanceof Integer) {
+-            valueData = Pair.create(MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE,
+-                    value);
+-        } else if (value instanceof Boolean) {
+-            valueData = Pair.create(MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE,
+-                    (Boolean) value ? 1 : 0);
+-        } else if (value instanceof Float) {
+-            valueData = Pair.create(MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_FLOAT_VALUE,
+-                    value);
+-        } else if (value instanceof String) {
+-            Log.d(LOG_TAG, "Tried to log string preference " + prefKey + " = " + value);
+-            valueData = null;
+-        } else {
+-            Log.w(LOG_TAG, "Tried to log unloggable object" + value);
+-            valueData = null;
+-        }
+-        if (valueData != null) {
+-            // Pref key exists in set, log it's change in metrics.
+-            mMetricsFeature.action(mContext, MetricsEvent.ACTION_SETTINGS_PREFERENCE_CHANGE,
+-                    Pair.create(MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_NAME, prefKey),
+-                    valueData);
+-        }
+-    }
+-
+-    @VisibleForTesting
+-    void logPackageName(String key, String value) {
+-        final String prefKey = mTag + "/" + key;
+-        mMetricsFeature.action(mContext, MetricsEvent.ACTION_SETTINGS_PREFERENCE_CHANGE, value,
+-                Pair.create(MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_NAME, prefKey));
+-    }
+-
+-    private void safeLogValue(String key, String value) {
+-        new AsyncPackageCheck().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, key, value);
+-    }
+-
+-    public static String buildCountName(String prefKey, Object value) {
+-        return prefKey + "|" + value;
+-    }
+-
+-    public static String buildPrefKey(String tag, String key) {
+-        return tag + "/" + key;
+-    }
+-
+-    private class AsyncPackageCheck extends AsyncTask<String, Void, Void> {
+-        @Override
+-        protected Void doInBackground(String... params) {
+-            String key = params[0];
+-            String value = params[1];
+-            PackageManager pm = mContext.getPackageManager();
+-            try {
+-                // Check if this might be a component.
+-                ComponentName name = ComponentName.unflattenFromString(value);
+-                if (value != null) {
+-                    value = name.getPackageName();
+-                }
+-            } catch (Exception e) {
+-            }
+-            try {
+-                pm.getPackageInfo(value, PackageManager.MATCH_ANY_USER);
+-                logPackageName(key, value);
+-            } catch (PackageManager.NameNotFoundException e) {
+-                // Clearly not a package, and it's unlikely this preference is in prefSet, so
+-                // lets force log it.
+-                logValue(key, value, true /* forceLog */);
+-            }
+-            return null;
+-        }
+-    }
+-
+-    public class EditorLogger implements Editor {
+-        @Override
+-        public Editor putString(String key, @Nullable String value) {
+-            safeLogValue(key, value);
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor putStringSet(String key, @Nullable Set<String> values) {
+-            safeLogValue(key, TextUtils.join(",", values));
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor putInt(String key, int value) {
+-            logValue(key, value);
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor putLong(String key, long value) {
+-            logValue(key, value);
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor putFloat(String key, float value) {
+-            logValue(key, value);
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor putBoolean(String key, boolean value) {
+-            logValue(key, value);
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor remove(String key) {
+-            return this;
+-        }
+-
+-        @Override
+-        public Editor clear() {
+-            return this;
+-        }
+-
+-        @Override
+-        public boolean commit() {
+-            return true;
+-        }
+-
+-        @Override
+-        public void apply() {
+-        }
+-    }
+-}
+diff --git a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixin.java b/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixin.java
+deleted file mode 100644
+index 79838962ef1..00000000000
+--- a/packages/SettingsLib/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixin.java
++++ /dev/null
+@@ -1,96 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package com.android.settingslib.core.instrumentation;
+-
+-import android.app.Activity;
+-import android.content.Context;
+-import android.content.Intent;
+-
+-import android.os.SystemClock;
+-import com.android.internal.logging.nano.MetricsProto;
+-import com.android.settingslib.core.lifecycle.LifecycleObserver;
+-import com.android.settingslib.core.lifecycle.events.OnPause;
+-import com.android.settingslib.core.lifecycle.events.OnResume;
+-
+-import static com.android.settingslib.core.instrumentation.Instrumentable.METRICS_CATEGORY_UNKNOWN;
+-
+-/**
+- * Logs visibility change of a fragment.
+- */
+-public class VisibilityLoggerMixin implements LifecycleObserver, OnResume, OnPause {
+-
+-    private static final String TAG = "VisibilityLoggerMixin";
+-
+-    private final int mMetricsCategory;
+-
+-    private MetricsFeatureProvider mMetricsFeature;
+-    private int mSourceMetricsCategory = MetricsProto.MetricsEvent.VIEW_UNKNOWN;
+-    private long mVisibleTimestamp;
+-
+-    /**
+-     * The metrics category constant for logging source when a setting fragment is opened.
+-     */
+-    public static final String EXTRA_SOURCE_METRICS_CATEGORY = ":settings:source_metrics";
+-
+-    private VisibilityLoggerMixin() {
+-        mMetricsCategory = METRICS_CATEGORY_UNKNOWN;
+-    }
+-
+-    public VisibilityLoggerMixin(int metricsCategory, MetricsFeatureProvider metricsFeature) {
+-        mMetricsCategory = metricsCategory;
+-        mMetricsFeature = metricsFeature;
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        mVisibleTimestamp = SystemClock.elapsedRealtime();
+-        if (mMetricsFeature != null && mMetricsCategory != METRICS_CATEGORY_UNKNOWN) {
+-            mMetricsFeature.visible(null /* context */, mSourceMetricsCategory, mMetricsCategory);
+-        }
+-    }
+-
+-    @Override
+-    public void onPause() {
+-        mVisibleTimestamp = 0;
+-        if (mMetricsFeature != null && mMetricsCategory != METRICS_CATEGORY_UNKNOWN) {
+-            mMetricsFeature.hidden(null /* context */, mMetricsCategory);
+-        }
+-    }
+-
+-    /**
+-     * Sets source metrics category for this logger. Source is the caller that opened this UI.
+-     */
+-    public void setSourceMetricsCategory(Activity activity) {
+-        if (mSourceMetricsCategory != MetricsProto.MetricsEvent.VIEW_UNKNOWN || activity == null) {
+-            return;
+-        }
+-        final Intent intent = activity.getIntent();
+-        if (intent == null) {
+-            return;
+-        }
+-        mSourceMetricsCategory = intent.getIntExtra(EXTRA_SOURCE_METRICS_CATEGORY,
+-                MetricsProto.MetricsEvent.VIEW_UNKNOWN);
+-    }
+-
+-    /** Returns elapsed time since onResume() */
+-    public long elapsedTimeSinceVisible() {
+-        if (mVisibleTimestamp == 0) {
+-            return 0;
+-        }
+-        return SystemClock.elapsedRealtime() - mVisibleTimestamp;
+-    }
+-}
+diff --git a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/MetricsFeatureProviderTest.java b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/MetricsFeatureProviderTest.java
+deleted file mode 100644
+index 8bea51d1696..00000000000
+--- a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/MetricsFeatureProviderTest.java
++++ /dev/null
+@@ -1,132 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.settingslib.core.instrumentation;
+-
+-import static com.google.common.truth.Truth.assertThat;
+-import static org.mockito.Matchers.anyString;
+-import static org.mockito.Matchers.eq;
+-import static org.mockito.Mockito.verify;
+-import static org.mockito.Mockito.verifyNoMoreInteractions;
+-import static org.mockito.Mockito.when;
+-
+-import android.content.ComponentName;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.util.Pair;
+-
+-import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+-import com.android.settingslib.TestConfig;
+-import com.android.settingslib.SettingsLibRobolectricTestRunner;
+-
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.junit.runner.RunWith;
+-import org.mockito.ArgumentCaptor;
+-import org.mockito.Captor;
+-import org.mockito.Mock;
+-import org.mockito.MockitoAnnotations;
+-import org.robolectric.RuntimeEnvironment;
+-import org.robolectric.annotation.Config;
+-import org.robolectric.util.ReflectionHelpers;
+-
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-@RunWith(SettingsLibRobolectricTestRunner.class)
+-@Config(manifest = TestConfig.MANIFEST_PATH, sdk = TestConfig.SDK_VERSION)
+-public class MetricsFeatureProviderTest {
+-    private static int CATEGORY = 10;
+-    private static boolean SUBTYPE_BOOLEAN = true;
+-    private static int SUBTYPE_INTEGER = 1;
+-    private static long ELAPSED_TIME = 1000;
+-
+-    @Mock private LogWriter mockLogWriter;
+-    @Mock private VisibilityLoggerMixin mockVisibilityLogger;
+-
+-    private Context mContext;
+-    private MetricsFeatureProvider mProvider;
+-
+-    @Captor
+-    private ArgumentCaptor<Pair> mPairCaptor;
+-
+-    @Before
+-    public void setUp() {
+-        MockitoAnnotations.initMocks(this);
+-        mContext = RuntimeEnvironment.application;
+-        mProvider = new MetricsFeatureProvider();
+-        List<LogWriter> writers = new ArrayList<>();
+-        writers.add(mockLogWriter);
+-        ReflectionHelpers.setField(mProvider, "mLoggerWriters", writers);
+-
+-        when(mockVisibilityLogger.elapsedTimeSinceVisible()).thenReturn(ELAPSED_TIME);
+-    }
+-
+-    @Test
+-    public void logDashboardStartIntent_intentEmpty_shouldNotLog() {
+-        mProvider.logDashboardStartIntent(mContext, null /* intent */,
+-                MetricsEvent.SETTINGS_GESTURES);
+-
+-        verifyNoMoreInteractions(mockLogWriter);
+-    }
+-
+-    @Test
+-    public void logDashboardStartIntent_intentHasNoComponent_shouldLog() {
+-        final Intent intent = new Intent(Intent.ACTION_ASSIST);
+-
+-        mProvider.logDashboardStartIntent(mContext, intent, MetricsEvent.SETTINGS_GESTURES);
+-
+-        verify(mockLogWriter).action(
+-                eq(mContext),
+-                eq(MetricsEvent.ACTION_SETTINGS_TILE_CLICK),
+-                anyString(),
+-                eq(Pair.create(MetricsEvent.FIELD_CONTEXT, MetricsEvent.SETTINGS_GESTURES)));
+-    }
+-
+-    @Test
+-    public void logDashboardStartIntent_intentIsExternal_shouldLog() {
+-        final Intent intent = new Intent().setComponent(new ComponentName("pkg", "cls"));
+-
+-        mProvider.logDashboardStartIntent(mContext, intent, MetricsEvent.SETTINGS_GESTURES);
+-
+-        verify(mockLogWriter).action(
+-                eq(mContext),
+-                eq(MetricsEvent.ACTION_SETTINGS_TILE_CLICK),
+-                anyString(),
+-                eq(Pair.create(MetricsEvent.FIELD_CONTEXT, MetricsEvent.SETTINGS_GESTURES)));
+-    }
+-
+-    @Test
+-    public void action_BooleanLogsElapsedTime() {
+-        mProvider.action(mockVisibilityLogger, CATEGORY, SUBTYPE_BOOLEAN);
+-        verify(mockLogWriter).action(eq(CATEGORY), eq(SUBTYPE_BOOLEAN), mPairCaptor.capture());
+-
+-        Pair value = mPairCaptor.getValue();
+-        assertThat(value.first instanceof Integer).isTrue();
+-        assertThat((int) value.first).isEqualTo(MetricsEvent.NOTIFICATION_SINCE_VISIBLE_MILLIS);
+-        assertThat(value.second).isEqualTo(ELAPSED_TIME);
+-    }
+-
+-    @Test
+-    public void action_IntegerLogsElapsedTime() {
+-        mProvider.action(mockVisibilityLogger, CATEGORY, SUBTYPE_INTEGER);
+-        verify(mockLogWriter).action(eq(CATEGORY), eq(SUBTYPE_INTEGER), mPairCaptor.capture());
+-
+-        Pair value = mPairCaptor.getValue();
+-        assertThat(value.first instanceof Integer).isTrue();
+-        assertThat((int) value.first).isEqualTo(MetricsEvent.NOTIFICATION_SINCE_VISIBLE_MILLIS);
+-        assertThat(value.second).isEqualTo(ELAPSED_TIME);
+-    }
+-}
+diff --git a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/SharedPreferenceLoggerTest.java b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/SharedPreferenceLoggerTest.java
+deleted file mode 100644
+index d558a645aeb..00000000000
+--- a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/SharedPreferenceLoggerTest.java
++++ /dev/null
+@@ -1,181 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.settingslib.core.instrumentation;
+-
+-import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.ACTION_SETTINGS_PREFERENCE_CHANGE;
+-import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_FLOAT_VALUE;
+-import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE;
+-import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.FIELD_SETTINGS_PREFERENCE_CHANGE_NAME;
+-import static org.mockito.Matchers.any;
+-import static org.mockito.Matchers.anyInt;
+-import static org.mockito.Matchers.argThat;
+-import static org.mockito.Matchers.eq;
+-import static org.mockito.Mockito.times;
+-import static org.mockito.Mockito.verify;
+-
+-import android.content.Context;
+-import android.content.SharedPreferences;
+-import android.util.Pair;
+-
+-import com.android.settingslib.TestConfig;
+-import com.android.settingslib.SettingsLibRobolectricTestRunner;
+-
+-import com.google.common.truth.Platform;
+-
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.junit.runner.RunWith;
+-import org.mockito.Answers;
+-import org.mockito.ArgumentMatcher;
+-import org.mockito.Mock;
+-import org.mockito.MockitoAnnotations;
+-import org.robolectric.annotation.Config;
+-
+-@RunWith(SettingsLibRobolectricTestRunner.class)
+-@Config(manifest = TestConfig.MANIFEST_PATH, sdk = TestConfig.SDK_VERSION)
+-public class SharedPreferenceLoggerTest {
+-
+-    private static final String TEST_TAG = "tag";
+-    private static final String TEST_KEY = "key";
+-
+-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+-    private Context mContext;
+-
+-    private ArgumentMatcher<Pair<Integer, Object>> mNamePairMatcher;
+-    @Mock
+-    private MetricsFeatureProvider mMetricsFeature;
+-    private SharedPreferencesLogger mSharedPrefLogger;
+-
+-    @Before
+-    public void init() {
+-        MockitoAnnotations.initMocks(this);
+-        mSharedPrefLogger = new SharedPreferencesLogger(mContext, TEST_TAG, mMetricsFeature);
+-        mNamePairMatcher = pairMatches(FIELD_SETTINGS_PREFERENCE_CHANGE_NAME, String.class);
+-    }
+-
+-    @Test
+-    public void putInt_shouldNotLogInitialPut() {
+-        final SharedPreferences.Editor editor = mSharedPrefLogger.edit();
+-        editor.putInt(TEST_KEY, 1);
+-        editor.putInt(TEST_KEY, 1);
+-        editor.putInt(TEST_KEY, 1);
+-        editor.putInt(TEST_KEY, 2);
+-        editor.putInt(TEST_KEY, 2);
+-        editor.putInt(TEST_KEY, 2);
+-        editor.putInt(TEST_KEY, 2);
+-
+-        verify(mMetricsFeature, times(6)).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE, Integer.class)));
+-    }
+-
+-    @Test
+-    public void putBoolean_shouldNotLogInitialPut() {
+-        final SharedPreferences.Editor editor = mSharedPrefLogger.edit();
+-        editor.putBoolean(TEST_KEY, true);
+-        editor.putBoolean(TEST_KEY, true);
+-        editor.putBoolean(TEST_KEY, false);
+-        editor.putBoolean(TEST_KEY, false);
+-        editor.putBoolean(TEST_KEY, false);
+-
+-
+-        verify(mMetricsFeature).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE, true)));
+-        verify(mMetricsFeature, times(3)).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE, false)));
+-    }
+-
+-    @Test
+-    public void putLong_shouldNotLogInitialPut() {
+-        final SharedPreferences.Editor editor = mSharedPrefLogger.edit();
+-        editor.putLong(TEST_KEY, 1);
+-        editor.putLong(TEST_KEY, 1);
+-        editor.putLong(TEST_KEY, 1);
+-        editor.putLong(TEST_KEY, 1);
+-        editor.putLong(TEST_KEY, 2);
+-
+-        verify(mMetricsFeature, times(4)).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE, Integer.class)));
+-    }
+-
+-    @Test
+-    public void putLong_biggerThanIntMax_shouldLogIntMax() {
+-        final SharedPreferences.Editor editor = mSharedPrefLogger.edit();
+-        final long veryBigNumber = 500L + Integer.MAX_VALUE;
+-        editor.putLong(TEST_KEY, 1);
+-        editor.putLong(TEST_KEY, veryBigNumber);
+-
+-        verify(mMetricsFeature).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(
+-                        FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE, Integer.MAX_VALUE)));
+-    }
+-
+-    @Test
+-    public void putLong_smallerThanIntMin_shouldLogIntMin() {
+-        final SharedPreferences.Editor editor = mSharedPrefLogger.edit();
+-        final long veryNegativeNumber = -500L + Integer.MIN_VALUE;
+-        editor.putLong(TEST_KEY, 1);
+-        editor.putLong(TEST_KEY, veryNegativeNumber);
+-
+-        verify(mMetricsFeature).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(
+-                        FIELD_SETTINGS_PREFERENCE_CHANGE_INT_VALUE, Integer.MIN_VALUE)));
+-    }
+-
+-    @Test
+-    public void putFloat_shouldNotLogInitialPut() {
+-        final SharedPreferences.Editor editor = mSharedPrefLogger.edit();
+-        editor.putFloat(TEST_KEY, 1);
+-        editor.putFloat(TEST_KEY, 1);
+-        editor.putFloat(TEST_KEY, 1);
+-        editor.putFloat(TEST_KEY, 1);
+-        editor.putFloat(TEST_KEY, 2);
+-
+-        verify(mMetricsFeature, times(4)).action(any(Context.class), anyInt(),
+-                argThat(mNamePairMatcher),
+-                argThat(pairMatches(FIELD_SETTINGS_PREFERENCE_CHANGE_FLOAT_VALUE, Float.class)));
+-    }
+-
+-    @Test
+-    public void logPackage_shouldUseLogPackageApi() {
+-        mSharedPrefLogger.logPackageName("key", "com.android.settings");
+-        verify(mMetricsFeature).action(any(Context.class),
+-                eq(ACTION_SETTINGS_PREFERENCE_CHANGE),
+-                eq("com.android.settings"),
+-                any(Pair.class));
+-    }
+-
+-    private ArgumentMatcher<Pair<Integer, Object>> pairMatches(int tag, Class clazz) {
+-        return pair -> pair.first == tag && Platform.isInstanceOfType(pair.second, clazz);
+-    }
+-
+-    private ArgumentMatcher<Pair<Integer, Object>> pairMatches(int tag, boolean bool) {
+-        return pair -> pair.first == tag
+-                && Platform.isInstanceOfType(pair.second, Integer.class)
+-                && pair.second.equals((bool ? 1 : 0));
+-    }
+-
+-    private ArgumentMatcher<Pair<Integer, Object>> pairMatches(int tag, int val) {
+-        return pair -> pair.first == tag
+-                && Platform.isInstanceOfType(pair.second, Integer.class)
+-                && pair.second.equals(val);
+-    }
+-}
+diff --git a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixinTest.java b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixinTest.java
+deleted file mode 100644
+index a2648861d1d..00000000000
+--- a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/core/instrumentation/VisibilityLoggerMixinTest.java
++++ /dev/null
+@@ -1,122 +0,0 @@
+-/*
+- * Copyright (C) 2016 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.android.settingslib.core.instrumentation;
+-
+-import static com.android.settingslib.core.instrumentation.Instrumentable.METRICS_CATEGORY_UNKNOWN;
+-
+-import static org.mockito.ArgumentMatchers.nullable;
+-import static org.mockito.Matchers.anyInt;
+-import static org.mockito.Matchers.eq;
+-import static org.mockito.Mockito.mock;
+-import static org.mockito.Mockito.never;
+-import static org.mockito.Mockito.times;
+-import static org.mockito.Mockito.verify;
+-import static org.mockito.Mockito.when;
+-
+-import android.app.Activity;
+-import android.content.Context;
+-import android.content.Intent;
+-
+-import com.android.internal.logging.nano.MetricsProto;
+-import com.android.settingslib.SettingsLibRobolectricTestRunner;
+-import com.android.settingslib.TestConfig;
+-
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.junit.runner.RunWith;
+-import org.mockito.Mock;
+-import org.mockito.MockitoAnnotations;
+-import org.robolectric.annotation.Config;
+-
+-
+-@RunWith(SettingsLibRobolectricTestRunner.class)
+-@Config(manifest = TestConfig.MANIFEST_PATH, sdk = TestConfig.SDK_VERSION)
+-public class VisibilityLoggerMixinTest {
+-
+-    @Mock
+-    private MetricsFeatureProvider mMetricsFeature;
+-
+-    private VisibilityLoggerMixin mMixin;
+-
+-    @Before
+-    public void init() {
+-        MockitoAnnotations.initMocks(this);
+-        mMixin = new VisibilityLoggerMixin(TestInstrumentable.TEST_METRIC, mMetricsFeature);
+-    }
+-
+-    @Test
+-    public void shouldLogVisibleOnResume() {
+-        mMixin.onResume();
+-
+-        verify(mMetricsFeature, times(1))
+-                .visible(nullable(Context.class), eq(MetricsProto.MetricsEvent.VIEW_UNKNOWN),
+-                        eq(TestInstrumentable.TEST_METRIC));
+-    }
+-
+-    @Test
+-    public void shouldLogVisibleWithSource() {
+-        final Intent sourceIntent = new Intent()
+-                .putExtra(VisibilityLoggerMixin.EXTRA_SOURCE_METRICS_CATEGORY,
+-                        MetricsProto.MetricsEvent.SETTINGS_GESTURES);
+-        final Activity activity = mock(Activity.class);
+-        when(activity.getIntent()).thenReturn(sourceIntent);
+-        mMixin.setSourceMetricsCategory(activity);
+-        mMixin.onResume();
+-
+-        verify(mMetricsFeature, times(1))
+-                .visible(nullable(Context.class), eq(MetricsProto.MetricsEvent.SETTINGS_GESTURES),
+-                        eq(TestInstrumentable.TEST_METRIC));
+-    }
+-
+-    @Test
+-    public void shouldLogHideOnPause() {
+-        mMixin.onPause();
+-
+-        verify(mMetricsFeature, times(1))
+-                .hidden(nullable(Context.class), eq(TestInstrumentable.TEST_METRIC));
+-    }
+-
+-    @Test
+-    public void shouldNotLogIfMetricsFeatureIsNull() {
+-        mMixin = new VisibilityLoggerMixin(TestInstrumentable.TEST_METRIC, null);
+-        mMixin.onResume();
+-        mMixin.onPause();
+-
+-        verify(mMetricsFeature, never())
+-                .hidden(nullable(Context.class), anyInt());
+-    }
+-
+-    @Test
+-    public void shouldNotLogIfMetricsCategoryIsUnknown() {
+-        mMixin = new VisibilityLoggerMixin(METRICS_CATEGORY_UNKNOWN, mMetricsFeature);
+-
+-        mMixin.onResume();
+-        mMixin.onPause();
+-
+-        verify(mMetricsFeature, never())
+-                .hidden(nullable(Context.class), anyInt());
+-    }
+-
+-    private final class TestInstrumentable implements Instrumentable {
+-
+-        public static final int TEST_METRIC = 12345;
+-
+-        @Override
+-        public int getMetricsCategory() {
+-            return TEST_METRIC;
+-        }
+-    }
+-}
+-- 
+2.17.1
+

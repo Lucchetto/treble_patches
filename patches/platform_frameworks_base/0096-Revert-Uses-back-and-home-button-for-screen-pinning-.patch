@@ -1,0 +1,892 @@
+From d89a67e9f8adf1e702122b98f15e999f37938572 Mon Sep 17 00:00:00 2001
+From: Matthew Ng <ngmatthew@google.com>
+Date: Thu, 1 Feb 2018 18:03:08 +0000
+Subject: [PATCH 096/306] Revert "Uses back and home button for screen pinning
+ when recents is invisible"
+
+This reverts commit c4356fb75318967148e8394878af1c13d37080dd.
+
+Reason for revert: Regression b/72800226
+
+Change-Id: Iaa14de444c00a9da7c3b3a6d8828f40d66a8ac29
+(cherry picked from commit 9b9d0c513a8f25d2a3dcdaeee15c9b727ede385c)
+---
+ .../internal/statusbar/IStatusBar.aidl        |  6 --
+ .../internal/statusbar/IStatusBarService.aidl |  6 --
+ core/res/res/values/strings.xml               |  9 ++
+ core/res/res/values/symbols.xml               |  3 +
+ .../layout/screen_pinning_request_buttons.xml | 20 +----
+ packages/SystemUI/res/values/strings.xml      | 11 ---
+ .../src/com/android/systemui/SysUIToast.java  |  8 +-
+ .../recents/ScreenPinningRequest.java         | 31 ++-----
+ .../systemui/statusbar/CommandQueue.java      | 30 -------
+ .../phone/NavigationBarFragment.java          | 82 ++++---------------
+ .../statusbar/phone/NavigationBarView.java    | 45 +++++-----
+ .../systemui/statusbar/phone/StatusBar.java   | 24 +-----
+ .../android/server/am/LockTaskController.java | 28 +++++--
+ .../com/android/server/am/LockTaskNotify.java | 27 +++---
+ .../statusbar/StatusBarManagerService.java    | 21 +----
+ .../server/am/LockTaskControllerTest.java     |  6 +-
+ 16 files changed, 93 insertions(+), 264 deletions(-)
+ rename packages/SystemUI/src/com/android/systemui/statusbar/phone/ScreenPinningNotify.java => services/core/java/com/android/server/am/LockTaskNotify.java (70%)
+
+diff --git a/core/java/com/android/internal/statusbar/IStatusBar.aidl b/core/java/com/android/internal/statusbar/IStatusBar.aidl
+index f70d3c2a27f..ebb5f9f9e44 100644
+--- a/core/java/com/android/internal/statusbar/IStatusBar.aidl
++++ b/core/java/com/android/internal/statusbar/IStatusBar.aidl
+@@ -132,12 +132,6 @@ oneway interface IStatusBar
+     void clickQsTile(in ComponentName tile);
+     void handleSystemKey(in int key);
+ 
+-    /**
+-     * Methods to show toast messages for screen pinning
+-     */
+-    void showPinningEnterExitToast(boolean entering);
+-    void showPinningEscapeToast();
+-
+     void showShutdownUi(boolean isReboot, String reason);
+ 
+     // Used to show the dialog when FingerprintService starts authentication
+diff --git a/core/java/com/android/internal/statusbar/IStatusBarService.aidl b/core/java/com/android/internal/statusbar/IStatusBarService.aidl
+index adf42878ebb..cb0b53c495d 100644
+--- a/core/java/com/android/internal/statusbar/IStatusBarService.aidl
++++ b/core/java/com/android/internal/statusbar/IStatusBarService.aidl
+@@ -81,12 +81,6 @@ interface IStatusBarService
+     void clickTile(in ComponentName tile);
+     void handleSystemKey(in int key);
+ 
+-    /**
+-     * Methods to show toast messages for screen pinning
+-     */
+-    void showPinningEnterExitToast(boolean entering);
+-    void showPinningEscapeToast();
+-
+     // Used to show the dialog when FingerprintService starts authentication
+     void showFingerprintDialog(in Bundle bundle, IFingerprintDialogReceiver receiver);
+     // Used to hide the dialog when a finger is authenticated
+diff --git a/core/res/res/values/strings.xml b/core/res/res/values/strings.xml
+index 3b752c42072..224503bf6b3 100644
+--- a/core/res/res/values/strings.xml
++++ b/core/res/res/values/strings.xml
+@@ -4423,6 +4423,15 @@
+     <!-- DO NOT TRANSLATE -->
+     <string name="date_picker_day_typeface">sans-serif-medium</string>
+ 
++    <!-- Notify use that they are in Lock-to-app -->
++    <string name="lock_to_app_toast">To unpin this screen, touch &amp; hold Back and Overview
++        buttons</string>
++
++    <!-- Starting lock-to-app indication. -->
++    <string name="lock_to_app_start">Screen pinned</string>
++    <!-- Exting lock-to-app indication. -->
++    <string name="lock_to_app_exit">Screen unpinned</string>
++
+     <!-- Lock-to-app unlock pin string -->
+     <string name="lock_to_app_unlock_pin">Ask for PIN before unpinning</string>
+     <!-- Lock-to-app unlock pattern string -->
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index fee5a80245b..a338f89af20 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -767,6 +767,9 @@
+   <java-symbol type="string" name="kilobyteShort" />
+   <java-symbol type="string" name="last_month" />
+   <java-symbol type="string" name="launchBrowserDefault" />
++  <java-symbol type="string" name="lock_to_app_toast" />
++  <java-symbol type="string" name="lock_to_app_start" />
++  <java-symbol type="string" name="lock_to_app_exit" />
+   <java-symbol type="string" name="lock_to_app_unlock_pin" />
+   <java-symbol type="string" name="lock_to_app_unlock_pattern" />
+   <java-symbol type="string" name="lock_to_app_unlock_password" />
+diff --git a/packages/SystemUI/res/layout/screen_pinning_request_buttons.xml b/packages/SystemUI/res/layout/screen_pinning_request_buttons.xml
+index a3118b0a5d9..c2b1009c313 100644
+--- a/packages/SystemUI/res/layout/screen_pinning_request_buttons.xml
++++ b/packages/SystemUI/res/layout/screen_pinning_request_buttons.xml
+@@ -84,25 +84,7 @@
+         android:layout_height="@dimen/screen_pinning_request_button_height"
+         android:layout_weight="0"
+         android:paddingStart="@dimen/screen_pinning_request_frame_padding"
+-        android:paddingEnd="@dimen/screen_pinning_request_frame_padding"
+-        android:theme="@*android:style/ThemeOverlay.DeviceDefault.Accent">
+-
+-        <ImageView
+-            android:id="@+id/screen_pinning_home_bg_light"
+-            android:layout_width="match_parent"
+-            android:layout_height="match_parent"
+-            android:scaleType="matrix"
+-            android:src="@drawable/screen_pinning_light_bg_circ" />
+-
+-        <ImageView
+-            android:id="@+id/screen_pinning_home_bg"
+-            android:layout_width="match_parent"
+-            android:layout_height="match_parent"
+-            android:paddingEnd="@dimen/screen_pinning_request_inner_padding"
+-            android:paddingStart="@dimen/screen_pinning_request_inner_padding"
+-            android:paddingTop="@dimen/screen_pinning_request_inner_padding"
+-            android:scaleType="matrix"
+-            android:src="@drawable/screen_pinning_bg_circ" />
++        android:paddingEnd="@dimen/screen_pinning_request_frame_padding" >
+ 
+         <ImageView
+             android:layout_width="match_parent"
+diff --git a/packages/SystemUI/res/values/strings.xml b/packages/SystemUI/res/values/strings.xml
+index fadcbcd4f4b..5557f8eda00 100644
+--- a/packages/SystemUI/res/values/strings.xml
++++ b/packages/SystemUI/res/values/strings.xml
+@@ -1281,23 +1281,12 @@
+     <string name="screen_pinning_title">Screen is pinned</string>
+     <!-- Screen pinning dialog description. -->
+     <string name="screen_pinning_description">This keeps it in view until you unpin. Touch &amp; hold Back and Overview to unpin.</string>
+-    <string name="screen_pinning_description_recents_invisible">This keeps it in view until you unpin. Touch &amp; hold Back and Home to unpin.</string>
+     <!-- Screen pinning dialog description. -->
+     <string name="screen_pinning_description_accessible">This keeps it in view until you unpin. Touch &amp; hold Overview to unpin.</string>
+-    <string name="screen_pinning_description_recents_invisible_accessible">This keeps it in view until you unpin. Touch &amp; hold Home to unpin.</string>
+-    <!-- Notify use that they are in Lock-to-app -->
+-    <string name="screen_pinning_toast">To unpin this screen, touch &amp; hold Back and Overview
+-        buttons</string>
+-    <string name="screen_pinning_toast_recents_invisible">To unpin this screen, touch &amp; hold Back
+-        and Home buttons</string>
+     <!-- Screen pinning positive response. -->
+     <string name="screen_pinning_positive">Got it</string>
+     <!-- Screen pinning negative response. -->
+     <string name="screen_pinning_negative">No thanks</string>
+-    <!-- Enter/Exiting screen pinning indication. -->
+-    <string name="screen_pinning_start">Screen pinned</string>
+-    <string name="screen_pinning_exit">Screen unpinned</string>
+-
+ 
+     <!-- Hide quick settings tile confirmation title -->
+     <string name="quick_settings_reset_confirmation_title">Hide <xliff:g id="tile_label" example="Hotspot">%1$s</xliff:g>?</string>
+diff --git a/packages/SystemUI/src/com/android/systemui/SysUIToast.java b/packages/SystemUI/src/com/android/systemui/SysUIToast.java
+index 43b918dbea7..89bc82f8793 100644
+--- a/packages/SystemUI/src/com/android/systemui/SysUIToast.java
++++ b/packages/SystemUI/src/com/android/systemui/SysUIToast.java
+@@ -15,19 +15,13 @@
+  */
+ package com.android.systemui;
+ 
+-import android.annotation.StringRes;
+ import android.content.Context;
+ import android.view.WindowManager;
+ import android.widget.Toast;
+-import static android.widget.Toast.Duration;
+ 
+ public class SysUIToast {
+ 
+-    public static Toast makeText(Context context, @StringRes int resId, @Duration int duration) {
+-        return makeText(context, context.getString(resId), duration);
+-    }
+-
+-    public static Toast makeText(Context context, CharSequence text, @Duration int duration) {
++    public static Toast makeText(Context context, CharSequence text, int duration) {
+         Toast toast = Toast.makeText(context, text, duration);
+         toast.getWindowParams().privateFlags |=
+                 WindowManager.LayoutParams.PRIVATE_FLAG_SHOW_FOR_ALL_USERS;
+diff --git a/packages/SystemUI/src/com/android/systemui/recents/ScreenPinningRequest.java b/packages/SystemUI/src/com/android/systemui/recents/ScreenPinningRequest.java
+index 57f7818eae5..316ad166189 100644
+--- a/packages/SystemUI/src/com/android/systemui/recents/ScreenPinningRequest.java
++++ b/packages/SystemUI/src/com/android/systemui/recents/ScreenPinningRequest.java
+@@ -23,12 +23,15 @@ import android.content.BroadcastReceiver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
++import android.content.res.Configuration;
+ import android.graphics.PixelFormat;
++import android.graphics.Rect;
+ import android.graphics.drawable.ColorDrawable;
+ import android.os.Binder;
+ import android.os.RemoteException;
+ import android.util.DisplayMetrics;
+ import android.view.Gravity;
++import android.view.Surface;
+ import android.view.View;
+ import android.view.ViewGroup;
+ import android.view.WindowManager;
+@@ -40,9 +43,6 @@ import android.widget.LinearLayout;
+ import android.widget.TextView;
+ 
+ import com.android.systemui.R;
+-import com.android.systemui.SysUiServiceProvider;
+-import com.android.systemui.statusbar.phone.NavigationBarView;
+-import com.android.systemui.statusbar.phone.StatusBar;
+ import com.android.systemui.util.leak.RotationUtils;
+ 
+ import java.util.ArrayList;
+@@ -233,30 +233,11 @@ public class ScreenPinningRequest implements View.OnClickListener {
+                         .setVisibility(View.INVISIBLE);
+             }
+ 
+-            StatusBar statusBar = SysUiServiceProvider.getComponent(mContext, StatusBar.class);
+-            NavigationBarView navigationBarView = statusBar.getNavigationBarView();
+-            final boolean recentsVisible = navigationBarView != null
+-                    && navigationBarView.isRecentsButtonVisible();
+             boolean touchExplorationEnabled = mAccessibilityService.isTouchExplorationEnabled();
+-            int descriptionStringResId;
+-            if (recentsVisible) {
+-                mLayout.findViewById(R.id.screen_pinning_recents_group).setVisibility(VISIBLE);
+-                mLayout.findViewById(R.id.screen_pinning_home_bg_light).setVisibility(INVISIBLE);
+-                mLayout.findViewById(R.id.screen_pinning_home_bg).setVisibility(INVISIBLE);
+-                descriptionStringResId = touchExplorationEnabled
+-                        ? R.string.screen_pinning_description_accessible
+-                        : R.string.screen_pinning_description;
+-            } else {
+-                mLayout.findViewById(R.id.screen_pinning_recents_group).setVisibility(INVISIBLE);
+-                mLayout.findViewById(R.id.screen_pinning_home_bg_light).setVisibility(VISIBLE);
+-                mLayout.findViewById(R.id.screen_pinning_home_bg).setVisibility(VISIBLE);
+-                descriptionStringResId = touchExplorationEnabled
+-                        ? R.string.screen_pinning_description_recents_invisible_accessible
+-                        : R.string.screen_pinning_description_recents_invisible;
+-            }
+-
+             ((TextView) mLayout.findViewById(R.id.screen_pinning_description))
+-                    .setText(descriptionStringResId);
++                    .setText(touchExplorationEnabled
++                            ? R.string.screen_pinning_description_accessible
++                            : R.string.screen_pinning_description);
+             final int backBgVisibility = touchExplorationEnabled ? View.INVISIBLE : View.VISIBLE;
+             mLayout.findViewById(R.id.screen_pinning_back_bg).setVisibility(backBgVisibility);
+             mLayout.findViewById(R.id.screen_pinning_back_bg_light).setVisibility(backBgVisibility);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java b/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
+index f5f62b85ac9..79e9f7b45d8 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/CommandQueue.java
+@@ -24,7 +24,6 @@ import android.os.Handler;
+ import android.os.IBinder;
+ import android.os.Looper;
+ import android.os.Message;
+-import android.os.RemoteException;
+ import android.support.annotation.VisibleForTesting;
+ import android.util.Pair;
+ 
+@@ -91,8 +90,6 @@ public class CommandQueue extends IStatusBar.Stub {
+     private static final int MSG_FINGERPRINT_ERROR             = 42 << MSG_SHIFT;
+     private static final int MSG_FINGERPRINT_HIDE              = 43 << MSG_SHIFT;
+     private static final int MSG_SHOW_CHARGING_ANIMATION       = 44 << MSG_SHIFT;
+-    private static final int MSG_SHOW_PINNING_TOAST_ENTER_EXIT = 45 << MSG_SHIFT;
+-    private static final int MSG_SHOW_PINNING_TOAST_ESCAPE     = 46 << MSG_SHIFT;
+ 
+     public static final int FLAG_EXCLUDE_NONE = 0;
+     public static final int FLAG_EXCLUDE_SEARCH_PANEL = 1 << 0;
+@@ -151,8 +148,6 @@ public class CommandQueue extends IStatusBar.Stub {
+         default void clickTile(ComponentName tile) { }
+ 
+         default void handleSystemKey(int arg1) { }
+-        default void showPinningEnterExitToast(boolean entering) { }
+-        default void showPinningEscapeToast() { }
+         default void handleShowGlobalActionsMenu() { }
+         default void handleShowShutdownUi(boolean isReboot, String reason) { }
+ 
+@@ -457,21 +452,6 @@ public class CommandQueue extends IStatusBar.Stub {
+         }
+     }
+ 
+-    @Override
+-    public void showPinningEnterExitToast(boolean entering) {
+-        synchronized (mLock) {
+-            mHandler.obtainMessage(MSG_SHOW_PINNING_TOAST_ENTER_EXIT, entering).sendToTarget();
+-        }
+-    }
+-
+-    @Override
+-    public void showPinningEscapeToast() {
+-        synchronized (mLock) {
+-            mHandler.obtainMessage(MSG_SHOW_PINNING_TOAST_ESCAPE).sendToTarget();
+-        }
+-    }
+-
+-
+     @Override
+     public void showGlobalActionsMenu() {
+         synchronized (mLock) {
+@@ -787,16 +767,6 @@ public class CommandQueue extends IStatusBar.Stub {
+                         mCallbacks.get(i).showChargingAnimation(msg.arg1);
+                     }
+                     break;
+-                case MSG_SHOW_PINNING_TOAST_ENTER_EXIT:
+-                    for (int i = 0; i < mCallbacks.size(); i++) {
+-                        mCallbacks.get(i).showPinningEnterExitToast(msg.arg1 != 0);
+-                    }
+-                    break;
+-                case MSG_SHOW_PINNING_TOAST_ESCAPE:
+-                    for (int i = 0; i < mCallbacks.size(); i++) {
+-                        mCallbacks.get(i).showPinningEscapeToast();
+-                    }
+-                    break;
+             }
+         }
+     }
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarFragment.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarFragment.java
+index 242be71a42a..65c45a3120c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarFragment.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarFragment.java
+@@ -22,13 +22,11 @@ import static android.app.StatusBarManager.windowStateToString;
+ import static com.android.systemui.statusbar.phone.BarTransitions.MODE_SEMI_TRANSPARENT;
+ import static com.android.systemui.statusbar.phone.StatusBar.DEBUG_WINDOW_STATE;
+ import static com.android.systemui.statusbar.phone.StatusBar.dumpBarTransitions;
+-import static com.android.systemui.OverviewProxyService.OverviewProxyListener;
+ 
+ import android.accessibilityservice.AccessibilityServiceInfo;
+ import android.animation.Animator;
+ import android.animation.AnimatorListenerAdapter;
+ import android.animation.ObjectAnimator;
+-import android.annotation.IdRes;
+ import android.annotation.Nullable;
+ import android.app.ActivityManager;
+ import android.app.ActivityManagerNative;
+@@ -71,7 +69,6 @@ import android.view.WindowManagerGlobal;
+ import android.view.accessibility.AccessibilityEvent;
+ import android.view.accessibility.AccessibilityManager;
+ import android.view.accessibility.AccessibilityManager.AccessibilityServicesStateChangeListener;
+-import android.widget.Button;
+ 
+ import com.android.internal.logging.MetricsLogger;
+ import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+@@ -156,18 +153,6 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+     private Animator mRotateShowAnimator;
+     private Animator mRotateHideAnimator;
+ 
+-    private final OverviewProxyListener mOverviewProxyListener = new OverviewProxyListener() {
+-        @Override
+-        public void onConnectionChanged(boolean isConnected) {
+-            mNavigationBarView.onOverviewProxyConnectionChanged(isConnected);
+-            updateScreenPinningGestures();
+-        }
+-
+-        @Override
+-        public void onRecentsAnimationStarted() {
+-            mNavigationBarView.setRecentsAnimationStarted(true);
+-        }
+-    };
+ 
+     // ----- Fragment Lifecycle Callbacks -----
+ 
+@@ -254,14 +239,12 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+         filter.addAction(Intent.ACTION_SCREEN_ON);
+         getContext().registerReceiverAsUser(mBroadcastReceiver, UserHandle.ALL, filter, null, null);
+         notifyNavigationBarScreenOn();
+-        mOverviewProxyService.addCallback(mOverviewProxyListener);
+     }
+ 
+     @Override
+     public void onDestroyView() {
+         super.onDestroyView();
+         mNavigationBarView.getLightTransitionsController().destroy(getContext());
+-        mOverviewProxyService.removeCallback(mOverviewProxyListener);
+         getContext().unregisterReceiver(mBroadcastReceiver);
+     }
+ 
+@@ -531,7 +514,6 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+         if (masked != mDisabledFlags1) {
+             mDisabledFlags1 = masked;
+             if (mNavigationBarView != null) mNavigationBarView.setDisabledFlags(state1);
+-            updateScreenPinningGestures();
+         }
+     }
+ 
+@@ -546,7 +528,7 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+     private boolean shouldDisableNavbarGestures() {
+         return !mStatusBar.isDeviceProvisioned()
+                 || (mDisabledFlags1 & StatusBarManager.DISABLE_SEARCH) != 0
+-                || mNavigationBarView.getRecentsButton().getVisibility() != View.VISIBLE;
++                || mOverviewProxyService.getProxy() != null;
+     }
+ 
+     private void repositionNavigationBar() {
+@@ -558,24 +540,6 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+                 ((View) mNavigationBarView.getParent()).getLayoutParams());
+     }
+ 
+-    private void updateScreenPinningGestures() {
+-        if (mNavigationBarView == null) {
+-            return;
+-        }
+-
+-        // Change the cancel pin gesture to home and back if recents button is invisible
+-        boolean recentsVisible = mNavigationBarView.isRecentsButtonVisible();
+-        ButtonDispatcher homeButton = mNavigationBarView.getHomeButton();
+-        ButtonDispatcher backButton = mNavigationBarView.getBackButton();
+-        if (recentsVisible) {
+-            homeButton.setOnLongClickListener(this::onHomeLongClick);
+-            backButton.setOnLongClickListener(this::onLongPressBackRecents);
+-        } else {
+-            homeButton.setOnLongClickListener(this::onLongPressBackHome);
+-            backButton.setOnLongClickListener(this::onLongPressBackHome);
+-        }
+-    }
+-
+     private void notifyNavigationBarScreenOn() {
+         mNavigationBarView.notifyScreenOn();
+     }
+@@ -685,29 +649,20 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+         mCommandQueue.toggleRecentApps();
+     }
+ 
+-    private boolean onLongPressBackHome(View v) {
+-        return onLongPressNavigationButtons(v, R.id.back, R.id.home);
+-    }
+-
+-    private boolean onLongPressBackRecents(View v) {
+-        return onLongPressNavigationButtons(v, R.id.back, R.id.recent_apps);
+-    }
+-
+     /**
+-     * This handles long-press of both back and recents/home. Back is the common button with
+-     * combination of recents if it is visible or home if recents is invisible.
+-     * They are handled together to capture them both being long-pressed
++     * This handles long-press of both back and recents.  They are
++     * handled together to capture them both being long-pressed
+      * at the same time to exit screen pinning (lock task).
+      *
+-     * When accessibility mode is on, only a long-press from recents/home
++     * When accessibility mode is on, only a long-press from recents
+      * is required to exit.
+      *
+      * In all other circumstances we try to pass through long-press events
+      * for Back, so that apps can still use it.  Which can be from two things.
+      * 1) Not currently in screen pinning (lock task).
+-     * 2) Back is long-pressed without recents/home.
++     * 2) Back is long-pressed without recents.
+      */
+-    private boolean onLongPressNavigationButtons(View v, @IdRes int btnId1, @IdRes int btnId2) {
++    private boolean onLongPressBackRecents(View v) {
+         try {
+             boolean sendBackLongPress = false;
+             IActivityManager activityManager = ActivityManagerNative.getDefault();
+@@ -715,7 +670,6 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+             boolean inLockTaskMode = activityManager.isInLockTaskMode();
+             if (inLockTaskMode && !touchExplorationEnabled) {
+                 long time = System.currentTimeMillis();
+-
+                 // If we recently long-pressed the other button then they were
+                 // long-pressed 'together'
+                 if ((time - mLastLockToAppLongPress) < LOCK_TO_APP_GESTURE_TOLERENCE) {
+@@ -723,32 +677,26 @@ public class NavigationBarFragment extends Fragment implements Callbacks {
+                     // When exiting refresh disabled flags.
+                     mNavigationBarView.setDisabledFlags(mDisabledFlags1, true);
+                     return true;
+-                } else if (v.getId() == btnId1) {
+-                    ButtonDispatcher button = btnId2 == R.id.recent_apps
+-                            ? mNavigationBarView.getRecentsButton()
+-                            : mNavigationBarView.getHomeButton();
+-                    if (!button.getCurrentView().isPressed()) {
+-                        // If we aren't pressing recents/home right now then they presses
+-                        // won't be together, so send the standard long-press action.
+-                        sendBackLongPress = true;
+-                    }
++                } else if ((v.getId() == R.id.back)
++                        && !mNavigationBarView.getRecentsButton().getCurrentView().isPressed()) {
++                    // If we aren't pressing recents right now then they presses
++                    // won't be together, so send the standard long-press action.
++                    sendBackLongPress = true;
+                 }
+                 mLastLockToAppLongPress = time;
+             } else {
+                 // If this is back still need to handle sending the long-press event.
+-                if (v.getId() == btnId1) {
++                if (v.getId() == R.id.back) {
+                     sendBackLongPress = true;
+                 } else if (touchExplorationEnabled && inLockTaskMode) {
+-                    // When in accessibility mode a long press that is recents/home (not back)
++                    // When in accessibility mode a long press that is recents (not back)
+                     // should stop lock task.
+                     activityManager.stopSystemLockTaskMode();
+                     // When exiting refresh disabled flags.
+                     mNavigationBarView.setDisabledFlags(mDisabledFlags1, true);
+                     return true;
+-                } else if (v.getId() == btnId2) {
+-                    return btnId2 == R.id.recent_apps
+-                            ? onLongPressRecents()
+-                            : onHomeLongClick(mNavigationBarView.getHomeButton().getCurrentView());
++                } else if (v.getId() == R.id.recent_apps) {
++                    return onLongPressRecents();
+                 }
+             }
+             if (sendBackLongPress) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+index cd220a7053a..de6ecac5b00 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/NavigationBarView.java
+@@ -207,6 +207,23 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         }
+     }
+ 
++    private final OverviewProxyListener mOverviewProxyListener = new OverviewProxyListener() {
++        @Override
++        public void onConnectionChanged(boolean isConnected) {
++            updateSlippery();
++            setDisabledFlags(mDisabledFlags, true);
++            setUpSwipeUpOnboarding(isConnected);
++        }
++
++        @Override
++        public void onRecentsAnimationStarted() {
++            mRecentsAnimationStarted = true;
++            if (mSwipeUpOnboarding != null) {
++                mSwipeUpOnboarding.onRecentsAnimationStarted();
++            }
++        }
++    };
++
+     public NavigationBarView(Context context, AttributeSet attrs) {
+         super(context, attrs);
+ 
+@@ -263,19 +280,6 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         notifyVerticalChangedListener(mVertical);
+     }
+ 
+-    public void setRecentsAnimationStarted(boolean started) {
+-        mRecentsAnimationStarted = started;
+-        if (mSwipeUpOnboarding != null) {
+-            mSwipeUpOnboarding.onRecentsAnimationStarted();
+-        }
+-    }
+-
+-    public void onConnectionChanged(boolean isConnected) {
+-        updateSlippery();
+-        setDisabledFlags(mDisabledFlags, true);
+-        setUpSwipeUpOnboarding(isConnected);
+-    }
+-
+     @Override
+     public boolean onTouchEvent(MotionEvent event) {
+         if (mGestureHelper.onTouchEvent(event)) {
+@@ -349,10 +353,6 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         return mButtonDispatchers;
+     }
+ 
+-    public boolean isRecentsButtonVisible() {
+-        return getRecentsButton().getVisibility() == View.VISIBLE;
+-    }
+-
+     private void updateCarModeIcons(Context ctx) {
+         mBackCarModeIcon = getDrawable(ctx,
+                 R.drawable.ic_sysbar_back_carmode, R.drawable.ic_sysbar_back_carmode);
+@@ -613,9 +613,6 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         final ViewGroup navbarView = ((ViewGroup) getParent());
+         final WindowManager.LayoutParams lp = (WindowManager.LayoutParams) navbarView
+                 .getLayoutParams();
+-        if (lp == null) {
+-            return;
+-        }
+         if (slippery && (lp.flags & WindowManager.LayoutParams.FLAG_SLIPPERY) == 0) {
+             lp.flags |= WindowManager.LayoutParams.FLAG_SLIPPERY;
+             changed = true;
+@@ -679,12 +676,6 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         }
+     }
+ 
+-    public void onOverviewProxyConnectionChanged(boolean isConnected) {
+-        setSlippery(!isConnected);
+-        setDisabledFlags(mDisabledFlags, true);
+-        setUpSwipeUpOnboarding(isConnected);
+-    }
+-
+     @Override
+     protected void onDraw(Canvas canvas) {
+         mGestureHelper.onDraw(canvas);
+@@ -882,6 +873,7 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         onPluginDisconnected(null); // Create default gesture helper
+         Dependency.get(PluginManager.class).addPluginListener(this,
+                 NavGesture.class, false /* Only one */);
++        mOverviewProxyService.addCallback(mOverviewProxyListener);
+         setUpSwipeUpOnboarding(mOverviewProxyService.getProxy() != null);
+     }
+ 
+@@ -892,6 +884,7 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
+         if (mGestureHelper != null) {
+             mGestureHelper.destroy();
+         }
++        mOverviewProxyService.removeCallback(mOverviewProxyListener);
+         setUpSwipeUpOnboarding(false);
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 1bf719ae68a..426268ba490 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -404,13 +404,6 @@ public class StatusBar extends SystemUI implements DemoMode,
+     protected NotificationEntryManager mEntryManager;
+     protected NotificationViewHierarchyManager mViewHierarchyManager;
+ 
+-    /**
+-     * Helper that is responsible for showing the right toast when a disallowed activity operation
+-     * occurred. In pinned mode, we show instructions on how to break out of this mode, whilst in
+-     * fully locked mode we only show that unlocking is blocked.
+-     */
+-    private ScreenPinningNotify mScreenPinningNotify;
+-
+     // for disabling the status bar
+     private int mDisabled1 = 0;
+     private int mDisabled2 = 0;
+@@ -837,7 +830,7 @@ public class StatusBar extends SystemUI implements DemoMode,
+         } catch (RemoteException ex) {
+             // no window manager? good luck with that
+         }
+-        mScreenPinningNotify = new ScreenPinningNotify(mContext);
++
+         mStackScroller.setLongPressListener(mEntryManager.getNotificationLongClicker());
+         mStackScroller.setStatusBar(this);
+         mStackScroller.setGroupManager(mGroupManager);
+@@ -2148,21 +2141,6 @@ public class StatusBar extends SystemUI implements DemoMode,
+ 
+     }
+ 
+-    @Override
+-    public void showPinningEnterExitToast(boolean entering) {
+-        if (entering) {
+-            mScreenPinningNotify.showPinningStartToast();
+-        } else {
+-            mScreenPinningNotify.showPinningExitToast();
+-        }
+-    }
+-
+-    @Override
+-    public void showPinningEscapeToast() {
+-        mScreenPinningNotify.showEscapeToast(getNavigationBarView() == null
+-                || getNavigationBarView().isRecentsButtonVisible());
+-    }
+-
+     boolean panelsEnabled() {
+         return (mDisabled1 & StatusBarManager.DISABLE_EXPAND) == 0
+                 && (mDisabled2 & StatusBarManager.DISABLE2_NOTIFICATION_SHADE) == 0
+diff --git a/services/core/java/com/android/server/am/LockTaskController.java b/services/core/java/com/android/server/am/LockTaskController.java
+index e5762d29492..21f9135bd03 100644
+--- a/services/core/java/com/android/server/am/LockTaskController.java
++++ b/services/core/java/com/android/server/am/LockTaskController.java
+@@ -38,7 +38,6 @@ import static com.android.server.am.TaskRecord.LOCK_TASK_AUTH_LAUNCHABLE_PRIV;
+ import static com.android.server.am.TaskRecord.LOCK_TASK_AUTH_PINNABLE;
+ import static com.android.server.am.TaskRecord.LOCK_TASK_AUTH_WHITELISTED;
+ 
+-import android.annotation.IntDef;
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
+ import android.app.Activity;
+@@ -142,6 +141,14 @@ public class LockTaskController {
+     @VisibleForTesting
+     TelecomManager mTelecomManager;
+ 
++    /**
++     * Helper that is responsible for showing the right toast when a disallowed activity operation
++     * occurred. In pinned mode, we show instructions on how to break out of this mode, whilst in
++     * fully locked mode we only show that unlocking is blocked.
++     */
++    @VisibleForTesting
++    LockTaskNotify mLockTaskNotify;
++
+     /**
+      * The chain of tasks in LockTask mode, in the order of when they first entered LockTask mode.
+      *
+@@ -468,7 +475,7 @@ public class LockTaskController {
+                 getDevicePolicyManager().notifyLockTaskModeChanged(false, null, userId);
+             }
+             if (mLockTaskModeState == LOCK_TASK_MODE_PINNED) {
+-                getStatusBarService().showPinningEnterExitToast(false /* entering */);
++                getLockTaskNotify().showPinningExitToast();
+             }
+         } catch (RemoteException ex) {
+             throw new RuntimeException(ex);
+@@ -483,11 +490,7 @@ public class LockTaskController {
+      */
+     void showLockTaskToast() {
+         if (mLockTaskModeState == LOCK_TASK_MODE_PINNED) {
+-            try {
+-                getStatusBarService().showPinningEscapeToast();
+-            } catch (RemoteException e) {
+-                Slog.e(TAG, "Failed to send pinning escape toast", e);
+-            }
++            mHandler.post(() -> getLockTaskNotify().showEscapeToast());
+         }
+     }
+ 
+@@ -579,7 +582,7 @@ public class LockTaskController {
+         // When lock task starts, we disable the status bars.
+         try {
+             if (lockTaskModeState == LOCK_TASK_MODE_PINNED) {
+-                getStatusBarService().showPinningEnterExitToast(true /* entering */);
++                getLockTaskNotify().showPinningStartToast();
+             }
+             mLockTaskModeState = lockTaskModeState;
+             setStatusBarState(lockTaskModeState, userId);
+@@ -832,6 +835,15 @@ public class LockTaskController {
+         return mTelecomManager;
+     }
+ 
++    // Should only be called on the handler thread
++    @NonNull
++    private LockTaskNotify getLockTaskNotify() {
++        if (mLockTaskNotify == null) {
++            mLockTaskNotify = new LockTaskNotify(mContext);
++        }
++        return mLockTaskNotify;
++    }
++
+     public void dump(PrintWriter pw, String prefix) {
+         pw.println(prefix + "LockTaskController");
+         prefix = prefix + "  ";
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScreenPinningNotify.java b/services/core/java/com/android/server/am/LockTaskNotify.java
+similarity index 70%
+rename from packages/SystemUI/src/com/android/systemui/statusbar/phone/ScreenPinningNotify.java
+rename to services/core/java/com/android/server/am/LockTaskNotify.java
+index 0d07ad9cdf2..1dcb0addc18 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScreenPinningNotify.java
++++ b/services/core/java/com/android/server/am/LockTaskNotify.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2018 The Android Open Source Project
++ * Copyright (C) 2013 The Android Open Source Project
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-package com.android.systemui.statusbar.phone;
++package com.android.server.am;
+ 
+ import android.content.Context;
+ import android.os.SystemClock;
+@@ -22,37 +22,36 @@ import android.util.Slog;
+ import android.view.WindowManager;
+ import android.widget.Toast;
+ 
+-import com.android.systemui.R;
+-import com.android.systemui.SysUIToast;
++import com.android.internal.R;
+ 
+ /**
+  *  Helper to manage showing/hiding a image to notify them that they are entering or exiting screen
+  *  pinning mode. All exposed methods should be called from a handler thread.
+  */
+-public class ScreenPinningNotify {
+-    private static final String TAG = "ScreenPinningNotify";
++public class LockTaskNotify {
++    private static final String TAG = "LockTaskNotify";
+     private static final long SHOW_TOAST_MINIMUM_INTERVAL = 1000;
+ 
+     private final Context mContext;
+     private Toast mLastToast;
+     private long mLastShowToastTime;
+ 
+-    public ScreenPinningNotify(Context context) {
++    public LockTaskNotify(Context context) {
+         mContext = context;
+     }
+ 
+     /** Show "Screen pinned" toast. */
+     void showPinningStartToast() {
+-        makeAllUserToastAndShow(R.string.screen_pinning_start);
++        makeAllUserToastAndShow(R.string.lock_to_app_start);
+     }
+ 
+     /** Show "Screen unpinned" toast. */
+     void showPinningExitToast() {
+-        makeAllUserToastAndShow(R.string.screen_pinning_exit);
++        makeAllUserToastAndShow(R.string.lock_to_app_exit);
+     }
+ 
+     /** Show a toast that describes the gesture the user should use to escape pinned mode. */
+-    void showEscapeToast(boolean isRecentsButtonVisible) {
++    void showEscapeToast() {
+         long showToastTime = SystemClock.elapsedRealtime();
+         if ((showToastTime - mLastShowToastTime) < SHOW_TOAST_MINIMUM_INTERVAL) {
+             Slog.i(TAG, "Ignore toast since it is requested in very short interval.");
+@@ -61,14 +60,14 @@ public class ScreenPinningNotify {
+         if (mLastToast != null) {
+             mLastToast.cancel();
+         }
+-        mLastToast = makeAllUserToastAndShow(isRecentsButtonVisible
+-                ? R.string.screen_pinning_toast
+-                : R.string.screen_pinning_toast_recents_invisible);
++        mLastToast = makeAllUserToastAndShow(R.string.lock_to_app_toast);
+         mLastShowToastTime = showToastTime;
+     }
+ 
+     private Toast makeAllUserToastAndShow(int resId) {
+-        Toast toast = SysUIToast.makeText(mContext, resId, Toast.LENGTH_LONG);
++        Toast toast = Toast.makeText(mContext, resId, Toast.LENGTH_LONG);
++        toast.getWindowParams().privateFlags |=
++                WindowManager.LayoutParams.PRIVATE_FLAG_SHOW_FOR_ALL_USERS;
+         toast.show();
+         return toast;
+     }
+diff --git a/services/core/java/com/android/server/statusbar/StatusBarManagerService.java b/services/core/java/com/android/server/statusbar/StatusBarManagerService.java
+index 7c170aee92f..adb368b074c 100644
+--- a/services/core/java/com/android/server/statusbar/StatusBarManagerService.java
++++ b/services/core/java/com/android/server/statusbar/StatusBarManagerService.java
+@@ -56,6 +56,7 @@ import java.io.PrintWriter;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
++
+ /**
+  * A note on locking:  We rely on the fact that calls onto mBar are oneway or
+  * if they are local, that they just enqueue messages to not deadlock.
+@@ -523,26 +524,6 @@ public class StatusBarManagerService extends IStatusBarService.Stub {
+         }
+     }
+ 
+-    @Override
+-    public void showPinningEnterExitToast(boolean entering) throws RemoteException {
+-        if (mBar != null) {
+-            try {
+-                mBar.showPinningEnterExitToast(entering);
+-            } catch (RemoteException ex) {
+-            }
+-        }
+-    }
+-
+-    @Override
+-    public void showPinningEscapeToast() throws RemoteException {
+-        if (mBar != null) {
+-            try {
+-                mBar.showPinningEscapeToast();
+-            } catch (RemoteException ex) {
+-            }
+-        }
+-    }
+-
+     @Override
+     public void showFingerprintDialog(Bundle bundle, IFingerprintDialogReceiver receiver) {
+         if (mBar != null) {
+diff --git a/services/tests/servicestests/src/com/android/server/am/LockTaskControllerTest.java b/services/tests/servicestests/src/com/android/server/am/LockTaskControllerTest.java
+index 1cbb3991e46..d2ae22b4344 100644
+--- a/services/tests/servicestests/src/com/android/server/am/LockTaskControllerTest.java
++++ b/services/tests/servicestests/src/com/android/server/am/LockTaskControllerTest.java
+@@ -90,6 +90,7 @@ public class LockTaskControllerTest {
+     @Mock private IStatusBarService mStatusBarService;
+     @Mock private WindowManagerService mWindowManager;
+     @Mock private LockPatternUtils mLockPatternUtils;
++    @Mock private LockTaskNotify mLockTaskNotify;
+     @Mock private StatusBarManagerInternal mStatusBarManagerInternal;
+     @Mock private TelecomManager mTelecomManager;
+     @Mock private RecentTasks mRecentTasks;
+@@ -122,6 +123,7 @@ public class LockTaskControllerTest {
+         mLockTaskController.mDevicePolicyManager = mDevicePolicyManager;
+         mLockTaskController.mTelecomManager = mTelecomManager;
+         mLockTaskController.mLockPatternUtils = mLockPatternUtils;
++        mLockTaskController.mLockTaskNotify = mLockTaskNotify;
+ 
+         LocalServices.removeServiceForTest(StatusBarManagerInternal.class);
+         LocalServices.addService(StatusBarManagerInternal.class, mStatusBarManagerInternal);
+@@ -206,7 +208,7 @@ public class LockTaskControllerTest {
+         // THEN lock task mode should be started
+         verifyLockTaskStarted(STATUS_BAR_MASK_PINNED, DISABLE2_NONE);
+         // THEN screen pinning toast should be shown
+-        verify(mStatusBarService).showPinningEnterExitToast(true /* entering */);
++        verify(mLockTaskNotify).showPinningStartToast();
+     }
+ 
+     @Test
+@@ -375,7 +377,7 @@ public class LockTaskControllerTest {
+         // THEN the keyguard should be shown
+         verify(mLockPatternUtils).requireCredentialEntry(UserHandle.USER_ALL);
+         // THEN screen pinning toast should be shown
+-        verify(mStatusBarService).showPinningEnterExitToast(false /* entering */);
++        verify(mLockTaskNotify).showPinningExitToast();
+     }
+ 
+     @Test
+-- 
+2.17.1
+

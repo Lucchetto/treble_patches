@@ -1,0 +1,395 @@
+From 8b597eac8a7cb6dd9fcc6b18e5c34d857d6ed1e7 Mon Sep 17 00:00:00 2001
+From: Jorim Jaggi <jjaggi@google.com>
+Date: Wed, 28 Feb 2018 14:03:08 +0000
+Subject: [PATCH 148/306] Revert "Elevate remote/recents animation priority"
+
+This reverts commit 574aea0f1b073889186a82c94a991cc746b1c58c.
+
+Reason for revert: Crashes sometimes (chaselist issue)
+
+Change-Id: I1440ef7a002e85c3e020d424f13073ca2516dd9c
+Fixes: 73991490
+(cherry picked from commit a8b48ab7332f61afe37b2e866e9cb67421fab1c0)
+---
+ .../android/app/ActivityManagerInternal.java  | 12 -----
+ .../android/view/RemoteAnimationAdapter.java  | 17 -------
+ .../view/RemoteAnimationDefinition.java       | 10 -----
+ .../server/am/ActivityManagerService.java     | 45 ++-----------------
+ .../com/android/server/am/ProcessRecord.java  | 11 +----
+ .../android/server/am/RecentsAnimation.java   |  9 +---
+ .../server/am/SafeActivityOptions.java        |  6 ---
+ .../server/wm/RemoteAnimationController.java  | 11 -----
+ .../server/wm/WindowManagerService.java       | 10 -----
+ 9 files changed, 7 insertions(+), 124 deletions(-)
+
+diff --git a/core/java/android/app/ActivityManagerInternal.java b/core/java/android/app/ActivityManagerInternal.java
+index cab6744e3c8..c78255f3134 100644
+--- a/core/java/android/app/ActivityManagerInternal.java
++++ b/core/java/android/app/ActivityManagerInternal.java
+@@ -27,7 +27,6 @@ import android.os.IBinder;
+ import android.os.SystemClock;
+ import android.service.voice.IVoiceInteractionSession;
+ import android.util.SparseIntArray;
+-import android.view.RemoteAnimationAdapter;
+ 
+ import com.android.internal.app.IVoiceInteractor;
+ 
+@@ -264,17 +263,6 @@ public abstract class ActivityManagerInternal {
+      */
+     public abstract void setHasOverlayUi(int pid, boolean hasOverlayUi);
+ 
+-    /**
+-     * Sets if the given pid is currently running a remote animation, which is taken a signal for
+-     * determining oom adjustment and scheduling behavior.
+-     *
+-     * @param pid The pid we are setting overlay UI for.
+-     * @param runningRemoteAnimation True if the process is running a remote animation, false
+-     *                               otherwise.
+-     * @see RemoteAnimationAdapter
+-     */
+-    public abstract void setRunningRemoteAnimation(int pid, boolean runningRemoteAnimation);
+-
+     /**
+      * Called after the network policy rules are updated by
+      * {@link com.android.server.net.NetworkPolicyManagerService} for a specific {@param uid} and
+diff --git a/core/java/android/view/RemoteAnimationAdapter.java b/core/java/android/view/RemoteAnimationAdapter.java
+index a864e550c25..d597e597b11 100644
+--- a/core/java/android/view/RemoteAnimationAdapter.java
++++ b/core/java/android/view/RemoteAnimationAdapter.java
+@@ -52,9 +52,6 @@ public class RemoteAnimationAdapter implements Parcelable {
+     private final long mDuration;
+     private final long mStatusBarTransitionDelay;
+ 
+-    /** @see #getCallingPid */
+-    private int mCallingPid;
+-
+     /**
+      * @param runner The interface that gets notified when we actually need to start the animation.
+      * @param duration The duration of the animation.
+@@ -86,20 +83,6 @@ public class RemoteAnimationAdapter implements Parcelable {
+         return mStatusBarTransitionDelay;
+     }
+ 
+-    /**
+-     * To be called by system_server to keep track which pid is running this animation.
+-     */
+-    public void setCallingPid(int pid) {
+-        mCallingPid = pid;
+-    }
+-
+-    /**
+-     * @return The pid of the process running the animation.
+-     */
+-    public int getCallingPid() {
+-        return mCallingPid;
+-    }
+-
+     @Override
+     public int describeContents() {
+         return 0;
+diff --git a/core/java/android/view/RemoteAnimationDefinition.java b/core/java/android/view/RemoteAnimationDefinition.java
+index 8def43512e5..381f6926a1e 100644
+--- a/core/java/android/view/RemoteAnimationDefinition.java
++++ b/core/java/android/view/RemoteAnimationDefinition.java
+@@ -70,16 +70,6 @@ public class RemoteAnimationDefinition implements Parcelable {
+         mTransitionAnimationMap = in.readSparseArray(null /* loader */);
+     }
+ 
+-    /**
+-     * To be called by system_server to keep track which pid is running the remote animations inside
+-     * this definition.
+-     */
+-    public void setCallingPid(int pid) {
+-        for (int i = mTransitionAnimationMap.size() - 1; i >= 0; i--) {
+-            mTransitionAnimationMap.valueAt(i).setCallingPid(pid);
+-        }
+-    }
+-
+     @Override
+     public int describeContents() {
+         return 0;
+diff --git a/services/core/java/com/android/server/am/ActivityManagerService.java b/services/core/java/com/android/server/am/ActivityManagerService.java
+index f1e3bfd463b..9e169355706 100644
+--- a/services/core/java/com/android/server/am/ActivityManagerService.java
++++ b/services/core/java/com/android/server/am/ActivityManagerService.java
+@@ -5140,7 +5140,6 @@ public class ActivityManagerService extends IActivityManager.Stub
+     public void startRecentsActivity(Intent intent, IAssistDataReceiver assistDataReceiver,
+                 IRecentsAnimationRunner recentsAnimationRunner) {
+         enforceCallerIsRecentsOrHasPermission(MANAGE_ACTIVITY_STACKS, "startRecentsActivity()");
+-        final int callingPid = Binder.getCallingPid();
+         final long origId = Binder.clearCallingIdentity();
+         try {
+             synchronized (this) {
+@@ -5166,7 +5165,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+ 
+                 // Start a new recents animation
+                 final RecentsAnimation anim = new RecentsAnimation(this, mStackSupervisor,
+-                        mActivityStartController, mWindowManager, mUserController, callingPid);
++                        mActivityStartController, mWindowManager, mUserController);
+                 anim.startRecentsActivity(intent, recentsAnimationRunner, recentsComponent,
+                         recentsUid);
+             }
+@@ -14329,28 +14328,6 @@ public class ActivityManagerService extends IActivityManager.Stub
+         }
+     }
+ 
+-    void setRunningRemoteAnimation(int pid, boolean runningRemoteAnimation) {
+-        synchronized (ActivityManagerService.this) {
+-            final ProcessRecord pr;
+-            synchronized (mPidsSelfLocked) {
+-                pr = mPidsSelfLocked.get(pid);
+-                if (pr == null) {
+-                    Slog.w(TAG, "setRunningRemoteAnimation called on unknown pid: " + pid);
+-                    return;
+-                }
+-            }
+-            if (pr.runningRemoteAnimation == runningRemoteAnimation) {
+-                return;
+-            }
+-            pr.runningRemoteAnimation = runningRemoteAnimation;
+-            if (DEBUG_OOM_ADJ) {
+-                Slog.i(TAG, "Setting runningRemoteAnimation=" + pr.runningRemoteAnimation
+-                        + " for pid=" + pid);
+-            }
+-            updateOomAdjLocked(pr, true);
+-        }
+-    }
+-
+     public final void enterSafeMode() {
+         synchronized(this) {
+             // It only makes sense to do this before the system is ready
+@@ -22728,12 +22705,6 @@ public class ActivityManagerService extends IActivityManager.Stub
+             foregroundActivities = true;
+             procState = PROCESS_STATE_CUR_TOP;
+             if (DEBUG_OOM_ADJ_REASON) Slog.d(TAG, "Making top: " + app);
+-        } else if (app.runningRemoteAnimation) {
+-            adj = ProcessList.VISIBLE_APP_ADJ;
+-            schedGroup = ProcessList.SCHED_GROUP_TOP_APP;
+-            app.adjType = "running-remote-anim";
+-            procState = PROCESS_STATE_CUR_TOP;
+-            if (DEBUG_OOM_ADJ_REASON) Slog.d(TAG, "Making running remote anim: " + app);
+         } else if (app.instr != null) {
+             // Don't want to kill running instrumentation.
+             adj = ProcessList.FOREGROUND_APP_ADJ;
+@@ -22809,9 +22780,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+                         app.adjType = "vis-activity";
+                         if (DEBUG_OOM_ADJ_REASON) Slog.d(TAG, "Raise to vis-activity: " + app);
+                     }
+-                    if (schedGroup < ProcessList.SCHED_GROUP_DEFAULT) {
+-                        schedGroup = ProcessList.SCHED_GROUP_DEFAULT;
+-                    }
++                    schedGroup = ProcessList.SCHED_GROUP_DEFAULT;
+                     app.cached = false;
+                     app.empty = false;
+                     foregroundActivities = true;
+@@ -22834,9 +22803,7 @@ public class ActivityManagerService extends IActivityManager.Stub
+                         app.adjType = "pause-activity";
+                         if (DEBUG_OOM_ADJ_REASON) Slog.d(TAG, "Raise to pause-activity: " + app);
+                     }
+-                    if (schedGroup < ProcessList.SCHED_GROUP_DEFAULT) {
+-                        schedGroup = ProcessList.SCHED_GROUP_DEFAULT;
+-                    }
++                    schedGroup = ProcessList.SCHED_GROUP_DEFAULT;
+                     app.cached = false;
+                     app.empty = false;
+                     foregroundActivities = true;
+@@ -25977,11 +25944,6 @@ public class ActivityManagerService extends IActivityManager.Stub
+             }
+         }
+ 
+-        @Override
+-        public void setRunningRemoteAnimation(int pid, boolean runningRemoteAnimation) {
+-            ActivityManagerService.this.setRunningRemoteAnimation(pid, runningRemoteAnimation);
+-        }
+-
+         /**
+          * Called after the network policy rules are updated by
+          * {@link com.android.server.net.NetworkPolicyManagerService} for a specific {@param uid}
+@@ -26531,7 +26493,6 @@ public class ActivityManagerService extends IActivityManager.Stub
+             throws RemoteException {
+         enforceCallingPermission(CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS,
+                 "registerRemoteAnimations");
+-        definition.setCallingPid(Binder.getCallingPid());
+         synchronized (this) {
+             final ActivityRecord r = ActivityRecord.isInStackLocked(token);
+             if (r == null) {
+diff --git a/services/core/java/com/android/server/am/ProcessRecord.java b/services/core/java/com/android/server/am/ProcessRecord.java
+index 0bf269151f2..1f607553041 100644
+--- a/services/core/java/com/android/server/am/ProcessRecord.java
++++ b/services/core/java/com/android/server/am/ProcessRecord.java
+@@ -129,12 +129,6 @@ final class ProcessRecord {
+                                 // When true the process will oom adj score will be set to
+                                 // ProcessList#PERCEPTIBLE_APP_ADJ at minimum to reduce the chance
+                                 // of the process getting killed.
+-    boolean runningRemoteAnimation; // Is the process currently running a RemoteAnimation? When true
+-                                // the process will be set to use the
+-                                // ProcessList#SCHED_GROUP_TOP_APP scheduling group to boost
+-                                // performance, as well as oom adj score will be set to
+-                                // ProcessList#VISIBLE_APP_ADJ at minimum to reduce the chance
+-                                // of the process getting killed.
+     boolean pendingUiClean;     // Want to clean up resources from showing UI?
+     boolean hasAboveClient;     // Bound using BIND_ABOVE_CLIENT, so want to be lower
+     boolean treatLikeActivity;  // Bound using BIND_TREAT_LIKE_ACTIVITY
+@@ -342,10 +336,9 @@ final class ProcessRecord {
+                     pw.print(" hasAboveClient="); pw.print(hasAboveClient);
+                     pw.print(" treatLikeActivity="); pw.println(treatLikeActivity);
+         }
+-        if (hasTopUi || hasOverlayUi || runningRemoteAnimation) {
++        if (hasTopUi || hasOverlayUi) {
+             pw.print(prefix); pw.print("hasTopUi="); pw.print(hasTopUi);
+-                    pw.print(" hasOverlayUi="); pw.print(hasOverlayUi);
+-                    pw.print(" runningRemoteAnimation="); pw.println(runningRemoteAnimation);
++                    pw.print(" hasOverlayUi="); pw.println(hasOverlayUi);
+         }
+         if (foregroundServices || forcingToImportant != null) {
+             pw.print(prefix); pw.print("foregroundServices="); pw.print(foregroundServices);
+diff --git a/services/core/java/com/android/server/am/RecentsAnimation.java b/services/core/java/com/android/server/am/RecentsAnimation.java
+index 0ef8bffc861..6dcf04193c8 100644
+--- a/services/core/java/com/android/server/am/RecentsAnimation.java
++++ b/services/core/java/com/android/server/am/RecentsAnimation.java
+@@ -50,7 +50,6 @@ class RecentsAnimation implements RecentsAnimationCallbacks {
+     private final WindowManagerService mWindowManager;
+     private final UserController mUserController;
+     private final Handler mHandler;
+-    private final int mCallingPid;
+ 
+     private final Runnable mCancelAnimationRunnable;
+ 
+@@ -59,14 +58,13 @@ class RecentsAnimation implements RecentsAnimationCallbacks {
+ 
+     RecentsAnimation(ActivityManagerService am, ActivityStackSupervisor stackSupervisor,
+             ActivityStartController activityStartController, WindowManagerService wm,
+-            UserController userController, int callingPid) {
++            UserController userController) {
+         mService = am;
+         mStackSupervisor = stackSupervisor;
+         mActivityStartController = activityStartController;
+         mHandler = new Handler(mStackSupervisor.mLooper);
+         mWindowManager = wm;
+         mUserController = userController;
+-        mCallingPid = callingPid;
+ 
+         mCancelAnimationRunnable = () -> {
+             // The caller has not finished the animation in a predefined amount of time, so
+@@ -96,10 +94,9 @@ class RecentsAnimation implements RecentsAnimationCallbacks {
+             }
+         }
+ 
+-        mService.setRunningRemoteAnimation(mCallingPid, true);
+-
+         mWindowManager.deferSurfaceLayout();
+         try {
++
+             final ActivityDisplay display;
+             if (hasExistingHomeActivity) {
+                 // Move the home activity into place for the animation if it is not already top most
+@@ -155,8 +152,6 @@ class RecentsAnimation implements RecentsAnimationCallbacks {
+         synchronized (mService) {
+             if (mWindowManager.getRecentsAnimationController() == null) return;
+ 
+-            mService.setRunningRemoteAnimation(mCallingPid, false);
+-
+             mWindowManager.inSurfaceTransaction(() -> {
+                 Trace.traceBegin(TRACE_TAG_ACTIVITY_MANAGER,
+                         "RecentsAnimation#onAnimationFinished_inSurfaceTransaction");
+diff --git a/services/core/java/com/android/server/am/SafeActivityOptions.java b/services/core/java/com/android/server/am/SafeActivityOptions.java
+index ac6f01fa855..d08111ec0aa 100644
+--- a/services/core/java/com/android/server/am/SafeActivityOptions.java
++++ b/services/core/java/com/android/server/am/SafeActivityOptions.java
+@@ -121,16 +121,10 @@ class SafeActivityOptions {
+         if (mOriginalOptions != null) {
+             checkPermissions(intent, aInfo, callerApp, supervisor, mOriginalOptions,
+                     mOriginalCallingPid, mOriginalCallingUid);
+-            if (mOriginalOptions.getRemoteAnimationAdapter() != null) {
+-                mOriginalOptions.getRemoteAnimationAdapter().setCallingPid(mOriginalCallingPid);
+-            }
+         }
+         if (mCallerOptions != null) {
+             checkPermissions(intent, aInfo, callerApp, supervisor, mCallerOptions,
+                     mRealCallingPid, mRealCallingUid);
+-            if (mCallerOptions.getRemoteAnimationAdapter() != null) {
+-                mCallerOptions.getRemoteAnimationAdapter().setCallingPid(mRealCallingPid);
+-            }
+         }
+         return mergeActivityOptions(mOriginalOptions, mCallerOptions);
+     }
+diff --git a/services/core/java/com/android/server/wm/RemoteAnimationController.java b/services/core/java/com/android/server/wm/RemoteAnimationController.java
+index e4bb0436e1e..ed6e606b0c7 100644
+--- a/services/core/java/com/android/server/wm/RemoteAnimationController.java
++++ b/services/core/java/com/android/server/wm/RemoteAnimationController.java
+@@ -103,7 +103,6 @@ class RemoteAnimationController {
+                 onAnimationFinished();
+             }
+         });
+-        sendRunningRemoteAnimation(true);
+     }
+ 
+     private RemoteAnimationTarget[] createAnimations() {
+@@ -132,7 +131,6 @@ class RemoteAnimationController {
+                 mService.closeSurfaceTransaction("RemoteAnimationController#finished");
+             }
+         }
+-        sendRunningRemoteAnimation(false);
+     }
+ 
+     private void invokeAnimationCancelled() {
+@@ -150,14 +148,6 @@ class RemoteAnimationController {
+         }
+     }
+ 
+-    private void sendRunningRemoteAnimation(boolean running) {
+-        final int pid = mRemoteAnimationAdapter.getCallingPid();
+-        if (pid == 0) {
+-            throw new RuntimeException("Calling pid of remote animation was null");
+-        }
+-        mService.sendSetRunningRemoteAnimation(pid, running);
+-    }
+-
+     private static final class FinishedCallback extends IRemoteAnimationFinishedCallback.Stub {
+ 
+         RemoteAnimationController mOuter;
+@@ -261,7 +251,6 @@ class RemoteAnimationController {
+                 mHandler.removeCallbacks(mTimeoutRunnable);
+                 releaseFinishedCallback();
+                 invokeAnimationCancelled();
+-                sendRunningRemoteAnimation(false);
+             }
+         }
+ 
+diff --git a/services/core/java/com/android/server/wm/WindowManagerService.java b/services/core/java/com/android/server/wm/WindowManagerService.java
+index 8b8a6d38259..1521afc1b05 100644
+--- a/services/core/java/com/android/server/wm/WindowManagerService.java
++++ b/services/core/java/com/android/server/wm/WindowManagerService.java
+@@ -4606,7 +4606,6 @@ public class WindowManagerService extends IWindowManager.Stub
+         public static final int NOTIFY_KEYGUARD_FLAGS_CHANGED = 56;
+         public static final int NOTIFY_KEYGUARD_TRUSTED_CHANGED = 57;
+         public static final int SET_HAS_OVERLAY_UI = 58;
+-        public static final int SET_RUNNING_REMOTE_ANIMATION = 59;
+ 
+         /**
+          * Used to denote that an integer field in a message will not be used.
+@@ -5021,10 +5020,6 @@ public class WindowManagerService extends IWindowManager.Stub
+                     mAmInternal.setHasOverlayUi(msg.arg1, msg.arg2 == 1);
+                 }
+                 break;
+-                case SET_RUNNING_REMOTE_ANIMATION: {
+-                    mAmInternal.setRunningRemoteAnimation(msg.arg1, msg.arg2 == 1);
+-                }
+-                break;
+             }
+             if (DEBUG_WINDOW_TRACE) {
+                 Slog.v(TAG_WM, "handleMessage: exit");
+@@ -7453,10 +7448,5 @@ public class WindowManagerService extends IWindowManager.Stub
+     SurfaceControl.Builder makeSurfaceBuilder(SurfaceSession s) {
+         return mSurfaceBuilderFactory.make(s);
+     }
+-
+-    void sendSetRunningRemoteAnimation(int pid, boolean runningRemoteAnimation) {
+-        mH.obtainMessage(H.SET_RUNNING_REMOTE_ANIMATION, pid, runningRemoteAnimation ? 1 : 0)
+-                .sendToTarget();
+-    }
+ }
+ 
+-- 
+2.17.1
+

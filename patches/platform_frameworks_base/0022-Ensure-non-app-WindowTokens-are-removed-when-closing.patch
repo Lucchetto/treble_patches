@@ -1,0 +1,35 @@
+From ae5f0f0861889eda3b4310049b9c4e5388265490 Mon Sep 17 00:00:00 2001
+From: chaviw <chaviw@google.com>
+Date: Mon, 4 Dec 2017 18:39:34 -0800
+Subject: [PATCH 022/306] Ensure non app WindowTokens are removed when closing.
+
+Non app WindowTokens weren't propery removed when closing. This
+would cause several layers to stay around in the system.
+
+Bug: 69852584
+Test: Turn phone screen off and back on again. Window is removed.
+Change-Id: I51674ebdab129b462e958c3027a26ee6feeffb9f
+(cherry picked from commit aec55ff58ca4ae1056744015cc72771866fc347c)
+---
+ services/core/java/com/android/server/wm/WindowToken.java | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/services/core/java/com/android/server/wm/WindowToken.java b/services/core/java/com/android/server/wm/WindowToken.java
+index c9d7b70d695..a3d4b71a68a 100644
+--- a/services/core/java/com/android/server/wm/WindowToken.java
++++ b/services/core/java/com/android/server/wm/WindowToken.java
+@@ -125,6 +125,11 @@ class WindowToken extends WindowContainer<WindowState> {
+     }
+ 
+     void setExiting() {
++        if (mChildren.size() == 0) {
++            super.removeImmediately();
++            return;
++        }
++
+         // This token is exiting, so allow it to be removed when it no longer contains any windows.
+         mPersistOnEmpty = false;
+ 
+-- 
+2.17.1
+

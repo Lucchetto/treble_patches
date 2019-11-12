@@ -1,0 +1,152 @@
+From 055128414ef1d3bb159304e7bc4f294c63c61cac Mon Sep 17 00:00:00 2001
+From: Andrii Kulian <akulian@google.com>
+Date: Fri, 23 Mar 2018 17:12:05 +0000
+Subject: [PATCH 168/306] Revert "Use transaction for local activity relaunch"
+
+This reverts commit 77d73605979a19e377c97df1c82a2dfd8e3a71cd.
+
+Reason for revert: b/76088057
+
+Bug: 72029061
+Bug: 76088057
+Change-Id: Ib1212740bcd5dd0fe8de87521e716c17b93c30cd
+(cherry picked from commit 46312b3999f2305f42e0e18926ec0ea0067bcd75)
+---
+ core/java/android/app/ActivityThread.java     | 33 ++++---------------
+ .../TransactionExecutorHelper.java            | 27 ++-------------
+ 2 files changed, 10 insertions(+), 50 deletions(-)
+
+diff --git a/core/java/android/app/ActivityThread.java b/core/java/android/app/ActivityThread.java
+index baf2d6027ca..f01eee4709b 100644
+--- a/core/java/android/app/ActivityThread.java
++++ b/core/java/android/app/ActivityThread.java
+@@ -30,15 +30,12 @@ import android.annotation.Nullable;
+ import android.app.assist.AssistContent;
+ import android.app.assist.AssistStructure;
+ import android.app.backup.BackupAgent;
+-import android.app.servertransaction.ActivityLifecycleItem;
+ import android.app.servertransaction.ActivityLifecycleItem.LifecycleState;
+-import android.app.servertransaction.ActivityRelaunchItem;
+ import android.app.servertransaction.ActivityResultItem;
+ import android.app.servertransaction.ClientTransaction;
+ import android.app.servertransaction.PendingTransactionActions;
+ import android.app.servertransaction.PendingTransactionActions.StopInfo;
+ import android.app.servertransaction.TransactionExecutor;
+-import android.app.servertransaction.TransactionExecutorHelper;
+ import android.content.BroadcastReceiver;
+ import android.content.ComponentCallbacks2;
+ import android.content.ComponentName;
+@@ -523,10 +520,6 @@ public final class ActivityThread extends ClientTransactionHandler {
+             return activityInfo.persistableMode == ActivityInfo.PERSIST_ACROSS_REBOOTS;
+         }
+ 
+-        public boolean isVisibleFromServer() {
+-            return activity != null && activity.mVisibleFromServer;
+-        }
+-
+         public String toString() {
+             ComponentName componentName = intent != null ? intent.getComponent() : null;
+             return "ActivityRecord{"
+@@ -1804,7 +1797,6 @@ public final class ActivityThread extends ClientTransactionHandler {
+                         // message is handled.
+                         transaction.recycle();
+                     }
+-                    // TODO(lifecycler): Recycle locally scheduled transactions.
+                     break;
+             }
+             Object obj = msg.obj;
+@@ -4731,25 +4723,14 @@ public final class ActivityThread extends ClientTransactionHandler {
+             return;
+         }
+ 
++        // TODO(b/73747058): Investigate converting this to use transaction to relaunch.
++        handleRelaunchActivityInner(r, 0 /* configChanges */, null /* pendingResults */,
++                null /* pendingIntents */, null /* pendingActions */, prevState != ON_RESUME,
++                r.overrideConfig, "handleRelaunchActivityLocally");
+ 
+-        // Initialize a relaunch request.
+-        final MergedConfiguration mergedConfiguration = new MergedConfiguration(
+-                r.createdConfig != null ? r.createdConfig : mConfiguration,
+-                r.overrideConfig);
+-        final ActivityRelaunchItem activityRelaunchItem = ActivityRelaunchItem.obtain(
+-                null /* pendingResults */, null /* pendingIntents */, 0 /* configChanges */,
+-                mergedConfiguration, r.mPreserveWindow);
+-        // Make sure to match the existing lifecycle state in the end of the transaction.
+-        final ActivityLifecycleItem lifecycleRequest =
+-                TransactionExecutorHelper.getLifecycleRequestForCurrentState(r);
+-        // Schedule the transaction.
+-        final ClientTransaction transaction = ClientTransaction.obtain(this.mAppThread, r.token);
+-        transaction.addCallback(activityRelaunchItem);
+-        transaction.setLifecycleStateRequest(lifecycleRequest);
+-        try {
+-            mAppThread.scheduleTransaction(transaction);
+-        } catch (RemoteException e) {
+-            // Local scheduling
++        // Restore back to the previous state before relaunch if needed.
++        if (prevState != r.getLifecycleState()) {
++            mTransactionExecutor.cycleToPath(r, prevState);
+         }
+     }
+ 
+diff --git a/core/java/android/app/servertransaction/TransactionExecutorHelper.java b/core/java/android/app/servertransaction/TransactionExecutorHelper.java
+index 01b13a28aed..7e66fd7a2ea 100644
+--- a/core/java/android/app/servertransaction/TransactionExecutorHelper.java
++++ b/core/java/android/app/servertransaction/TransactionExecutorHelper.java
+@@ -26,7 +26,7 @@ import static android.app.servertransaction.ActivityLifecycleItem.ON_STOP;
+ import static android.app.servertransaction.ActivityLifecycleItem.PRE_ON_CREATE;
+ import static android.app.servertransaction.ActivityLifecycleItem.UNDEFINED;
+ 
+-import android.app.ActivityThread.ActivityClientRecord;
++import android.app.ActivityThread;
+ import android.util.IntArray;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+@@ -124,7 +124,7 @@ public class TransactionExecutorHelper {
+      *         {@link ActivityLifecycleItem#UNDEFINED} if there is not path.
+      */
+     @VisibleForTesting
+-    public int getClosestPreExecutionState(ActivityClientRecord r,
++    public int getClosestPreExecutionState(ActivityThread.ActivityClientRecord r,
+             int postExecutionState) {
+         switch (postExecutionState) {
+             case UNDEFINED:
+@@ -147,7 +147,7 @@ public class TransactionExecutorHelper {
+      *         were provided or there is not path.
+      */
+     @VisibleForTesting
+-    public int getClosestOfStates(ActivityClientRecord r, int[] finalStates) {
++    public int getClosestOfStates(ActivityThread.ActivityClientRecord r, int[] finalStates) {
+         if (finalStates == null || finalStates.length == 0) {
+             return UNDEFINED;
+         }
+@@ -168,27 +168,6 @@ public class TransactionExecutorHelper {
+         return closestState;
+     }
+ 
+-    /** Get the lifecycle state request to match the current state in the end of a transaction. */
+-    public static ActivityLifecycleItem getLifecycleRequestForCurrentState(ActivityClientRecord r) {
+-        final int prevState = r.getLifecycleState();
+-        final ActivityLifecycleItem lifecycleItem;
+-        switch (prevState) {
+-            // TODO(lifecycler): Extend to support all possible states.
+-            case ON_PAUSE:
+-                lifecycleItem = PauseActivityItem.obtain();
+-                break;
+-            case ON_STOP:
+-                lifecycleItem = StopActivityItem.obtain(r.isVisibleFromServer(),
+-                        0 /* configChanges */);
+-                break;
+-            default:
+-                lifecycleItem = ResumeActivityItem.obtain(false /* isForward */);
+-                break;
+-        }
+-
+-        return lifecycleItem;
+-    }
+-
+     /**
+      * Check if there is a destruction involved in the path. We want to avoid a lifecycle sequence
+      * that involves destruction and recreation if there is another path.
+-- 
+2.17.1
+

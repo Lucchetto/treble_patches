@@ -1,0 +1,37 @@
+From f70f239d704ff74a13ea3f23eac384a58f266e5d Mon Sep 17 00:00:00 2001
+From: Selim Cinek <cinek@google.com>
+Date: Thu, 22 Mar 2018 19:10:29 -0700
+Subject: [PATCH 169/306] Fixed an issue where notifications were invisible on
+ AOD
+
+Because of the new screen off animation, the shelf would
+be positioned wrongly and therefore the icons would
+be clipped.
+We'll have to revisit this positioning, when we do the real AOD
+layout, for now we place the invisible shelf at the bottom
+of the last notification.
+
+Change-Id: If2bd7c71957585ac73ace004221e48c5b5f134af
+Fixes: 76160478
+Test: add ambient notification,  observe  normal clipping
+(cherry picked from commit 27d52695424e017e03321cfd8f49963081107b44)
+---
+ .../src/com/android/systemui/statusbar/NotificationShelf.java   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/NotificationShelf.java b/packages/SystemUI/src/com/android/systemui/statusbar/NotificationShelf.java
+index aecf5fb89d8..41c75599140 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/NotificationShelf.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/NotificationShelf.java
+@@ -177,7 +177,7 @@ public class NotificationShelf extends ActivatableNotificationView implements
+             mShelfState.yTranslation = Math.max(Math.min(viewEnd, maxShelfEnd) - mShelfState.height,
+                     getFullyClosedTranslation());
+             mShelfState.zTranslation = ambientState.getBaseZHeight();
+-            if (mAmbientState.isDark()) {
++            if (mAmbientState.isDark() && !mAmbientState.hasPulsingNotifications()) {
+                 mShelfState.yTranslation = mAmbientState.getDarkTopPadding();
+             }
+             float openedAmount = (mShelfState.yTranslation - getFullyClosedTranslation())
+-- 
+2.17.1
+

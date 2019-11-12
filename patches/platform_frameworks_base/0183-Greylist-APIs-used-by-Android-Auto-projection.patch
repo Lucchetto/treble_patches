@@ -1,0 +1,31 @@
+From 79311ae3fa17ee692bc0171e22e589e2a96c46d6 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Thu, 12 Apr 2018 10:12:18 -0700
+Subject: [PATCH 183/306] Greylist APIs used by Android Auto projection
+
+Fixes:
+04-06 19:12:06.529 W android.gms:ca: Accessing hidden method Landroid/media/AudioAttributes$Builder;->addTag(Ljava/lang/String;)Landroid/media/AudioAttributes$Builder; (blacklist, reflection)
+
+Bug: 77315795
+Test: make
+Change-Id: I171fbfb60623a970285ac89499bbb94b1e5e57d4
+(cherry picked from commit b535c0dbf445f2a1c3ad9ed5b3d8ba42d09a4273)
+---
+ config/hiddenapi-light-greylist.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/config/hiddenapi-light-greylist.txt b/config/hiddenapi-light-greylist.txt
+index acd4425e2b4..1769bd83d75 100644
+--- a/config/hiddenapi-light-greylist.txt
++++ b/config/hiddenapi-light-greylist.txt
+@@ -1042,6 +1042,7 @@ Landroid/media/AudioAttributes;->mFlags:I
+ Landroid/media/AudioAttributes;->mFormattedTags:Ljava/lang/String;
+ Landroid/media/AudioAttributes;->mSource:I
+ Landroid/media/AudioAttributes;->mUsage:I
++Landroid/media/AudioAttributes$Builder;->addTag(Ljava/lang/String;)Landroid/media/AudioAttributes$Builder;
+ Landroid/media/AudioDevicePortConfig;-><init>(Landroid/media/AudioDevicePort;IIILandroid/media/AudioGainConfig;)V
+ Landroid/media/AudioDevicePort;-><init>(Landroid/media/AudioHandle;Ljava/lang/String;[I[I[I[I[Landroid/media/AudioGain;ILjava/lang/String;)V
+ Landroid/media/AudioFormat;-><init>(IIII)V
+-- 
+2.17.1
+

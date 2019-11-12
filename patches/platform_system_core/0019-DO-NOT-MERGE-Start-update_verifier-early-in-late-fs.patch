@@ -1,0 +1,88 @@
+From cee9908b9e609b73e6d5ee3ed8deb3b8bff517fd Mon Sep 17 00:00:00 2001
+From: Tao Bao <tbao@google.com>
+Date: Tue, 7 May 2019 11:09:04 -0700
+Subject: [PATCH 19/29] DO NOT MERGE Start update_verifier early in late-fs.
+
+We used to start update_verifier after mounting userdata (post-fs-data),
+as part of zygote-start. This leads to issues in practice for security
+updates, where an A/B device falls back into the old slot (for any
+reason, which unrelates to this change) but failing to boot due to
+upgraded key blob. It essentially breaks the fallback capability offered
+by A/B OTA.
+
+This CL mitigates the issue by starting update_verifier early, before
+mounting userdata. This avoids the device from falling back to the old
+slot with an already-upgraded key blob. update_verifier loses the
+opportunity of verifying _all_ the updated blocks based on the info
+that's stored in userdata.  Instead it will only trigger the minimal
+read to finish the work of marking a successful boot. This is a
+trade-off in P to avoid putting the device in a bad state after
+fallback, which will be improved in Q by better handling the fallback
+path in vold.
+
+Bug: 131176531
+Test: Flash and boot crosshatch. Check the start of update_verifier and
+      it marks a successful boot.
+Change-Id: I3f4c4333ff38772a9a93c9d027d497db11de1d63
+(cherry picked from commit 79cfc7d5a8a5c4d308fa2315f42cf17f253c09fd)
+---
+ rootdir/init.rc | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index b9464e7fd..f4b208278 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -381,6 +381,10 @@ on late-fs
+     # HALs required before storage encryption can get unlocked (FBE/FDE)
+     class_start early_hal
+ 
++    # Check and mark a successful boot, before mounting userdata with mount_all.
++    # No-op for non-A/B device.
++    exec_start update_verifier_nonencrypted
++
+ on post-fs-data
+     # We chown/chmod /data again so because mount is run as root + defaults
+     chown system system /data
+@@ -558,22 +562,16 @@ on post-fs-data
+ # It is recommended to put unnecessary data/ initialization from post-fs-data
+ # to start-zygote in device's init.rc to unblock zygote start.
+ on zygote-start && property:ro.crypto.state=unencrypted
+-    # A/B update verifier that marks a successful boot.
+-    exec_start update_verifier_nonencrypted
+     start netd
+     start zygote
+     start zygote_secondary
+ 
+ on zygote-start && property:ro.crypto.state=unsupported
+-    # A/B update verifier that marks a successful boot.
+-    exec_start update_verifier_nonencrypted
+     start netd
+     start zygote
+     start zygote_secondary
+ 
+ on zygote-start && property:ro.crypto.state=encrypted && property:ro.crypto.type=file
+-    # A/B update verifier that marks a successful boot.
+-    exec_start update_verifier_nonencrypted
+     start netd
+     start zygote
+     start zygote_secondary
+@@ -700,15 +698,11 @@ on property:vold.decrypt=trigger_post_fs_data
+     trigger zygote-start
+ 
+ on property:vold.decrypt=trigger_restart_min_framework
+-    # A/B update verifier that marks a successful boot.
+-    exec_start update_verifier
+     class_start main
+ 
+ on property:vold.decrypt=trigger_restart_framework
+     stop surfaceflinger
+     start surfaceflinger
+-    # A/B update verifier that marks a successful boot.
+-    exec_start update_verifier
+     class_start main
+     class_start late_start
+ 
+-- 
+2.17.1
+

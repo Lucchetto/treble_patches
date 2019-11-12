@@ -1,0 +1,829 @@
+From 4287367ab2669220c80e8704986227d141c491cc Mon Sep 17 00:00:00 2001
+From: CY Cheng <cycheng@google.com>
+Date: Fri, 15 Jun 2018 21:20:10 +0800
+Subject: [PATCH 31/70] Add an adapter to bridge ECC data and emergency dialer
+ UI
+
+- EccInfoHelper is not instanciated in EmergencyDialer yet, it's
+waiting for a proper IsoToEccRepository to supply EccInfo.
+- After get current country's EccInfo list from EccInfoHelper, apply
+the EccInfo list to EccShortcutAdapter.
+- With EccShortcutAdapter, each EccInfo will show as a shortcut button
+in EmergencyDialer. The types of an EccInfo will be combined together
+to generate the description string for the shortcut button.
+- Add strings for ECC types.
+- Add police and fire icon resources.
+
+Test: Manually
+
+Bug: 112168722
+Bug: 111622312
+Bug: 80406570
+
+Change-Id: I1f15bb81598f21364309f2a19ad8d2f14a195d42
+Merged-In: I1f15bb81598f21364309f2a19ad8d2f14a195d42
+---
+ res/drawable-hdpi/ic_fire_white_24.png        | Bin 0 -> 442 bytes
+ res/drawable-hdpi/ic_shield_white_24.png      | Bin 0 -> 243 bytes
+ res/drawable-mdpi/ic_fire_white_24.png        | Bin 0 -> 245 bytes
+ res/drawable-mdpi/ic_shield_white_24.png      | Bin 0 -> 189 bytes
+ res/drawable-xhdpi/ic_fire_white_24.png       | Bin 0 -> 423 bytes
+ res/drawable-xhdpi/ic_shield_white_24.png     | Bin 0 -> 344 bytes
+ res/drawable-xxhdpi/ic_fire_white_24.png      | Bin 0 -> 821 bytes
+ res/drawable-xxhdpi/ic_shield_white_24.png    | Bin 0 -> 475 bytes
+ res/drawable-xxxhdpi/ic_fire_white_24.png     | Bin 0 -> 753 bytes
+ res/drawable-xxxhdpi/ic_shield_white_24.png   | Bin 0 -> 600 bytes
+ res/values/strings.xml                        |  13 ++
+ src/com/android/phone/EccShortcutAdapter.java | 217 ++++++++++++++++++
+ src/com/android/phone/EmergencyDialer.java    | 132 +++++++++--
+ .../phone/EmergencyShortcutButton.java        |   6 +-
+ src/com/android/phone/ecc/CountryEccInfo.java |   4 +-
+ src/com/android/phone/ecc/EccInfo.java        |   4 +-
+ src/com/android/phone/ecc/EccInfoHelper.java  |  12 +-
+ 17 files changed, 354 insertions(+), 34 deletions(-)
+ create mode 100644 res/drawable-hdpi/ic_fire_white_24.png
+ create mode 100644 res/drawable-hdpi/ic_shield_white_24.png
+ create mode 100644 res/drawable-mdpi/ic_fire_white_24.png
+ create mode 100644 res/drawable-mdpi/ic_shield_white_24.png
+ create mode 100644 res/drawable-xhdpi/ic_fire_white_24.png
+ create mode 100644 res/drawable-xhdpi/ic_shield_white_24.png
+ create mode 100644 res/drawable-xxhdpi/ic_fire_white_24.png
+ create mode 100644 res/drawable-xxhdpi/ic_shield_white_24.png
+ create mode 100644 res/drawable-xxxhdpi/ic_fire_white_24.png
+ create mode 100644 res/drawable-xxxhdpi/ic_shield_white_24.png
+ create mode 100644 src/com/android/phone/EccShortcutAdapter.java
+
+diff --git a/res/drawable-hdpi/ic_fire_white_24.png b/res/drawable-hdpi/ic_fire_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c0c6ed664097505439eda854e9785b69c96245b
+GIT binary patch
+literal 442
+zcmV;r0Y(0aP)<h;3K|Lk000e1NJLTq001Na001Ni1ONa4O9@aD0004jNkl<Zcmd_o
+zL)26O7{>7@+qT<e+qKTN+hx0U+4efy_A1-9-Aw;F_uM&mZr{~6vkAYK`}64UL{=s+
+zL-C?K&w%xc5B2!~zy!sECVT-yFU5}hydz?yV#i@DOBE~H5$zSp6dSH%*G#dXBENe`
+zP9+}WNa#4}6%<*>ZQM;bxky0;!+xe3_Y%%tP(}V|3yd?qJGl8ubNS&0FxvQTVtGKA
+zXy0idFEq5G$00038I9c=D#;x)0JvcM%dxa23G1;tA$J@FLrIC&So%q%WDj;V<%XwV
+z*e;Qg??g<~FQj5O(PqmH?}_L~OF~u<Wgs12u$+|}KH}_+OsvB4Np84?vqv(~4a+yV
+zVLi^4$iy%#ujPgTIC()XnK%+C0OaHwc45|0NG2K+ZL-|46uZ;pk%`jW!4jsJ+>w{3
+z*nMRMZRp4v!bDpjZ&W9QzZ;~JA6oMbZ?7n>AgIS1++CuCf+9DI2$4{TrKC~fP@FNG
+k;s*d9xyd1hkyHPlpKr`)^K8mOVgLXD07*qoM6N<$g0N-At^fc4
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-hdpi/ic_shield_white_24.png b/res/drawable-hdpi/ic_shield_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf23794e127f374d4fa2e483a697c6108efc4177
+GIT binary patch
+literal 243
+zcmV<P01W?$P)<h;3K|Lk000e1NJLTq001Na001Ni1ONa4O9@aD0002GNkl<ZcmeIz
+zK@o#607TK15DAfhgh+^kRss${0uI0lH~|O5!SA)hkVz7zOb<K(d-#{tjc_<!#hVp?
+zm6z&Z=-BzT(_vHs%Sg<K%`GyMGUL)k^2Dp**(tT-bwp2%{?CV=p=ZcZ!~JeZqJqw_
+zP-@W`T1vG#gQb+wIVMU>iosICDvp6%ed^6Na%{<mqalzIXq1K{#VHS-Kuo|Z9}Qci
+tO`|dx295@dYG9cN00btiuEFDVpAXGleg<yx%_aZ<002ovPDHLkV1g#5VBG)!
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-mdpi/ic_fire_white_24.png b/res/drawable-mdpi/ic_fire_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..de8fda994c7635cd81d5c09ad9ed97153035ebf0
+GIT binary patch
+literal 245
+zcmV<R01E$!P)<h;3K|Lk000e1NJLTq000;O000;W1ONa4N`Cco0002INkl<ZcmciA
+z5fH;b5QX9A6sJ1X>73$pPH~D$&#5kr)4Aka8kfZ7FDzu|nq&?-{qW}A%-fyS&(P7U
+z9X%^qt%v|5wIN_8wPC@$TifqqOJHKRa@RTTbP@#`BV>Zaw|L$?xRJ|s#JZ0X854NA
+zV%_mFXNdt5Bo`S~!wmHP3k8!^!*PKKMl}lH4gO5nR3qVK_j*$4hH+;{V7*#wVmI^P
+v1(=OaN5~wyI*&wcA?OM>5(O(V5%qT;RqKd{JOjFD00000NkvXXu0mjfy#!?d
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-mdpi/ic_shield_white_24.png b/res/drawable-mdpi/ic_shield_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a5d958571c9c8796c682b26c0dd31c9a880576c
+GIT binary patch
+literal 189
+zcmeAS@N?(olHy`uVBq!ia0vp^5+KaM0wlfaz7_+i7Ec$)kP61P=NtuF9C%zVdPs0i
+zY?>U)?!v@3;edw(d&B`o3kLRje;FgzCEFgH*!_RqH1`jwDNmFQg>;Q~&zz=`9#9pQ
+zrERNaD#f;r$HY$I8{2<&?ukd)TRlED3L4652#WR#$roKH*zb0HreEJg%SlJMC+S=_
+mFe{T*GZZ>@q-ElheeyGB6_p9?Uz!AT4}+(xpUXO@geCxjTt1%w
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xhdpi/ic_fire_white_24.png b/res/drawable-xhdpi/ic_fire_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..750072e240f37bcf3217e7804aadaf6b48903b9d
+GIT binary patch
+literal 423
+zcmV;Y0a*TtP)<h;3K|Lk000e1NJLTq001xm001xu1ONa4{R=S+0004QNkl<ZcmeIy
+zA#j8+5QX9ODqi6g-V|?&H^r;-3U3;34zKFX;SG2L-UM&{imu8*GJ6ownfnxinFqTs
+zk+%Y9SnyH?jt4-Y0BQn%TDcw_3TWhNv`{cWhf^?MLKWEoJu!c6H3P9luEUKzU9tJA
+z1$R|{j@%0lNPWwBcv9}TSBu%}(@5GxB~~=Rm=92a#@w51K&-Rhn%)p#yF7S6;txi8
+z_JrIn6cxI>gBJB7%<P%0y{~j&&jF74<xMbvy6GQ11sp~!rkh7!j|Vb{BqD0b+4)+(
+z|CKmaV%`=I_@rV%DJP1C*eE&VHKKO<6eNe$6wniq97b~7xd2bvPx9?ma%f4}^!pWy
+zWyy+-BeVAWxJ5U^S&nS+MSx?n9W;ew<5{4MF2%`u3KHE=55A~H_~1@R7dV3%lc-;L
+zRBTvizYM5N5u2{p7%`I;*VhV%C(p|nR1As13{-L+j*fv5#mb1M#mPVL_6t%#>$3@Q
+RWf=ef002ovPDHLkV1mrywgvzI
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xhdpi/ic_shield_white_24.png b/res/drawable-xhdpi/ic_shield_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..e8862337e830301e8a82801dd13058925bf742f1
+GIT binary patch
+literal 344
+zcmV-e0jK_nP)<h;3K|Lk000e1NJLTq001xm001xu1ONa4{R=S+0003WNkl<ZcmeFu
+zAxuJ17{&3k;Z!El1CC&zHzJW}VY4SH!RSUbF?!P(9EnD7ZZt^FN#EWy6G#%+{w53a
+ze%$xI+jzgeot<-ZOsLRf!GazYrAD0r8GkYc)RhWNMr_!(VMJ42w3)CYWXFWIZ}AxR
+zEB4~i>{rai4fZR>;tuvJBvJ;H0WM`g8L%aVtwP91AyWuTQdla4DJe`9!jKe(3ZX*^
+z9ffel4_;eN6~-K|xh(YY>dQivH6ClKvN6WvL5FaS$CV8J4r9fj#ur6=bD=ogQpAno
+z@kCya%7YVL$>WWR^5K$CVy&ntKN`Ff<Aa8Zp~^Fdyl^fL?y=m-j}|ljGoz(c=(5_o
+qwX4+loyPzA|5t&q;lBpM2m%1_;-}v6P&C5;0000<MNUMnLSTZu2AB%~
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxhdpi/ic_fire_white_24.png b/res/drawable-xxhdpi/ic_fire_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..37c6ecd18f0b512214fd0038a44e41b7a1f04180
+GIT binary patch
+literal 821
+zcmV-51Iqk~P)<h;3K|Lk000e1NJLTq002k;002k`1ONa4|Kxkj0008~Nkl<ZcmeI#
+z1DNDW07c<D#<OkPwr$(CZQHhO+qSW`Jw~5(wJM#dB$F)q{}hy6Dk_??uqqcYpQa2f
+z#FM0eo0L3CIEO|iIzdTe0X`#bIVFqr89~};C5ugIAk&{p5?j$kwhxpX)}w`7A1Nu!
+z%^>o9rDRaXH`w%3GPn{iGb(<}LnB_cQ~bCWZ+9zhEJhpN22!bbaX*C}r#Mkf9fkF!
+zM)6@k{N1Yf@GkyRY^8WmN(<nxj+GP#mZPJFv8Fm7`_OTX?4i!aRk%oTQS_TcPx?@0
+z-k-(QJIt%-@B#n}nfEtvH=GR>4YtbN!TFFNS~x)AF(Z8eNXg(Uf=RKT!s0Y08YF{H
+z392phVo4X1REhcaI9}es&nT7+ci&1|z<j*|yC$l55<kCErl5F)w2jQyBe45MVqr$&
+z=K=-AXwptFUpK<;IgP^>wEM2!3n&PdCDVuIdl_}uJfR8LofZmvLP2m4ncA4c{CO3d
+zS2NbGW(r$h?zoL?N0~pzV)L5}cJ^tdN92w#$kv-0O~4}9v``^~&8WlM5K82VzsPm1
+z`PUPhwUvPlX~Wxwaz!^w8!WGJC}#*ZXDAD2;O#QGq96JCvof=CA9k-P3nhGumuKaQ
+zVYvE7IoK92zsePZa5Y3ZC}TKwqvVR8L$r{=C)m}=6|dv!RpsHG=n8ZVt`1fnzQb;$
+zT(J{wMlhTITs3}_D`uw+7u!2sDxZ`)KA@x8IbIfAikEZcj-%+9L2NDy=A<4kE6E+R
+z(~O^yTu80+Jnf-ixDh{F$^&QN?Ro{n%nYNjI(Akbs<?|3UYeOtL2&~9US_X!w^74x
+z{6QgiDL6{_4)E8^58S~+{6dRwo6f5+Sdx08bd17cN7{+XcZvch6OA6sr)Y2#DZ=W_
+zLW&N%F@`YyWKl(nMfrxHUZO_Pql|NC#?`OvsLsPOyyP(J{$dYG)Y({wEBJ%LMvY&=
+z6(<(uAa3Df{$+$&g}d<u4{<UZP_8LbQBl!YR7fe2Tp;{*00000NkvXXu0mjfh5>$o
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxhdpi/ic_shield_white_24.png b/res/drawable-xxhdpi/ic_shield_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..16218361a353830dc2756640fd0aae5bf434e2ee
+GIT binary patch
+literal 475
+zcmV<10VMv3P)<h;3K|Lk000e1NJLTq002k;002k`1ONa4|Kxkj0004^Nkl<ZcmeIw
+zfktFu7>Duy2*x79w95>^E?B#TFkMIr5Fipwph%aHLZP5Q1OgbS0s#sMkRh0Xs-kL2
+zPau-gd(JuEJLvme!GlNNP(&BQ9B{xeUFtNtsnOt7gBsoH6#7`;iubNqpikbYvc(gh
+zd18yI?=cqHuQDEE5a24qF$Ni~G8|)IxXSAo`&ACdI9z2v#^EaaF-}+EC<eu#7!+Cz
+zia{|bh!_-uV$eNa?q$IxUM^)p6E96!aD<m5S+I?lZCS90mql4HiI)jkP{m7C78JR~
+z!!1SGu#bnjteC>XxUBfaGod~6Q+DhT+MbeNoY2OU1SQ&p)aHkhVV#iHl@xz?B$P*f
+zD>*g^WkYFD;hGR`C@URi2w_I)aY)_{l?DHKAWskcQ#Q<!r&(o1fgSR)OF`MuOOre_
+z=v6)#;+(857*u}f&zRJ*&umXRBds(3Du0wYCXHjt3WFZ%Bvq$J;ZUGP8>=?c6cic*
+zoM3UnfP7G7iLWeClqV`IbH_*SSfQd$pu`+4-fA&VNu9+gtDJJm8YB9Cq8G;Qnc7l{
+R0)_wp002ovPDHLkV1oB=%ZdO1
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxxhdpi/ic_fire_white_24.png b/res/drawable-xxxhdpi/ic_fire_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..fb1d6309da8db51bd1183b23ada5d23d20324725
+GIT binary patch
+literal 753
+zcmV<N0uKF&P)<h;3K|Lk000e1NJLTq003YB003YJ1ONa4NRhv@0008GNkl<ZcmeI(
+z2c4ua7>4mzLL?vo2aAJ^gTuk$;NoC$usGOpFgTcTz&HpFp6g{REdla7{tCV~g_5Gf
+z|KV^r@QIF&EY;#YKRKm_oHKt}rG?KtXOs>MPds-`Yv^2fsZObU&ucF2^1-HEJ`~zN
+zGCU+30K)}R4)DZBD(xF3AFC4_{m-;14<7)p{i0xuLVLxTG3vD2AAH*F4^V1<$QZBF
+z{!lZ8)85cAO|Cs5XQ~TE`+;M+N9_kKBpm@D;Rxi+_lVKfuq<&QTYI7EGiLl09>HVR
+zeqmKX0{}d%`@!bMKZ8a)V-y#Lj-PCV0ML=I^|~se1OOi~0tO#FK+Fg@h#w$Y1PuP&
+z01aVzj6$P=cLO+v)D%o{QD|KFS2;02A#q}gI_?i+J?(d1lE~<pqKG$upq=zT+|T-E
+z>Y{${>lylS%ZZd5{W%Zqv~U^<Fe`$`#9Ojzo)59{OIehw_W{*V>yYswX=Vhk5U7V+
+zhbte+XGgH{e%U={^dKswnGu?J0l<xZ7u3?s2wuzKhld8)^iKoaN-wm5^|f)u7`=fj
+z!>X78pyQr9zRYV!idDXf2%(Z@_CdRk0B-ml6KxvPMhuWKXx9OxH3HNuXSWPcv7Fg5
+zK*3Ut-hpArRm-tdwxDrZY3ph17R@gwMV$r9T9C^s+u~%*)nXRTu1q0tVh*?Xc*0d-
+zP%>3R7GPl33WXcvoiKs626Kf%8FC+<9KYlN5Wf#R#fKY(o-ypU+o@-YckXeFb5m%X
+zn5yG}d+sQ><DLgP#<L0yL(f`HiUG?ydW_<rVhvXD&=6arxM<>+pKgRk>!6Nbeq>mB
+z!m6|`GOmPjqtF(p=vl7DXe$_+MIjn8Z4HB)5#oj;(|%xSxQ#5m#%iC)u{c^<`WHpF
+joNyEv1#&nX4u`{6u3Qd5kI2Nx00000NkvXXu0mjfb&*q`
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/drawable-xxxhdpi/ic_shield_white_24.png b/res/drawable-xxxhdpi/ic_shield_white_24.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..8b9f129781de4a5588a329c4318a05115d0ab527
+GIT binary patch
+literal 600
+zcmV-e0;m0nP)<h;3K|Lk000e1NJLTq003YB003YJ1ONa4NRhv@0006XNkl<ZcmeIx
+z1FW1;6h+}v+qP{xW^H4_TH%B>f`_1HSVS*=u?JDzPA8~syQ@L%`{Uj-$^BwyC3}nK
+zd2yi<Gf0zW29>1HP?xn_=8Ma$rLGhT+EL6Ce)fc7+KF}y=Q!{AllL5FxbDUO2g|Q8
+zSiAvCuP|7=0SB)zSiAv)S2$g~`70DI-uxB%7H|Fv_ltM`3iHJ~c!h(-8@<BS;@!W(
+zeDTU&figb82lxOV-~)Vs5AXp#zz1031AKrF@Bu!+2l#;3X!2T2@fb}Wiz#lS$!#%3
+z4oz}miY%IB#S~>|a#T#Q9ZlAYDH3Rs5L1jnlQCk7>U=<p4^$U(<j~@z1i@jn*eyY@
+z2rU*#5VYbW8hoUM1VaW5G7=Q)(O|s<MISWiCBc!=I3NQga4jKWP?P7l^nw}^4yCwM
+zDq+!_m$>qZW)dEyxKb)npgB)*;Tg>(8YFQcDN&&+m$B_CRV6yi#<s~4Ey}Q|Orl0h
+zo?*)aT1xa-f-MP&2j$pME^(m_7l~V*IuakcaF;mUqqD?|(Zp%E#E%KQBM$EvCw4H8
+zILsD%SV7d5i(O3N1yOmyM6r*7Tqg=Q=r3;2oHSu&X(sMag?)rkLRE2%c|0J9hs+Wk
+zXv9uFVB!P2XegR6m<<0b!(h>e3e4jg|8kA_R1mGGNs=6Yk|Rk?(U0zIBG32oY^J*u
+m7J9RRbDU=*{Uj!y=Y0b0KR#)s^{_1f0000<MNUMnLSTaLTn0w~
+
+literal 0
+HcmV?d00001
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 399fd5ed9..88873b3fa 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -1157,6 +1157,19 @@
+          emergency calling is not currently available. -->
+     <string name="dial_emergency_calling_not_available">Emergency calling not available</string>
+ 
++    <!-- Text for description of police calling type -->
++    <string name="police_type_description">Police</string>
++    <!-- Text for description of ambulance calling type -->
++    <string name="ambulance_type_description">Ambulance</string>
++    <!-- Text for description of fire calling type -->
++    <string name="fire_type_description">Fire</string>
++
++    <!-- Format for concatenating multiple emergency type descriptions. The separator may differ in
++         different locales, for example arabic comma "،" is used in some countries. Some languages
++         may use full-width separator without leading or trailing spaces, eg. Ideographic comma "、"
++         in Chinese and Japanese. -->
++    <string name="description_concat_format">%1$s, %2$s</string>
++
+     <!-- Displayed in the text entry box in the dialer when in landscape mode to guide the user
+          to dial using the physical keyboard -->
+     <string name="dialerKeyboardHintText">Use keyboard to dial</string>
+diff --git a/src/com/android/phone/EccShortcutAdapter.java b/src/com/android/phone/EccShortcutAdapter.java
+new file mode 100644
+index 000000000..bd7252caa
+--- /dev/null
++++ b/src/com/android/phone/EccShortcutAdapter.java
+@@ -0,0 +1,217 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.phone;
++
++import android.annotation.NonNull;
++import android.annotation.Nullable;
++import android.content.Context;
++import android.text.TextUtils;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.BaseAdapter;
++
++import com.android.phone.ecc.CountryEccInfo;
++import com.android.phone.ecc.EccInfo;
++
++import com.google.common.collect.LinkedListMultimap;
++
++import java.util.ArrayList;
++import java.util.List;
++
++/**
++ * An abstract adapter between ECC data and the view contains ECC shortcuts.
++ * This adapter will convert given {@link CountryEccInfo} to number string, description string and
++ * icon resource id for each {@link EccInfo}.
++ * The subclass should implements {@link #inflateView} to provide the view for an ECC data, when the
++ * view container calls {@link #getView}.
++ */
++public abstract class EccShortcutAdapter extends BaseAdapter {
++    // GSM default emergency number, used when country's fallback ECC(112 or 911) not available.
++    private static final String FALLBACK_EMERGENCY_NUMBER = "112";
++
++    private List<EccDisplayMaterial> mEccDisplayMaterialList;
++
++    private CharSequence mPoliceDescription;
++    private CharSequence mAmbulanceDescription;
++    private CharSequence mFireDescription;
++
++    private static class EccDisplayMaterial {
++        public CharSequence number = null;
++        public int iconRes = 0;
++        public CharSequence description = null;
++    }
++
++    public EccShortcutAdapter(@NonNull Context context) {
++        mPoliceDescription = context.getText(R.string.police_type_description);
++        mAmbulanceDescription = context.getText(R.string.ambulance_type_description);
++        mFireDescription = context.getText(R.string.fire_type_description);
++
++        mEccDisplayMaterialList = new ArrayList<>();
++    }
++
++    @Override
++    public int getCount() {
++        return mEccDisplayMaterialList.size();
++    }
++
++    @Override
++    public EccDisplayMaterial getItem(int position) {
++        return mEccDisplayMaterialList.get(position);
++    }
++
++    @Override
++    public long getItemId(int position) {
++        return position;
++    }
++
++    @Override
++    public View getView(int position, View convertView, ViewGroup parent) {
++        EccDisplayMaterial material = getItem(position);
++        return inflateView(convertView, parent, material.number, material.description,
++                material.iconRes);
++    }
++
++    /**
++     * Get a View that display the given ECC data: number, description and iconRes.
++     *
++     * @param convertView The old view to reuse, if possible. Note: You should check that this view
++     *                   is non-null and of an appropriate type before using. If it is not possible
++     *                   to convert this view to display the correct data, this method can create a
++     *                   new view. Heterogeneous lists can specify their number of view types, so
++     *                   that this View is always of the right type (see {@link
++     *                   BaseAdapter#getViewTypeCount()} and {@link
++     *                   BaseAdapter#getItemViewType(int)}).
++     * @param parent The parent that this view will eventually be attached to.
++     * @param number The number of the ECC shortcut to display in the view.
++     * @param description The description of the ECC shortcut to display in the view.
++     * @param iconRes The icon resource ID represent for the ECC shortcut.
++     * @return A View corresponding to the data at the specified position.
++     */
++    public abstract View inflateView(View convertView, ViewGroup parent, CharSequence number,
++            CharSequence description, int iconRes);
++
++    /**
++     * Update country ECC info. This method converts given country ECC info to ECC data that could
++     * be display by the short container View.
++     *
++     * @param context The context used to access resources.
++     * @param countryEccInfo Updated country ECC info.
++     */
++    public void updateCountryEccInfo(@NonNull Context context, CountryEccInfo countryEccInfo) {
++        List<EccDisplayMaterial> displayMaterials = new ArrayList<>();
++
++        final EccInfo.Type[] orderedMustHaveTypes =
++                { EccInfo.Type.POLICE, EccInfo.Type.AMBULANCE, EccInfo.Type.FIRE };
++
++        String fallback = null;
++        EccInfo[] eccInfoList = null;
++        if (countryEccInfo != null) {
++            fallback = countryEccInfo.getFallbackEcc();
++            eccInfoList = countryEccInfo.getEccInfoList();
++        }
++        if (TextUtils.isEmpty(fallback)) {
++            fallback = FALLBACK_EMERGENCY_NUMBER;
++        }
++
++        // Finding matched ECC for each must have types.
++        // Using LinkedListMultimap to prevent duplicated keys.
++        // LinkedListMultimap also preserve the insertion order of keys (ECC number) and values
++        // (matched types of the ECC number), which follows the order in orderedMustHaveTypes.
++        LinkedListMultimap<String, EccInfo.Type> eccList = LinkedListMultimap.create();
++        for (EccInfo.Type type : orderedMustHaveTypes) {
++            String number = null;
++            if (eccInfoList != null) {
++                number = pickEccNumberForType(type, eccInfoList);
++            }
++            if (number == null) {
++                number = fallback;
++            }
++            // append type for exist number, otherwise insert a new entry.
++            eccList.put(number, type);
++        }
++
++        // prepare display material for picked ECC
++        for (String number : eccList.keySet()) {
++            EccDisplayMaterial material = prepareDisplayMaterialForEccInfo(context,
++                    new EccInfo(number, eccList.asMap().get(number)));
++            if (material != null) {
++                displayMaterials.add(material);
++            }
++        }
++
++        mEccDisplayMaterialList = displayMaterials;
++        notifyDataSetChanged();
++    }
++
++    private @Nullable String pickEccNumberForType(@NonNull EccInfo.Type targetType,
++            @NonNull EccInfo[] eccInfoList) {
++        EccInfo pickedEccInfo = null;
++        for (EccInfo eccInfo : eccInfoList) {
++            if (eccInfo.containsType(targetType)) {
++                // An ECC is more suitable for a type if the ECC has fewer other types.
++                if (pickedEccInfo == null
++                        || eccInfo.getTypesCount() < pickedEccInfo.getTypesCount()) {
++                    pickedEccInfo = eccInfo;
++                }
++            }
++        }
++        if (pickedEccInfo != null) {
++            return pickedEccInfo.getNumber();
++        }
++        return null;
++    }
++
++    private @Nullable EccDisplayMaterial prepareDisplayMaterialForEccInfo(@NonNull Context context,
++            @NonNull EccInfo eccInfo) {
++        EccDisplayMaterial material = new EccDisplayMaterial();
++        material.number = eccInfo.getNumber();
++        EccInfo.Type[] types = eccInfo.getTypes();
++        for (EccInfo.Type type : types) {
++            CharSequence description;
++            switch (type) {
++                case POLICE:
++                    description = mPoliceDescription;
++                    material.iconRes = R.drawable.ic_shield_white_24;
++                    break;
++                case AMBULANCE:
++                    description = mAmbulanceDescription;
++                    material.iconRes = R.drawable.ic_emergency_number_24;
++                    break;
++                case FIRE:
++                    description = mFireDescription;
++                    material.iconRes = R.drawable.ic_fire_white_24;
++                    break;
++                default:
++                    // ignore unknown types
++                    continue;
++            }
++            if (TextUtils.isEmpty(material.description)) {
++                material.description = description;
++            } else {
++                // concatenate multiple types
++                material.iconRes = R.drawable.ic_emergency_number_24;
++                material.description = context.getString(R.string.description_concat_format,
++                        material.description, description);
++            }
++        }
++        if (TextUtils.isEmpty(material.description) || material.iconRes == 0) {
++            return null;
++        }
++        return material;
++    }
++
++}
+diff --git a/src/com/android/phone/EmergencyDialer.java b/src/com/android/phone/EmergencyDialer.java
+index 951fae9ca..c57615d5d 100644
+--- a/src/com/android/phone/EmergencyDialer.java
++++ b/src/com/android/phone/EmergencyDialer.java
+@@ -28,6 +28,7 @@ import android.content.BroadcastReceiver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
++import android.database.DataSetObserver;
+ import android.graphics.Color;
+ import android.graphics.Point;
+ import android.media.AudioManager;
+@@ -70,9 +71,12 @@ import com.android.internal.colorextraction.drawable.GradientDrawable;
+ import com.android.phone.common.dialpad.DialpadKeyButton;
+ import com.android.phone.common.util.ViewUtil;
+ import com.android.phone.common.widget.ResizingTextEditText;
++import com.android.phone.ecc.CountryEccInfo;
++import com.android.phone.ecc.EccInfoHelper;
+ 
+ import java.util.ArrayList;
+ import java.util.List;
++import java.util.Locale;
+ 
+ /**
+  * EmergencyDialer is a special dialer that is used ONLY for dialing emergency calls.
+@@ -135,13 +139,20 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+     /** 85% opacity for black background **/
+     private static final int BLACK_BACKGROUND_GRADIENT_ALPHA = 217;
+ 
++    /** Size limit of emergency shortcut buttons container. **/
++    private static final int SHORTCUT_SIZE_LIMIT = 3;
++
+     ResizingTextEditText mDigits;
+     private View mDialButton;
+     private View mDelete;
+     private View mEmergencyShortcutView;
+     private View mDialpadView;
+ 
++    private EccInfoHelper mEccInfoHelper;
++
+     private List<EmergencyShortcutButton> mEmergencyShortcutButtonList;
++    private EccShortcutAdapter mShortcutAdapter;
++    private DataSetObserver mShortcutDataSetObserver = null;
+ 
+     private ToneGenerator mToneGenerator;
+     private Object mToneGeneratorLock = new Object();
+@@ -219,6 +230,8 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+ 
+         mAreEmergencyDialerShortcutsEnabled = Settings.Global.getInt(getContentResolver(),
+                 Settings.Global.FASTER_EMERGENCY_PHONE_CALL_ENABLED, 0) != 0;
++        Log.d(LOG_TAG, "Enable emergency dialer shortcut: "
++                + mAreEmergencyDialerShortcutsEnabled);
+ 
+         mColorExtractor = new ColorExtractor(this);
+ 
+@@ -330,6 +343,10 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+             }
+         }
+         unregisterReceiver(mBroadcastReceiver);
++        if (mShortcutAdapter != null && mShortcutDataSetObserver != null) {
++            mShortcutAdapter.unregisterDataSetObserver(mShortcutDataSetObserver);
++            mShortcutDataSetObserver = null;
++        }
+     }
+ 
+     @Override
+@@ -592,6 +609,32 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+             mBackgroundGradient.setColors(lockScreenColors, false);
+             updateTheme(lockScreenColors.supportsDarkText());
+         }
++
++        if (mAreEmergencyDialerShortcutsEnabled && mEccInfoHelper != null) {
++            final Context context = this;
++            mEccInfoHelper.getCountryEccInfoAsync(context,
++                    new EccInfoHelper.CountryEccInfoResultCallback() {
++                        @Override
++                        public void onSuccess(String iso, CountryEccInfo countryEccInfo) {
++                            Log.d(LOG_TAG, "Retrieve ECC info success, country ISO: "
++                                    + Rlog.pii(LOG_TAG, iso));
++                            updateLocationAndEccInfo(iso, countryEccInfo);
++                        }
++
++                        @Override
++                        public void onDetectCountryFailed() {
++                            Log.w(LOG_TAG, "Cannot detect current country.");
++                            updateLocationAndEccInfo(null, null);
++                        }
++
++                        @Override
++                        public void onRetrieveCountryEccInfoFailed(String iso) {
++                            Log.w(LOG_TAG, "Retrieve ECC info failed, country ISO: "
++                                    + Rlog.pii(LOG_TAG, iso));
++                            updateLocationAndEccInfo(iso, null);
++                        }
++                    });
++        }
+     }
+ 
+     @Override
+@@ -900,53 +943,94 @@ public class EmergencyDialer extends Activity implements View.OnClickListener,
+         final View emergencyDialpadTitle = findViewById(R.id.emergency_dialpad_title_container);
+         emergencyDialpadTitle.setVisibility(View.VISIBLE);
+ 
+-        // TODO: Integrating emergency phone number table will get location information.
+-        // Using null to present no location status.
+-        setLocationInfo(null);
+-
+         mEmergencyShortcutButtonList = new ArrayList<>();
+         setupEmergencyCallShortcutButton();
+ 
++        updateLocationAndEccInfo(null, null);
++
+         switchView(mEmergencyShortcutView, mDialpadView, false);
+     }
+ 
+-    private void setLocationInfo(String country) {
++    private void setLocationInfo(String countryIso) {
+         final View locationInfo = findViewById(R.id.location_info);
+ 
+-        if (TextUtils.isEmpty(country)) {
++        String countryName = null;
++        if (!TextUtils.isEmpty(countryIso)) {
++            Locale locale = Locale.getDefault();
++            countryName = new Locale(locale.getLanguage(), countryIso, locale.getVariant())
++                    .getDisplayCountry();
++        }
++        if (TextUtils.isEmpty(countryName)) {
+             locationInfo.setVisibility(View.INVISIBLE);
+         } else {
+             final TextView location = (TextView) locationInfo.findViewById(R.id.location_text);
+-            location.setText(country);
++            location.setText(countryName);
+             locationInfo.setVisibility(View.VISIBLE);
+         }
+     }
+ 
+-    // TODO: Integrate emergency phone number table.
+-    // Using default layout(no location, phone number is 112, description is Emergency,
+-    // and icon is cross shape) until integrating emergency phone number table.
+     private void setupEmergencyCallShortcutButton() {
+         final ViewGroup shortcutButtonContainer = findViewById(
+                 R.id.emergency_shortcut_buttons_container);
+         shortcutButtonContainer.setClipToOutline(true);
++        final TextView emergencyNumberTitle = findViewById(R.id.emergency_number_title);
++
++        mShortcutAdapter = new EccShortcutAdapter(this) {
++            @Override
++            public View inflateView(View convertView, ViewGroup parent, CharSequence number,
++                    CharSequence description, int iconRes) {
++                EmergencyShortcutButton button = (EmergencyShortcutButton) getLayoutInflater()
++                        .inflate(R.layout.emergency_shortcut_button, parent, false);
++                button.setPhoneNumber(number);
++                button.setPhoneDescription(description);
++                button.setPhoneTypeIcon(iconRes);
++                button.setOnConfirmClickListener(EmergencyDialer.this);
++                return button;
++            }
++        };
++        mShortcutDataSetObserver = new DataSetObserver() {
++            @Override
++            public void onChanged() {
++                super.onChanged();
++                updateLayout();
++            }
++
++            @Override
++            public void onInvalidated() {
++                super.onInvalidated();
++                updateLayout();
++            }
+ 
+-        final EmergencyShortcutButton button =
+-                (EmergencyShortcutButton) getLayoutInflater().inflate(
+-                        R.layout.emergency_shortcut_button,
+-                        shortcutButtonContainer, false);
++            private void updateLayout() {
++                // clear previous added buttons
++                shortcutButtonContainer.removeAllViews();
++                mEmergencyShortcutButtonList.clear();
+ 
+-        button.setPhoneNumber("112");
+-        button.setPhoneDescription("Emergency");
+-        button.setPhoneTypeIcon(R.drawable.ic_emergency_number_24);
+-        button.setOnConfirmClickListener(this);
++                for (int i = 0; i < mShortcutAdapter.getCount() && i < SHORTCUT_SIZE_LIMIT; ++i) {
++                    EmergencyShortcutButton button = (EmergencyShortcutButton)
++                            mShortcutAdapter.getView(i, null, shortcutButtonContainer);
++                    mEmergencyShortcutButtonList.add(button);
++                    shortcutButtonContainer.addView(button);
++                }
+ 
+-        shortcutButtonContainer.addView(button);
+-        mEmergencyShortcutButtonList.add(button);
++                // update emergency numbers title for numerous buttons.
++                if (mEmergencyShortcutButtonList.size() > 1) {
++                    emergencyNumberTitle.setText(getString(
++                            R.string.numerous_emergency_numbers_title));
++                } else {
++                    emergencyNumberTitle.setText(getText(R.string.single_emergency_number_title));
++                }
++            }
++        };
++        mShortcutAdapter.registerDataSetObserver(mShortcutDataSetObserver);
++    }
+ 
+-        //Set emergency number title for numerous buttons.
+-        if (shortcutButtonContainer.getChildCount() > 1) {
+-            final TextView emergencyNumberTitle = findViewById(R.id.emergency_number_title);
+-            emergencyNumberTitle.setText(getString(R.string.numerous_emergency_numbers_title));
++    private void updateLocationAndEccInfo(String iso, CountryEccInfo countryEccInfo) {
++        if (!isFinishing() && !isDestroyed()) {
++            setLocationInfo(iso);
++            if (mShortcutAdapter != null) {
++                mShortcutAdapter.updateCountryEccInfo(this, countryEccInfo);
++            }
+         }
+     }
+ 
+diff --git a/src/com/android/phone/EmergencyShortcutButton.java b/src/com/android/phone/EmergencyShortcutButton.java
+index f2582cc5e..9b6caa4a9 100644
+--- a/src/com/android/phone/EmergencyShortcutButton.java
++++ b/src/com/android/phone/EmergencyShortcutButton.java
+@@ -102,14 +102,14 @@ public class EmergencyShortcutButton extends FrameLayout implements View.OnClick
+     /**
+      * Set emergency phone number description.
+      */
+-    public void setPhoneDescription(@NonNull String description) {
++    public void setPhoneDescription(@NonNull CharSequence description) {
+         mPhoneTypeDescription.setText(description);
+     }
+ 
+     /**
+      * Set emergency phone number.
+      */
+-    public void setPhoneNumber(@NonNull String number) {
++    public void setPhoneNumber(@NonNull CharSequence number) {
+         mPhoneNumber.setText(number);
+         mPhoneCallHint.setText(
+                 getContext().getString(R.string.emergency_call_shortcut_hint, number));
+@@ -117,7 +117,7 @@ public class EmergencyShortcutButton extends FrameLayout implements View.OnClick
+         // Set content description for phone number.
+         if (number.length() > 1) {
+             StringBuilder stringBuilder = new StringBuilder();
+-            for (char c : number.toCharArray()) {
++            for (char c : number.toString().toCharArray()) {
+                 stringBuilder.append(c).append(" ");
+             }
+             mPhoneNumber.setContentDescription(stringBuilder.toString().trim());
+diff --git a/src/com/android/phone/ecc/CountryEccInfo.java b/src/com/android/phone/ecc/CountryEccInfo.java
+index 41f06ebc9..bc7ec8418 100644
+--- a/src/com/android/phone/ecc/CountryEccInfo.java
++++ b/src/com/android/phone/ecc/CountryEccInfo.java
+@@ -19,7 +19,7 @@ package com.android.phone.ecc;
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
+ 
+-import java.util.List;
++import java.util.Collection;
+ 
+ /**
+  * ECC info of a country.
+@@ -28,7 +28,7 @@ public class CountryEccInfo {
+     private final String mFallbackEcc;
+     private final EccInfo[] mEccInfoList;
+ 
+-    public CountryEccInfo(String eccFallback, @NonNull List<EccInfo> eccInfoList) {
++    public CountryEccInfo(String eccFallback, @NonNull Collection<EccInfo> eccInfoList) {
+         mFallbackEcc = eccFallback;
+         mEccInfoList = eccInfoList.toArray(new EccInfo[eccInfoList.size()]);
+     }
+diff --git a/src/com/android/phone/ecc/EccInfo.java b/src/com/android/phone/ecc/EccInfo.java
+index c4bf11905..a219bae4a 100644
+--- a/src/com/android/phone/ecc/EccInfo.java
++++ b/src/com/android/phone/ecc/EccInfo.java
+@@ -18,7 +18,7 @@ package com.android.phone.ecc;
+ 
+ import android.annotation.NonNull;
+ 
+-import java.util.List;
++import java.util.Collection;
+ 
+ /**
+  * Emergency call code info.
+@@ -41,7 +41,7 @@ public class EccInfo {
+         mTypes = new Type[]{ type };
+     }
+ 
+-    public EccInfo(@NonNull String number, @NonNull List<Type> types) {
++    public EccInfo(@NonNull String number, @NonNull Collection<Type> types) {
+         mNumber = number;
+         mTypes = types.toArray(new Type[types.size()]);
+     }
+diff --git a/src/com/android/phone/ecc/EccInfoHelper.java b/src/com/android/phone/ecc/EccInfoHelper.java
+index 7035881e0..875442aae 100644
+--- a/src/com/android/phone/ecc/EccInfoHelper.java
++++ b/src/com/android/phone/ecc/EccInfoHelper.java
+@@ -29,6 +29,7 @@ import android.telephony.CellInfoGsm;
+ import android.telephony.CellInfoLte;
+ import android.telephony.CellInfoWcdma;
+ import android.telephony.PhoneNumberUtils;
++import android.telephony.Rlog;
+ import android.telephony.TelephonyManager;
+ import android.text.TextUtils;
+ import android.util.Log;
+@@ -44,6 +45,8 @@ import java.util.List;
+  * Helper for retrieve ECC info for current country.
+  */
+ public class EccInfoHelper {
++    // Debug constants.
++    private static final boolean DBG = false;
+     private static final String LOG_TAG = "EccInfoHelper";
+ 
+     // country ISO to ECC list data source
+@@ -163,14 +166,17 @@ public class EccInfoHelper {
+         TelephonyManager tm = (TelephonyManager) context.getSystemService(
+                 Context.TELEPHONY_SERVICE);
+         String iso = tm.getNetworkCountryIso();
+-        Log.d(LOG_TAG, "Current country ISO is " + iso);
++        if (DBG) Log.d(LOG_TAG, "Current country ISO is " + Rlog.pii(LOG_TAG, iso));
+ 
+         if (TextUtils.isEmpty(iso)) {
+             // XXX: according to ServiceStateTracker's implementation, retrieve cell info in a
+             // thread other than TelephonyManager's main thread.
+             String mcc = getCurrentMccFromCellInfo(context);
+             iso = countryCodeForMcc(mcc);
+-            Log.d(LOG_TAG, "Current mcc is " + mcc + ", mapping to ISO: " + iso);
++            if (DBG) {
++                Log.d(LOG_TAG, "Current mcc is " + Rlog.pii(LOG_TAG, mcc) + ", mapping to ISO: "
++                        + Rlog.pii(LOG_TAG, iso));
++            }
+         }
+         return iso;
+     }
+@@ -211,7 +217,7 @@ public class EccInfoHelper {
+                     break;
+                 }
+             }
+-            Log.d(LOG_TAG, "Retrieve MCC from cell info list: " + mcc);
++            if (DBG) Log.d(LOG_TAG, "Retrieve MCC from cell info list: " + Rlog.pii(LOG_TAG, mcc));
+         } else {
+             Log.w(LOG_TAG, "Cannot get cell info list.");
+         }
+-- 
+2.17.1
+

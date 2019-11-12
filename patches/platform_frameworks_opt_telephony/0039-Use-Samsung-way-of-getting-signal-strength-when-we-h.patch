@@ -1,0 +1,46 @@
+From d7dfc2c6ae7234f7f1f69493e00561f771ac0e9b Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Sun, 3 Nov 2019 16:59:34 +0100
+Subject: [PATCH 39/39] Use Samsung way of getting signal strength when we have
+ samsung radio
+
+Change-Id: I0af2059ab3857ca8dceaef2b34ff423dfaef46b0
+---
+ src/java/com/android/internal/telephony/RIL.java             | 5 ++++-
+ .../com/android/internal/telephony/SamsungRadioResponse.java | 4 +++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
+index b845d2614..f14e30fdd 100644
+--- a/src/java/com/android/internal/telephony/RIL.java
++++ b/src/java/com/android/internal/telephony/RIL.java
+@@ -996,7 +996,10 @@ public class RIL extends BaseCommands implements CommandsInterface {
+             if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
+ 
+             try {
+-                radioProxy.getSignalStrength(rr.mSerial);
++                if(mSamsungRadioProxy != null)
++                    mSamsungRadioProxy.secGetSignalStrength(rr.mSerial);
++                else
++                    radioProxy.getSignalStrength(rr.mSerial);
+             } catch (RemoteException | RuntimeException e) {
+                 handleRadioProxyExceptionForRR(rr, "getSignalStrength", e);
+             }
+diff --git a/src/java/com/android/internal/telephony/SamsungRadioResponse.java b/src/java/com/android/internal/telephony/SamsungRadioResponse.java
+index 63e680afb..11f8f23a8 100644
+--- a/src/java/com/android/internal/telephony/SamsungRadioResponse.java
++++ b/src/java/com/android/internal/telephony/SamsungRadioResponse.java
+@@ -625,7 +625,9 @@ public class SamsungRadioResponse extends IRadioResponse.Stub {
+     public void secAcceptCallResponse(RadioResponseInfo info) {}
+     public void secDialResponse(RadioResponseInfo info) {}
+     public void secGetCurrentCallsResponse(RadioResponseInfo info, ArrayList<SecCall> calls) {}
+-    public void secGetSignalStrengthResponse(RadioResponseInfo info, SecSignalStrength sigStrength) {}
++    public void secGetSignalStrengthResponse(RadioResponseInfo info, SecSignalStrength sigStrength) {
++        mResponse.getSignalStrengthResponse_1_2(info, sigStrength.base);
++    }
+     public void secGetVoiceRegistrationStateResponse(RadioResponseInfo info, SecVoiceRegStateResult voiceRegResponse) {}
+     public void secGetDataRegistrationStateResponse(RadioResponseInfo info, SecDataRegStateResult dataRegResponse) {}
+     public void secExplicitCallTransferResponse(RadioResponseInfo info) {}
+-- 
+2.17.1
+

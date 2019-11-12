@@ -1,0 +1,36 @@
+From 51f2b0ce43fff9f33d8b2c80493d3c559bc64a46 Mon Sep 17 00:00:00 2001
+From: Doris Ling <dling@google.com>
+Date: Thu, 8 Feb 2018 20:43:43 +0000
+Subject: [PATCH 114/306] Revert "Turn on about phone v2"
+
+This reverts commit ab4ed1169aadf3967db648a016356beaf6d8f950.
+
+Bug: 73102865
+Change-Id: I029064d144b891cb6eefacc2ad648a821fa49ec0
+Test: rebuild
+(cherry picked from commit 933026a3842fa6c3c2188275878b6d90b2025b2b)
+---
+ core/java/android/util/FeatureFlagUtils.java | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/util/FeatureFlagUtils.java b/core/java/android/util/FeatureFlagUtils.java
+index 1ead0b49bbe..3c3190b35e0 100644
+--- a/core/java/android/util/FeatureFlagUtils.java
++++ b/core/java/android/util/FeatureFlagUtils.java
+@@ -37,11 +37,12 @@ public class FeatureFlagUtils {
+     private static final Map<String, String> DEFAULT_FLAGS;
+     static {
+         DEFAULT_FLAGS = new HashMap<>();
++        DEFAULT_FLAGS.put("device_info_v2", "true");
+         DEFAULT_FLAGS.put("settings_connected_device_v2", "true");
+         DEFAULT_FLAGS.put("settings_battery_v2", "true");
+         DEFAULT_FLAGS.put("settings_battery_display_app_list", "false");
+         DEFAULT_FLAGS.put("settings_zone_picker_v2", "true");
+-        DEFAULT_FLAGS.put("settings_about_phone_v2", "true");
++        DEFAULT_FLAGS.put("settings_about_phone_v2", "false");
+         DEFAULT_FLAGS.put("settings_bluetooth_while_driving", "false");
+         DEFAULT_FLAGS.put("settings_data_usage_v2", "false");
+     }
+-- 
+2.17.1
+

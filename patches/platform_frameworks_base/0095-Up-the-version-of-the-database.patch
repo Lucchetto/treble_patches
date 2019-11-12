@@ -1,0 +1,36 @@
+From 0c660fd11631026359231e24964c12c112bffa67 Mon Sep 17 00:00:00 2001
+From: Robert Berry <robertberry@google.com>
+Date: Thu, 1 Feb 2018 12:49:31 +0000
+Subject: [PATCH 095/306] Up the version of the database
+
+We should have done this every time the schema changed, and written
+appropriate upgrade SQL. Unfortunately there are now devices in the
+wild that initially created the database using older SQL. As such
+they are missing columns. This causes them to crash when queries are
+run against the DB expecting those columns to exist. As we didn't
+up the version number, flashing a new build didn't cause the CREATE
+SQL to run again.
+
+Test: manual
+Change-Id: I1daa263d9baa69af4abb4bebfe45586b1f9dfd0e
+(cherry picked from commit bdc407d11fdb98612f35a4ac52393be82dc04854)
+---
+ .../storage/RecoverableKeyStoreDbHelper.java                    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/locksettings/recoverablekeystore/storage/RecoverableKeyStoreDbHelper.java b/services/core/java/com/android/server/locksettings/recoverablekeystore/storage/RecoverableKeyStoreDbHelper.java
+index d96671c5cd9..79fd496ad11 100644
+--- a/services/core/java/com/android/server/locksettings/recoverablekeystore/storage/RecoverableKeyStoreDbHelper.java
++++ b/services/core/java/com/android/server/locksettings/recoverablekeystore/storage/RecoverableKeyStoreDbHelper.java
+@@ -28,7 +28,7 @@ import com.android.server.locksettings.recoverablekeystore.storage.RecoverableKe
+  * Helper for creating the recoverable key database.
+  */
+ class RecoverableKeyStoreDbHelper extends SQLiteOpenHelper {
+-    private static final int DATABASE_VERSION = 1;
++    private static final int DATABASE_VERSION = 2;
+     private static final String DATABASE_NAME = "recoverablekeystore.db";
+ 
+     private static final String SQL_CREATE_KEYS_ENTRY =
+-- 
+2.17.1
+

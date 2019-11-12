@@ -1,0 +1,39 @@
+From ef824689800f0796cd90a32887cfac510d826449 Mon Sep 17 00:00:00 2001
+From: Selim Cinek <cinek@google.com>
+Date: Mon, 11 Jun 2018 17:26:34 -0700
+Subject: [PATCH 201/306] Keeping the lockdown state in sync with the
+ notification list
+
+Whenever the lockdown was changed, the UI wasn't consistently
+updated, but only once another notification / update came
+in, which lead to notifications being invisisible or visible
+when they shouldn't have been.
+
+Change-Id: I17c1b4e0ef58d6aa05f4404e52e07a098d4fce4e
+Fixes: 78020486
+Test: manual, hit lockdown observe notification gone, coming back when unlocked
+(cherry picked from commit ddb7b47dd0c875318669cc2d68f84de49710d138)
+---
+ .../src/com/android/systemui/statusbar/phone/StatusBar.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+index 7bbeed63fd9..7bdeab0af83 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBar.java
+@@ -607,6 +607,12 @@ public class StatusBar extends SystemUI implements DemoMode,
+                         maybeEscalateHeadsUp();
+                     }
+                 }
++
++                @Override
++                public void onStrongAuthStateChanged(int userId) {
++                    super.onStrongAuthStateChanged(userId);
++                    mEntryManager.updateNotifications();
++                }
+             };
+ 
+     private NavigationBarFragment mNavigationBar;
+-- 
+2.17.1
+

@@ -1,0 +1,74 @@
+From 921893fd4f3196b8154ccf9051cc3cf35926e0c0 Mon Sep 17 00:00:00 2001
+From: Wonsik Kim <wonsik@google.com>
+Date: Thu, 12 Jul 2018 10:32:24 -0700
+Subject: [PATCH 18/80] stagefright: MediaCodec to allocate by owner
+
+Bug: 111605816
+Test: adb shell stagefright -p
+Change-Id: I33d25ae707e151d4c703140acef730b10296f426
+---
+ media/libstagefright/MediaCodec.cpp           | 20 +++++++++++++------
+ .../include/media/stagefright/MediaCodec.h    |  2 +-
+ 2 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index 72eff946c..5361159a1 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -860,7 +860,15 @@ static CodecBase *CreateCCodec() {
+ }
+ 
+ //static
+-sp<CodecBase> MediaCodec::GetCodecBase(const AString &name) {
++sp<CodecBase> MediaCodec::GetCodecBase(const AString &name, const char *owner) {
++    if (owner) {
++        if (strncmp(owner, "default", 8) == 0) {
++            return new ACodec;
++        } else if (strncmp(owner, "codec2", 7) == 0) {
++            return CreateCCodec();
++        }
++    }
++
+     if (name.startsWithIgnoreCase("c2.")) {
+         return CreateCCodec();
+     } else if (name.startsWithIgnoreCase("omx.")) {
+@@ -884,11 +892,6 @@ status_t MediaCodec::init(const AString &name) {
+     // we need to invest in an extra looper to free the main event
+     // queue.
+ 
+-    mCodec = GetCodecBase(name);
+-    if (mCodec == NULL) {
+-        return NAME_NOT_FOUND;
+-    }
+-
+     mCodecInfo.clear();
+ 
+     bool secureCodec = false;
+@@ -922,6 +925,11 @@ status_t MediaCodec::init(const AString &name) {
+         return NAME_NOT_FOUND;
+     }
+ 
++    mCodec = GetCodecBase(name, mCodecInfo->getOwnerName());
++    if (mCodec == NULL) {
++        return NAME_NOT_FOUND;
++    }
++
+     if (mIsVideo) {
+         // video codec needs dedicated looper
+         if (mCodecLooper == NULL) {
+diff --git a/media/libstagefright/include/media/stagefright/MediaCodec.h b/media/libstagefright/include/media/stagefright/MediaCodec.h
+index ad02004aa..7f6aae628 100644
+--- a/media/libstagefright/include/media/stagefright/MediaCodec.h
++++ b/media/libstagefright/include/media/stagefright/MediaCodec.h
+@@ -377,7 +377,7 @@ private:
+ 
+     MediaCodec(const sp<ALooper> &looper, pid_t pid, uid_t uid);
+ 
+-    static sp<CodecBase> GetCodecBase(const AString &name);
++    static sp<CodecBase> GetCodecBase(const AString &name, const char *owner = nullptr);
+ 
+     static status_t PostAndAwaitResponse(
+             const sp<AMessage> &msg, sp<AMessage> *response);
+-- 
+2.17.1
+

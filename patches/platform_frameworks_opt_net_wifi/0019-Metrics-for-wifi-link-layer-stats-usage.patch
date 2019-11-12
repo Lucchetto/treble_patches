@@ -1,0 +1,269 @@
+From 9d57736a73dedbc6afc53dfc74802d0cbf56fb2e Mon Sep 17 00:00:00 2001
+From: xshu <xshu@google.com>
+Date: Fri, 14 Sep 2018 11:01:44 -0700
+Subject: [PATCH 19/32] Metrics for wifi link layer stats usage
+
+Collect and upload data on usage of important link layer stats that will
+be used as baseline for wifi scanning.
+
+**Some changes were introduced in the process of resolving merge
+conflict. In particular, a test which had dependency in WifiDataStall,
+which is not in P, is removed.
+
+Bug: 77603419
+Test: compile, unit tests
+Test: Do "adb shell dumpsys wifi | grep -A10
+mWifiLinkLayerUsageStats.loggingDurationMs=" and verify the wifi link
+layer usage stats are being printed properly.
+Change-Id: I0135b29200f7e4faa41d6c808e9d78fb4fb50f3c
+Merged-In: I0135b29200f7e4faa41d6c808e9d78fb4fb50f3c
+(cherry picked from commit f5e766890949a9abc6079678b0d36b52d4b5c483)
+---
+ .../com/android/server/wifi/WifiMetrics.java  | 56 +++++++++++-
+ .../android/server/wifi/WifiStateMachine.java |  4 +-
+ .../android/server/wifi/WifiMetricsTest.java  | 87 +++++++++++++++++++
+ 3 files changed, 145 insertions(+), 2 deletions(-)
+
+diff --git a/service/java/com/android/server/wifi/WifiMetrics.java b/service/java/com/android/server/wifi/WifiMetrics.java
+index 15f65c980..86d8549bc 100644
+--- a/service/java/com/android/server/wifi/WifiMetrics.java
++++ b/service/java/com/android/server/wifi/WifiMetrics.java
+@@ -29,7 +29,6 @@ import android.os.Handler;
+ import android.os.Looper;
+ import android.os.Message;
+ import android.os.SystemProperties;
+-
+ import android.util.Base64;
+ import android.util.Log;
+ import android.util.Pair;
+@@ -49,6 +48,7 @@ import com.android.server.wifi.nano.WifiMetricsProto.PnoScanMetrics;
+ import com.android.server.wifi.nano.WifiMetricsProto.SoftApConnectedClientsEvent;
+ import com.android.server.wifi.nano.WifiMetricsProto.StaEvent;
+ import com.android.server.wifi.nano.WifiMetricsProto.StaEvent.ConfigInfo;
++import com.android.server.wifi.nano.WifiMetricsProto.WifiLinkLayerUsageStats;
+ import com.android.server.wifi.nano.WifiMetricsProto.WpsMetrics;
+ import com.android.server.wifi.rtt.RttMetrics;
+ import com.android.server.wifi.util.InformationElementUtil;
+@@ -115,12 +115,14 @@ public class WifiMetrics {
+     private WifiAwareMetrics mWifiAwareMetrics;
+     private RttMetrics mRttMetrics;
+     private final PnoScanMetrics mPnoScanMetrics = new PnoScanMetrics();
++    private final WifiLinkLayerUsageStats mWifiLinkLayerUsageStats = new WifiLinkLayerUsageStats();
+     private final WpsMetrics mWpsMetrics = new WpsMetrics();
+     private Handler mHandler;
+     private ScoringParams mScoringParams;
+     private WifiConfigManager mWifiConfigManager;
+     private WifiNetworkSelector mWifiNetworkSelector;
+     private PasspointManager mPasspointManager;
++    private WifiLinkLayerStats mLastLinkLayerStats;
+     /**
+      * Metrics are stored within an instance of the WifiLog proto during runtime,
+      * The ConnectionEvent, SystemStateEntries & ScanReturnEntries metrics are stored during
+@@ -483,6 +485,45 @@ public class WifiMetrics {
+         mPasspointManager = passpointManager;
+     }
+ 
++    /**
++     * Increment cumulative counters for link layer stats.
++     * @param newStats
++     */
++    public void incrementWifiLinkLayerUsageStats(WifiLinkLayerStats newStats) {
++        if (newStats == null) {
++            return;
++        }
++        if (mLastLinkLayerStats == null) {
++            mLastLinkLayerStats = newStats;
++            return;
++        }
++        if (!newLinkLayerStatsIsValid(mLastLinkLayerStats, newStats)) {
++            // This could mean the radio chip is reset or the data is incorrectly reported.
++            // Don't increment any counts and discard the possibly corrupt |newStats| completely.
++            mLastLinkLayerStats = null;
++            return;
++        }
++        mWifiLinkLayerUsageStats.loggingDurationMs +=
++                (newStats.timeStampInMs - mLastLinkLayerStats.timeStampInMs);
++        mWifiLinkLayerUsageStats.radioOnTimeMs += (newStats.on_time - mLastLinkLayerStats.on_time);
++        mWifiLinkLayerUsageStats.radioTxTimeMs += (newStats.tx_time - mLastLinkLayerStats.tx_time);
++        mWifiLinkLayerUsageStats.radioRxTimeMs += (newStats.rx_time - mLastLinkLayerStats.rx_time);
++        mWifiLinkLayerUsageStats.radioScanTimeMs +=
++                (newStats.on_time_scan - mLastLinkLayerStats.on_time_scan);
++        mLastLinkLayerStats = newStats;
++    }
++
++    private boolean newLinkLayerStatsIsValid(WifiLinkLayerStats oldStats,
++            WifiLinkLayerStats newStats) {
++        if (newStats.on_time < oldStats.on_time
++                || newStats.tx_time < oldStats.tx_time
++                || newStats.rx_time < oldStats.rx_time
++                || newStats.on_time_scan < oldStats.on_time_scan) {
++            return false;
++        }
++        return true;
++    }
++
+     /**
+      * Increment total number of attempts to start a pno scan
+      */
+@@ -2092,6 +2133,17 @@ public class WifiMetrics {
+                 pw.println("mPnoScanMetrics.numPnoFoundNetworkEvents="
+                         + mPnoScanMetrics.numPnoFoundNetworkEvents);
+ 
++                pw.println("mWifiLinkLayerUsageStats.loggingDurationMs="
++                        + mWifiLinkLayerUsageStats.loggingDurationMs);
++                pw.println("mWifiLinkLayerUsageStats.radioOnTimeMs="
++                        + mWifiLinkLayerUsageStats.radioOnTimeMs);
++                pw.println("mWifiLinkLayerUsageStats.radioTxTimeMs="
++                        + mWifiLinkLayerUsageStats.radioTxTimeMs);
++                pw.println("mWifiLinkLayerUsageStats.radioRxTimeMs="
++                        + mWifiLinkLayerUsageStats.radioRxTimeMs);
++                pw.println("mWifiLinkLayerUsageStats.radioScanTimeMs="
++                        + mWifiLinkLayerUsageStats.radioScanTimeMs);
++
+                 pw.println("mWifiLogProto.connectToNetworkNotificationCount="
+                         + mConnectToNetworkNotificationCount.toString());
+                 pw.println("mWifiLogProto.connectToNetworkNotificationActionCount="
+@@ -2433,6 +2485,7 @@ public class WifiMetrics {
+             mWifiLogProto.wifiRttLog = mRttMetrics.consolidateProto();
+ 
+             mWifiLogProto.pnoScanMetrics = mPnoScanMetrics;
++            mWifiLogProto.wifiLinkLayerUsageStats = mWifiLinkLayerUsageStats;
+ 
+             /**
+              * Convert the SparseIntArray of "Connect to Network" notification types and counts to
+@@ -2597,6 +2650,7 @@ public class WifiMetrics {
+             mAvailableSavedPasspointProviderProfilesInScanHistogram.clear();
+             mAvailableSavedPasspointProviderBssidsInScanHistogram.clear();
+             mPnoScanMetrics.clear();
++            mWifiLinkLayerUsageStats.clear();
+             mConnectToNetworkNotificationCount.clear();
+             mConnectToNetworkNotificationActionCount.clear();
+             mNumOpenNetworkRecommendationUpdates = 0;
+diff --git a/service/java/com/android/server/wifi/WifiStateMachine.java b/service/java/com/android/server/wifi/WifiStateMachine.java
+index ef5eb027f..901059dbf 100644
+--- a/service/java/com/android/server/wifi/WifiStateMachine.java
++++ b/service/java/com/android/server/wifi/WifiStateMachine.java
+@@ -4857,7 +4857,9 @@ public class WifiStateMachine extends StateMachine {
+                     break;
+                 case CMD_RSSI_POLL:
+                     if (message.arg1 == mRssiPollToken) {
+-                        getWifiLinkLayerStats();
++                        WifiLinkLayerStats stats = getWifiLinkLayerStats();
++                        mWifiMetrics.incrementWifiLinkLayerUsageStats(stats);
++
+                         // Get Info and continue polling
+                         fetchRssiLinkSpeedAndFrequencyNative();
+                         // Send the update score to network agent.
+diff --git a/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java b/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java
+index 5646efc62..1e49bf2c0 100644
+--- a/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java
++++ b/tests/wifitests/src/com/android/server/wifi/WifiMetricsTest.java
+@@ -67,6 +67,7 @@ import java.util.BitSet;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Random;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
+@@ -79,6 +80,7 @@ public class WifiMetricsTest {
+     WifiMetrics mWifiMetrics;
+     WifiMetricsProto.WifiLog mDecodedProto;
+     TestLooper mTestLooper;
++    Random mRandom = new Random();
+     @Mock Clock mClock;
+     @Mock ScoringParams mScoringParams;
+     @Mock WifiConfigManager mWcm;
+@@ -1977,4 +1979,89 @@ public class WifiMetricsTest {
+         }
+         return bitSet;
+     }
++
++    private int nextRandInt() {
++        return mRandom.nextInt(10000);
++    }
++
++    private WifiLinkLayerStats nextRandomStats(WifiLinkLayerStats current) {
++        WifiLinkLayerStats out = new WifiLinkLayerStats();
++        out.timeStampInMs = current.timeStampInMs + nextRandInt();
++        out.on_time = current.on_time + nextRandInt();
++        out.tx_time = current.tx_time + nextRandInt();
++        out.rx_time = current.rx_time + nextRandInt();
++        out.on_time_scan = current.on_time_scan + nextRandInt();
++        return out;
++    }
++
++    private void assertWifiLinkLayerUsageHasDiff(WifiLinkLayerStats oldStats,
++            WifiLinkLayerStats newStats) {
++        assertEquals(newStats.timeStampInMs - oldStats.timeStampInMs,
++                mDecodedProto.wifiLinkLayerUsageStats.loggingDurationMs);
++        assertEquals(newStats.on_time - oldStats.on_time,
++                mDecodedProto.wifiLinkLayerUsageStats.radioOnTimeMs);
++        assertEquals(newStats.tx_time - oldStats.tx_time,
++                mDecodedProto.wifiLinkLayerUsageStats.radioTxTimeMs);
++        assertEquals(newStats.rx_time - oldStats.rx_time,
++                mDecodedProto.wifiLinkLayerUsageStats.radioRxTimeMs);
++        assertEquals(newStats.on_time_scan - oldStats.on_time_scan,
++                mDecodedProto.wifiLinkLayerUsageStats.radioScanTimeMs);
++    }
++
++    /**
++     * Verify that WifiMetrics is counting link layer usage correctly when given a series of
++     * valid input.
++     * @throws Exception
++     */
++    @Test
++    public void testWifiLinkLayerUsageStats() throws Exception {
++        WifiLinkLayerStats stat1 = nextRandomStats(new WifiLinkLayerStats());
++        WifiLinkLayerStats stat2 = nextRandomStats(stat1);
++        WifiLinkLayerStats stat3 = nextRandomStats(stat2);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat1);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat2);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat3);
++        dumpProtoAndDeserialize();
++
++        // After 2 increments, the counters should have difference between |stat1| and |stat3|
++        assertWifiLinkLayerUsageHasDiff(stat1, stat3);
++    }
++
++    /**
++     * Verify that null input is handled and wifi link layer usage stats are not incremented.
++     * @throws Exception
++     */
++    @Test
++    public void testWifiLinkLayerUsageStatsNullInput() throws Exception {
++        WifiLinkLayerStats stat1 = nextRandomStats(new WifiLinkLayerStats());
++        WifiLinkLayerStats stat2 = null;
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat1);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat2);
++        dumpProtoAndDeserialize();
++
++        // Counter should be zero
++        assertWifiLinkLayerUsageHasDiff(stat1, stat1);
++    }
++
++    /**
++     * Verify that when the new data appears to be bad link layer usage stats are not being
++     * incremented and the buffered WifiLinkLayerStats get cleared.
++     * @throws Exception
++     */
++    @Test
++    public void testWifiLinkLayerUsageStatsChipReset() throws Exception {
++        WifiLinkLayerStats stat1 = nextRandomStats(new WifiLinkLayerStats());
++        WifiLinkLayerStats stat2 = nextRandomStats(stat1);
++        stat2.on_time = stat1.on_time - 1;
++        WifiLinkLayerStats stat3 = nextRandomStats(stat2);
++        WifiLinkLayerStats stat4 = nextRandomStats(stat3);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat1);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat2);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat3);
++        mWifiMetrics.incrementWifiLinkLayerUsageStats(stat4);
++        dumpProtoAndDeserialize();
++
++        // Should only count the difference between |stat3| and |stat4|
++        assertWifiLinkLayerUsageHasDiff(stat3, stat4);
++    }
+ }
+-- 
+2.17.1
+

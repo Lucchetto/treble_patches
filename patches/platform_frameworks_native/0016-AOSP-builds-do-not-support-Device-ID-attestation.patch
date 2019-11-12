@@ -1,0 +1,36 @@
+From ba1712e854717c84fe99fa44be8f8eeab6358075 Mon Sep 17 00:00:00 2001
+From: Eran Messeri <eranm@google.com>
+Date: Fri, 22 Jun 2018 12:56:44 +0100
+Subject: [PATCH 16/48] AOSP builds do not support Device ID attestation
+
+AOSP builds have different product & brand values than the ones flashed
+onto the device's Keymaster in the factory.
+As a result, Device ID attestation will not work on them correctly
+because there is a mismatch between the values sent to Keymaster by the
+platform and the values Keymaster is expecting to attest to.
+
+Mark AOSP builds as not having this feature since it would affect all
+AOSP builds on all devices.
+
+Bug: 110361822
+Test: atest com.android.cts.devicepolicy.MixedDeviceOwnerTest#testKeyManagement
+Merged-In: I55e7c68b3e082af465c19cf18aeeeecffc4eb356
+Change-Id: I55e7c68b3e082af465c19cf18aeeeecffc4eb356
+(cherry picked from commit 4260ee9282f9666821dbdb4e7dda6c65f605a6b2)
+---
+ data/etc/aosp_excluded_hardware.xml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/data/etc/aosp_excluded_hardware.xml b/data/etc/aosp_excluded_hardware.xml
+index 013f278f3..c12f4358c 100644
+--- a/data/etc/aosp_excluded_hardware.xml
++++ b/data/etc/aosp_excluded_hardware.xml
+@@ -18,4 +18,5 @@
+     <!-- This should be used to exclude this feature from aosp targets. As aosp configurations
+     may or may not have a valid location provider -->
+     <unavailable-feature name="android.hardware.location.network" />
++    <unavailable-feature name="android.software.device_id_attestation" />
+ </permissions>
+-- 
+2.17.1
+

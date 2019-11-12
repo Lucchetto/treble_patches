@@ -1,0 +1,32 @@
+From ee33dce1323677ad4fff56b79b62f9a981e468c4 Mon Sep 17 00:00:00 2001
+From: Lucas Dupin <dupin@google.com>
+Date: Thu, 30 Nov 2017 13:09:22 -0500
+Subject: [PATCH 021/306] Propagate scrim alpha to LightBarController
+
+Change-Id: I8f89c0ccb5811ce729f04041dc1ff8efa3877991
+Fixes: 69895859
+Test: Launch settings, chrome, go back to launcher
+(cherry picked from commit 6afae3702f12f9e42d4b5c3f4552cc19775007d1)
+---
+ .../android/systemui/statusbar/phone/ScrimController.java    | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+index dfd4c176826..3a36776304f 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ScrimController.java
+@@ -629,6 +629,11 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener,
+             }
+         }
+ 
++        // TODO factor mLightBarController out of this class
++        if (scrim == mScrimBehind) {
++            mLightBarController.setScrimAlpha(alpha);
++        }
++
+         final ScrimView scrimView = scrim instanceof  ScrimView ? (ScrimView) scrim : null;
+         final boolean wantsAlphaUpdate = alpha != currentAlpha && alpha != animEndValue;
+         final boolean wantsTintUpdate = scrimView != null
+-- 
+2.17.1
+

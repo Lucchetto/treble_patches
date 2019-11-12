@@ -1,0 +1,35 @@
+From c8658713358bd8ef566aeee064ccf00fb92b1c7e Mon Sep 17 00:00:00 2001
+From: Ugo Yu <ugoyu@google.com>
+Date: Mon, 17 Sep 2018 15:59:30 +0800
+Subject: [PATCH 30/59] Check SDU lower bound before allocate p_data
+
+Bug: 112321180
+Test: SL4A BleCocTest:test_coc_insecured_connection_write_ascii
+Change-Id: Id0c9aa2097f0b6bdc2bb9fa9086daa9452188e1d
+(cherry picked from commit 785e12ed58d020a0df075163c1831021c0cde218)
+---
+ stack/l2cap/l2c_fcr.cc | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/stack/l2cap/l2c_fcr.cc b/stack/l2cap/l2c_fcr.cc
+index b20b9c1de..8326e4d16 100644
+--- a/stack/l2cap/l2c_fcr.cc
++++ b/stack/l2cap/l2c_fcr.cc
+@@ -841,6 +841,14 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
+       return;
+     }
+ 
++    if (sdu_length < p_buf->len) {
++      L2CAP_TRACE_ERROR("%s: Invalid sdu_length: %d", __func__, sdu_length);
++      android_errorWriteWithInfoLog(0x534e4554, "112321180", -1, NULL, 0);
++      /* Discard the buffer */
++      osi_free(p_buf);
++      return;
++    }
++
+     p_data = (BT_HDR*)osi_malloc(BT_HDR_SIZE + sdu_length);
+     if (p_data == NULL) {
+       osi_free(p_buf);
+-- 
+2.17.1
+

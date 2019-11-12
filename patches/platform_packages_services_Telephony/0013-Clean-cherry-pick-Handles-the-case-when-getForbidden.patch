@@ -1,0 +1,46 @@
+From f005ff9fd1882cbbff50ed69c4509fcc75e57cb4 Mon Sep 17 00:00:00 2001
+From: Cassie <xih@google.com>
+Date: Mon, 16 Jul 2018 13:07:59 -0700
+Subject: [PATCH 13/70] Clean cherry-pick 'Handles the case when
+ getForbiddenPlmns() returns null.'
+
+Bug: 111490801
+Test: Manual test
+Change-Id: I1dafdbb874468a8de15f7fad6de5a1478592c1ba
+Merged-In: I1dafdbb874468a8de15f7fad6de5a1478592c1ba
+---
+ src/com/android/phone/NetworkSelectListPreference.java | 3 ++-
+ src/com/android/phone/NetworkSelectSetting.java        | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/phone/NetworkSelectListPreference.java b/src/com/android/phone/NetworkSelectListPreference.java
+index 71a9dab00..341ac8d2b 100644
+--- a/src/com/android/phone/NetworkSelectListPreference.java
++++ b/src/com/android/phone/NetworkSelectListPreference.java
+@@ -105,7 +105,8 @@ public class NetworkSelectListPreference extends ListPreference
+         new AsyncTask<Void, Void, List<String>>() {
+             @Override
+             protected List<String> doInBackground(Void... voids) {
+-                return Arrays.asList(telephonyManager.getForbiddenPlmns());
++                String[] forbiddenPlmns = telephonyManager.getForbiddenPlmns();
++                return forbiddenPlmns != null ? Arrays.asList(forbiddenPlmns) : null;
+             }
+ 
+             @Override
+diff --git a/src/com/android/phone/NetworkSelectSetting.java b/src/com/android/phone/NetworkSelectSetting.java
+index 71162bb0f..0655a2ee9 100644
+--- a/src/com/android/phone/NetworkSelectSetting.java
++++ b/src/com/android/phone/NetworkSelectSetting.java
+@@ -160,7 +160,8 @@ public class NetworkSelectSetting extends PreferenceFragment {
+         new AsyncTask<Void, Void, List<String>>() {
+             @Override
+             protected List<String> doInBackground(Void... voids) {
+-                return Arrays.asList(mTelephonyManager.getForbiddenPlmns());
++                String[] forbiddenPlmns = mTelephonyManager.getForbiddenPlmns();
++                return forbiddenPlmns != null ? Arrays.asList(forbiddenPlmns) : null;
+             }
+ 
+             @Override
+-- 
+2.17.1
+

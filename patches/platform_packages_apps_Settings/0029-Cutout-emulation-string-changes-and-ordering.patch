@@ -1,0 +1,174 @@
+From 57fcb2f1f133e033d6ca519ba240aee879e6ce12 Mon Sep 17 00:00:00 2001
+From: Adrian Roos <roosa@google.com>
+Date: Tue, 21 Aug 2018 18:26:29 +0200
+Subject: [PATCH 29/71] Cutout emulation: string changes and ordering
+
+Updates strings according to spec. Also ensures
+that the emulation overlays are shown in the
+order of their priority.
+
+Bug: 112876936
+Test: Open developer options, go to "display cutout", verify strings.
+Change-Id: If2d05595d02a277896202ab2a6262c99508a3a17
+Merged-In: If2d05595d02a277896202ab2a6262c99508a3a17
+---
+ res/values/strings.xml                        |  6 ++---
+ ...lateDisplayCutoutPreferenceController.java |  6 ++++-
+ .../wrapper/OverlayManagerWrapper.java        |  5 +++-
+ ...DisplayCutoutPreferenceControllerTest.java | 26 ++++++++++++++-----
+ 4 files changed, 32 insertions(+), 11 deletions(-)
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 117035a349..fb5f395571 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -9417,13 +9417,13 @@
+     <string name="notification_log_details_ranking_none">Ranking object doesn\'t contain this key.</string>
+ 
+     <!-- [CHAR_LIMIT=NONE] Developer Settings: Title of the setting which turns on emulation of a display cutout. -->
+-    <string name="display_cutout_emulation">Simulate a display with a cutout</string>
++    <string name="display_cutout_emulation">Display cutout</string>
+ 
+     <!-- [CHAR_LIMIT=NONE] Developer Settings: Search keywords for the setting which turns on emulation of a display cutout. -->
+     <string name="display_cutout_emulation_keywords">display cutout, notch</string>
+ 
+-    <!-- [CHAR_LIMIT=NONE] Developer Settings: Label for the option that turns off display cutout emulation. -->
+-    <string name="display_cutout_emulation_none">None</string>
++    <!-- [CHAR_LIMIT=NONE] Developer Settings: Label for the option that turns off display cutout emulation, (i.e. on devices whose screen actually has a cutout, selecting this option will show that cutout).-->
++    <string name="display_cutout_emulation_device_default">Device default</string>
+ 
+     <!-- [CHAR_LIMIT=60] Label for special access screen -->
+     <string name="special_access">Special app access</string>
+diff --git a/src/com/android/settings/development/EmulateDisplayCutoutPreferenceController.java b/src/com/android/settings/development/EmulateDisplayCutoutPreferenceController.java
+index 9fa323a33b..651772e285 100644
+--- a/src/com/android/settings/development/EmulateDisplayCutoutPreferenceController.java
++++ b/src/com/android/settings/development/EmulateDisplayCutoutPreferenceController.java
+@@ -33,6 +33,7 @@ import com.android.settings.wrapper.OverlayManagerWrapper;
+ import com.android.settings.wrapper.OverlayManagerWrapper.OverlayInfo;
+ import com.android.settingslib.development.DeveloperOptionsPreferenceController;
+ 
++import java.util.Comparator;
+ import java.util.List;
+ 
+ public class EmulateDisplayCutoutPreferenceController extends
+@@ -40,6 +41,8 @@ public class EmulateDisplayCutoutPreferenceController extends
+         PreferenceControllerMixin {
+ 
+     private static final String KEY = "display_cutout_emulation";
++    private static final Comparator<OverlayInfo> OVERLAY_INFO_COMPARATOR =
++            Comparator.comparingInt(a -> a.priority);
+ 
+     private final OverlayManagerWrapper mOverlayManager;
+     private final boolean mAvailable;
+@@ -120,7 +123,7 @@ public class EmulateDisplayCutoutPreferenceController extends
+ 
+         int current = 0;
+         pkgs[0] = "";
+-        labels[0] = mContext.getString(R.string.display_cutout_emulation_none);
++        labels[0] = mContext.getString(R.string.display_cutout_emulation_device_default);
+ 
+         for (int i = 0; i < overlays.length; i++) {
+             OverlayInfo o = overlays[i];
+@@ -153,6 +156,7 @@ public class EmulateDisplayCutoutPreferenceController extends
+                 overlayInfos.remove(i);
+             }
+         }
++        overlayInfos.sort(OVERLAY_INFO_COMPARATOR);
+         return overlayInfos.toArray(new OverlayInfo[overlayInfos.size()]);
+     }
+ 
+diff --git a/src/com/android/settings/wrapper/OverlayManagerWrapper.java b/src/com/android/settings/wrapper/OverlayManagerWrapper.java
+index 6e3c234885..371504ff55 100644
+--- a/src/com/android/settings/wrapper/OverlayManagerWrapper.java
++++ b/src/com/android/settings/wrapper/OverlayManagerWrapper.java
+@@ -81,18 +81,21 @@ public class OverlayManagerWrapper {
+         public static final String CATEGORY_THEME = android.content.om.OverlayInfo.CATEGORY_THEME;
+         public final String packageName;
+         public final String category;
++        public final int priority;
+         private final boolean mEnabled;
+ 
+-        public OverlayInfo(String packageName, String category, boolean enabled) {
++        public OverlayInfo(String packageName, String category, boolean enabled, int priority) {
+             this.packageName = packageName;
+             this.category = category;
+             mEnabled = enabled;
++            this.priority = priority;
+         }
+ 
+         public OverlayInfo(android.content.om.OverlayInfo info) {
+             mEnabled = info.isEnabled();
+             category = info.category;
+             packageName = info.packageName;
++            priority = info.priority;
+         }
+ 
+         public boolean isEnabled() {
+diff --git a/tests/robotests/src/com/android/settings/development/EmulateDisplayCutoutPreferenceControllerTest.java b/tests/robotests/src/com/android/settings/development/EmulateDisplayCutoutPreferenceControllerTest.java
+index 73c976c70b..a01d33a75b 100644
+--- a/tests/robotests/src/com/android/settings/development/EmulateDisplayCutoutPreferenceControllerTest.java
++++ b/tests/robotests/src/com/android/settings/development/EmulateDisplayCutoutPreferenceControllerTest.java
+@@ -17,6 +17,8 @@
+ package com.android.settings.development;
+ 
+ import static com.google.common.truth.Truth.assertThat;
++
++import static org.mockito.AdditionalMatchers.aryEq;
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyInt;
+ import static org.mockito.ArgumentMatchers.eq;
+@@ -38,6 +40,7 @@ import com.android.settings.wrapper.OverlayManagerWrapper.OverlayInfo;
+ import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
++import org.mockito.AdditionalMatchers;
+ import org.mockito.Mock;
+ import org.mockito.MockitoAnnotations;
+ 
+@@ -46,10 +49,10 @@ import java.util.Arrays;
+ @RunWith(SettingsRobolectricTestRunner.class)
+ public class EmulateDisplayCutoutPreferenceControllerTest {
+ 
+-    private static final OverlayInfo ONE_DISABLED = createFakeOverlay("emulation.one", false);
+-    private static final OverlayInfo ONE_ENABLED = createFakeOverlay("emulation.one", true);
+-    private static final OverlayInfo TWO_DISABLED = createFakeOverlay("emulation.two", false);
+-    private static final OverlayInfo TWO_ENABLED = createFakeOverlay("emulation.two", true);
++    private static final OverlayInfo ONE_DISABLED = createFakeOverlay("emulation.one", false, 1);
++    private static final OverlayInfo ONE_ENABLED = createFakeOverlay("emulation.one", true, 1);
++    private static final OverlayInfo TWO_DISABLED = createFakeOverlay("emulation.two", false, 2);
++    private static final OverlayInfo TWO_ENABLED = createFakeOverlay("emulation.two", true, 2);
+ 
+     @Mock
+     private Context mContext;
+@@ -127,6 +130,16 @@ public class EmulateDisplayCutoutPreferenceControllerTest {
+         verify(mPreference).setValueIndex(0);
+     }
+ 
++    @Test
++    public void ordered_by_priority() throws Exception {
++        mockCurrentOverlays(TWO_DISABLED, ONE_DISABLED);
++
++        mController.updateState(null);
++
++        verify(mPreference).setEntryValues(
++                aryEq(new String[]{"", ONE_DISABLED.packageName, TWO_DISABLED.packageName}));
++    }
++
+     @Test
+     public void onDeveloperOptionsSwitchDisabled() throws Exception {
+         mockCurrentOverlays(ONE_ENABLED, TWO_DISABLED);
+@@ -145,7 +158,8 @@ public class EmulateDisplayCutoutPreferenceControllerTest {
+                 mOverlayManager);
+     }
+ 
+-    private static OverlayInfo createFakeOverlay(String pkg, boolean enabled) {
+-        return new OverlayInfo(pkg, DisplayCutout.EMULATION_OVERLAY_CATEGORY, enabled);
++    private static OverlayInfo createFakeOverlay(String pkg, boolean enabled, int priority) {
++        return new OverlayInfo(pkg, DisplayCutout.EMULATION_OVERLAY_CATEGORY, enabled,
++                priority);
+     }
+ }
+\ No newline at end of file
+-- 
+2.17.1
+

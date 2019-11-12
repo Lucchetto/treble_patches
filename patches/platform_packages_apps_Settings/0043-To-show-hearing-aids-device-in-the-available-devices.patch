@@ -1,0 +1,132 @@
+From 79d7fdc4f326875163de598aac0c0cee50516a77 Mon Sep 17 00:00:00 2001
+From: timhypeng <timhypeng@google.com>
+Date: Fri, 25 May 2018 14:01:02 +0800
+Subject: [PATCH 43/71] To show hearing aids device in the available devices
+ group
+
+Bug: 116725094
+Bug: 116044083
+Bug: 79553082
+Test: make -j50 RunSettingsRoboTests
+Change-Id: I8fe5eb653d332ef5ac4a566146f150774581167c
+Merged-In: I8fe5eb653d332ef5ac4a566146f150774581167c
+(cherry picked from commit 1c21bff1034b5124b69bda22c2fc9f70a449ffa7)
+---
+ .../AvailableMediaBluetoothDeviceUpdater.java |  5 ++++
+ .../ConnectedBluetoothDeviceUpdater.java      |  5 ++++
+ ...ilableMediaBluetoothDeviceUpdaterTest.java | 27 ++++++++++++++++++
+ .../ConnectedBluetoothDeviceUpdaterTest.java  | 28 +++++++++++++++++++
+ 4 files changed, 65 insertions(+)
+
+diff --git a/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdater.java b/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdater.java
+index 01c1ff6183..a0a87006d7 100644
+--- a/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdater.java
++++ b/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdater.java
+@@ -97,6 +97,11 @@ public class AvailableMediaBluetoothDeviceUpdater extends BluetoothDeviceUpdater
+             if (DBG) {
+                 Log.d(TAG, "isFilterMatched() current audio profile : " + currentAudioProfile);
+             }
++            // If device is Hearing Aid, it is compatible with HFP and A2DP.
++            // It would show in Available Devices group.
++            if (cachedDevice.isConnectedHearingAidDevice()) {
++                return true;
++            }
+             // According to the current audio profile type,
+             // this page will show the bluetooth device that have corresponding profile.
+             // For example:
+diff --git a/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdater.java b/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdater.java
+index d43290c956..b3be18735f 100644
+--- a/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdater.java
++++ b/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdater.java
+@@ -97,6 +97,11 @@ public class ConnectedBluetoothDeviceUpdater extends BluetoothDeviceUpdater {
+             if (DBG) {
+                 Log.d(TAG, "isFilterMatched() current audio profile : " + currentAudioProfile);
+             }
++            // If device is Hearing Aid, it is compatible with HFP and A2DP.
++            // It would not show in Connected Devices group.
++            if (cachedDevice.isConnectedHearingAidDevice()) {
++                return false;
++            }
+             // According to the current audio profile type,
+             // this page will show the bluetooth device that doesn't have corresponding profile.
+             // For example:
+diff --git a/tests/robotests/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdaterTest.java b/tests/robotests/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdaterTest.java
+index ced8fc4a2e..0b1311d936 100644
+--- a/tests/robotests/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdaterTest.java
++++ b/tests/robotests/src/com/android/settings/bluetooth/AvailableMediaBluetoothDeviceUpdaterTest.java
+@@ -203,6 +203,33 @@ public class AvailableMediaBluetoothDeviceUpdaterTest {
+         verify(mBluetoothDeviceUpdater).addPreference(mCachedBluetoothDevice);
+     }
+ 
++    @Test
++    public void onProfileConnectionStateChanged_hearingAidDeviceConnected_notInCall_addPreference()
++    {
++        mShadowAudioManager.setMode(AudioManager.MODE_NORMAL);
++        when(mBluetoothDeviceUpdater.
++                isDeviceConnected(any(CachedBluetoothDevice.class))).thenReturn(true);
++        when(mCachedBluetoothDevice.isConnectedHearingAidDevice()).thenReturn(true);
++
++        mBluetoothDeviceUpdater.onProfileConnectionStateChanged(mCachedBluetoothDevice,
++                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.HEARING_AID);
++
++        verify(mBluetoothDeviceUpdater).addPreference(mCachedBluetoothDevice);
++    }
++
++    @Test
++    public void onProfileConnectionStateChanged_hearingAidDeviceConnected_inCall_addPreference() {
++        mShadowAudioManager.setMode(AudioManager.MODE_IN_CALL);
++        when(mBluetoothDeviceUpdater.
++                isDeviceConnected(any(CachedBluetoothDevice.class))).thenReturn(true);
++        when(mCachedBluetoothDevice.isConnectedHearingAidDevice()).thenReturn(true);
++
++        mBluetoothDeviceUpdater.onProfileConnectionStateChanged(mCachedBluetoothDevice,
++                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.HEARING_AID);
++
++        verify(mBluetoothDeviceUpdater).addPreference(mCachedBluetoothDevice);
++    }
++
+     @Test
+     public void onProfileConnectionStateChanged_deviceDisconnected_removePreference() {
+         mBluetoothDeviceUpdater.onProfileConnectionStateChanged(mCachedBluetoothDevice,
+diff --git a/tests/robotests/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdaterTest.java b/tests/robotests/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdaterTest.java
+index 483df01a6b..8120d91d28 100644
+--- a/tests/robotests/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdaterTest.java
++++ b/tests/robotests/src/com/android/settings/bluetooth/ConnectedBluetoothDeviceUpdaterTest.java
+@@ -204,6 +204,34 @@ public class ConnectedBluetoothDeviceUpdaterTest {
+         verify(mBluetoothDeviceUpdater).addPreference(mCachedBluetoothDevice);
+     }
+ 
++    @Test
++    public void onProfileConnectionStateChanged_hearingAidDeviceConnected_inCall_removePreference()
++    {
++        mShadowAudioManager.setMode(AudioManager.MODE_IN_CALL);
++        when(mBluetoothDeviceUpdater.
++                isDeviceConnected(any(CachedBluetoothDevice.class))).thenReturn(true);
++        when(mCachedBluetoothDevice.isConnectedHearingAidDevice()).thenReturn(true);
++
++        mBluetoothDeviceUpdater.onProfileConnectionStateChanged(mCachedBluetoothDevice,
++                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.HEARING_AID);
++
++        verify(mBluetoothDeviceUpdater).removePreference(mCachedBluetoothDevice);
++    }
++
++    @Test
++    public void onProfileConnectionStateChanged_hearingAidDeviceConnected_notInCall_removePreference
++            () {
++        mShadowAudioManager.setMode(AudioManager.MODE_NORMAL);
++        when(mBluetoothDeviceUpdater.
++                isDeviceConnected(any(CachedBluetoothDevice.class))).thenReturn(true);
++        when(mCachedBluetoothDevice.isConnectedHearingAidDevice()).thenReturn(true);
++
++        mBluetoothDeviceUpdater.onProfileConnectionStateChanged(mCachedBluetoothDevice,
++                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.HEARING_AID);
++
++        verify(mBluetoothDeviceUpdater).removePreference(mCachedBluetoothDevice);
++    }
++
+     @Test
+     public void onProfileConnectionStateChanged_deviceDisconnected_removePreference() {
+         mBluetoothDeviceUpdater.onProfileConnectionStateChanged(mCachedBluetoothDevice,
+-- 
+2.17.1
+

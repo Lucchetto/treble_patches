@@ -1,0 +1,121 @@
+From d5c22e2ca51a2bf9cede60380b70486f34b7c908 Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Sat, 19 Jan 2019 18:18:08 -0800
+Subject: [PATCH 61/70] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: I925dd1f718219f29b221f83eb55869f62f7c199b
+---
+ res/values-af/strings.xml     |  2 +-
+ res/values-ar/strings.xml     |  2 +-
+ res/values-iw/strings.xml     |  4 ++--
+ res/values-pt/strings.xml     | 18 +++++++++---------
+ sip/res/values-bs/strings.xml |  4 ++--
+ sip/res/values-da/strings.xml |  4 ++--
+ 6 files changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/res/values-af/strings.xml b/res/values-af/strings.xml
+index 951df4e31..17a2f24f5 100644
+--- a/res/values-af/strings.xml
++++ b/res/values-af/strings.xml
+@@ -278,7 +278,7 @@
+     <!-- no translation found for throttle_time_frame_subtext (7732763021560399960) -->
+     <skip />
+     <string name="throttle_rate_subtext" msgid="2149102656120726855">"Datatempo verminder na <xliff:g id="USED">%1$d</xliff:g> Kb/s as datagebruiklimiet oorskry word"</string>
+-    <string name="throttle_help_subtext" msgid="5217706521499010816">"Meer inligting oor jou draer se mobielenetwerk-datagebruikbeleid"</string>
++    <string name="throttle_help_subtext" msgid="5217706521499010816">"Meer inligting oor jou diensverskaffer se mobielenetwerk-datagebruikbeleid"</string>
+     <string name="cell_broadcast_sms" msgid="5584192824053625842">"Seluitsending-SMS"</string>
+     <string name="enable_disable_cell_bc_sms" msgid="4851147873691392255">"Seluitsending-SMS"</string>
+     <string name="cell_bc_sms_enable" msgid="6441688565738921084">"Seluitsending-SMS geaktiveer"</string>
+diff --git a/res/values-ar/strings.xml b/res/values-ar/strings.xml
+index 7a6b3d23c..a658a6424 100644
+--- a/res/values-ar/strings.xml
++++ b/res/values-ar/strings.xml
+@@ -564,7 +564,7 @@
+     <string name="ota_hfa_activation_dialog_message" msgid="8092479227918463415">"يُجري الهاتف تنشيطًا لخدمة بيانات الجوّال.\n\nقد يستغرق هذا الأمر ما يصل إلى 5 دقائق."</string>
+     <string name="ota_skip_activation_dialog_title" msgid="2943366608272261306">"هل تريد تخطي التفعيل؟"</string>
+     <string name="ota_skip_activation_dialog_message" msgid="2440770373498870550">"‏إذا تخطيت عملية التفعيل، فلن تتمكّن من إجراء مكالمات أو الاتصال بشبكات بيانات الجوال (ومع ذلك، يمكنك الاتصال بشبكات Wi-Fi). وسيُطلَب منك تفعيل الهاتف عند تشغيله في كل مرة إلى حين تفعيله."</string>
+-    <string name="ota_skip_activation_dialog_skip_label" msgid="3458532775091563208">"تخطي"</string>
++    <string name="ota_skip_activation_dialog_skip_label" msgid="3458532775091563208">"التخطّي"</string>
+     <string name="ota_activate" msgid="1368528132525626264">"تفعيل"</string>
+     <string name="ota_title_activate_success" msgid="6570240212263372046">"تم تفعيل الهاتف."</string>
+     <string name="ota_title_problem_with_activation" msgid="7095824491970084367">"مشكلة في التفعيل"</string>
+diff --git a/res/values-iw/strings.xml b/res/values-iw/strings.xml
+index 2fe1587ed..6d9d8321c 100644
+--- a/res/values-iw/strings.xml
++++ b/res/values-iw/strings.xml
+@@ -563,8 +563,8 @@
+     <string name="ota_hfa_activation_title" msgid="2234246934160473981">"מפעיל..."</string>
+     <string name="ota_hfa_activation_dialog_message" msgid="8092479227918463415">"הטלפון מפעיל את שירותי הנתונים שלך לנייד.\n\nהתהליך עשוי לארוך עד 5 דקות."</string>
+     <string name="ota_skip_activation_dialog_title" msgid="2943366608272261306">"לדלג על ההפעלה?"</string>
+-    <string name="ota_skip_activation_dialog_message" msgid="2440770373498870550">"‏אם תדלג על ההפעלה, לא תוכל להתקשר או להתחבר לרשתות נתונים לנייד (אך תוכל להתחבר לרשתות Wi-Fi). עד שתפעיל את הטלפון, תתבקש להפעיל אותו בכל פעם שתדליק אותו."</string>
+-    <string name="ota_skip_activation_dialog_skip_label" msgid="3458532775091563208">"דלג"</string>
++    <string name="ota_skip_activation_dialog_message" msgid="2440770373498870550">"‏אם מדלגים על ההפעלה, אי אפשר להתקשר או להתחבר לרשתות נתונים לנייד (אך אפשר להתחבר לרשתות Wi-Fi). עד להפעלת הטלפון תופיע הודעה שמבקשת לבצע את ההפעלה בכל פעם שמדליקים את הטלפון."</string>
++    <string name="ota_skip_activation_dialog_skip_label" msgid="3458532775091563208">"דילוג"</string>
+     <string name="ota_activate" msgid="1368528132525626264">"הפעל"</string>
+     <string name="ota_title_activate_success" msgid="6570240212263372046">"הטלפון מופעל."</string>
+     <string name="ota_title_problem_with_activation" msgid="7095824491970084367">"בעיה בהפעלה"</string>
+diff --git a/res/values-pt/strings.xml b/res/values-pt/strings.xml
+index 39745b117..2de167f95 100644
+--- a/res/values-pt/strings.xml
++++ b/res/values-pt/strings.xml
+@@ -416,15 +416,15 @@
+     <string name="name" msgid="7329028332786872378">"Nome"</string>
+     <string name="number" msgid="7905950798349903858">"Número"</string>
+     <string name="save" msgid="4094274636321939086">"Salvar"</string>
+-    <string name="add_fdn_contact" msgid="2481915899633353976">"Adicionar número de chamadas fixas"</string>
+-    <string name="adding_fdn_contact" msgid="7627379633721940991">"Adicionando número de chamadas fixas…"</string>
+-    <string name="fdn_contact_added" msgid="7458335758501736665">"Número de chamadas fixas adicionado."</string>
+-    <string name="edit_fdn_contact" msgid="7976936035587081480">"Editar o número de chamadas fixas"</string>
+-    <string name="updating_fdn_contact" msgid="8370929876849803600">"Atualizando o número de chamadas fixas…"</string>
+-    <string name="fdn_contact_updated" msgid="5497828782609005017">"Número de chamadas fixas atualizado."</string>
+-    <string name="delete_fdn_contact" msgid="6668958073074151717">"Excluir número de chamadas fixas"</string>
+-    <string name="deleting_fdn_contact" msgid="5669163206349319969">"Excluindo número de chamadas fixas…"</string>
+-    <string name="fdn_contact_deleted" msgid="7154162327112259569">"Número de chamadas fixas excluído."</string>
++    <string name="add_fdn_contact" msgid="2481915899633353976">"Adicionar número de discagem fixa"</string>
++    <string name="adding_fdn_contact" msgid="7627379633721940991">"Adicionando número de discagem fixa…"</string>
++    <string name="fdn_contact_added" msgid="7458335758501736665">"Número de discagem fixa adicionado."</string>
++    <string name="edit_fdn_contact" msgid="7976936035587081480">"Editar o número de discagem fixa"</string>
++    <string name="updating_fdn_contact" msgid="8370929876849803600">"Atualizando o número de discagem fixa…"</string>
++    <string name="fdn_contact_updated" msgid="5497828782609005017">"Número de discagem fixa atualizado."</string>
++    <string name="delete_fdn_contact" msgid="6668958073074151717">"Excluir número de discagem fixa"</string>
++    <string name="deleting_fdn_contact" msgid="5669163206349319969">"Excluindo número de discagem fixa…"</string>
++    <string name="fdn_contact_deleted" msgid="7154162327112259569">"Número de discagem fixa excluído."</string>
+     <string name="pin2_invalid" msgid="5470854099230755944">"O FDN não foi atualizado porque você digitou um PIN incorreto."</string>
+     <string name="fdn_invalid_number" msgid="2062898833049589309">"O FDN não foi atualizado porque o número excede 20 dígitos."</string>
+     <string name="pin2_or_fdn_invalid" msgid="6025144083384701197">"O FDN não foi atualizado. O PIN2 estava incorreto, ou o número de telefone foi rejeitado."</string>
+diff --git a/sip/res/values-bs/strings.xml b/sip/res/values-bs/strings.xml
+index b066ddf09..7f0b72795 100644
+--- a/sip/res/values-bs/strings.xml
++++ b/sip/res/values-bs/strings.xml
+@@ -59,8 +59,8 @@
+     <string name="transport_title" msgid="889155457465372527">"Vrsta prijenosa"</string>
+     <string name="send_keepalive_title" msgid="599627072150501159">"Pošalji keep-alive poruku"</string>
+     <string name="advanced_settings" msgid="6622996380747040711">"Opcionalne postavke"</string>
+-    <string name="auth_username_title" msgid="8262491689004708265">"Korisničko ime za provjeru vjerodostojnosti"</string>
+-    <string name="auth_username_summary" msgid="941160241371436473">"Korisničko ime upotrijebljeno za provjeru vjerodostojnosti"</string>
++    <string name="auth_username_title" msgid="8262491689004708265">"Korisničko ime za autentifikaciju"</string>
++    <string name="auth_username_summary" msgid="941160241371436473">"Korisničko ime upotrijebljeno za autentifikaciju"</string>
+     <string name="default_preference_summary_username" msgid="8404717434312826082">"&lt;Nije postavljeno&gt;"</string>
+     <string name="default_preference_summary_password" msgid="4464464672997027904">"&lt;Nije postavljeno&gt;"</string>
+     <string name="default_preference_summary_domain_address" msgid="4871971710197441673">"&lt;Nije postavljeno&gt;"</string>
+diff --git a/sip/res/values-da/strings.xml b/sip/res/values-da/strings.xml
+index b6764a91c..bdce773b3 100644
+--- a/sip/res/values-da/strings.xml
++++ b/sip/res/values-da/strings.xml
+@@ -48,8 +48,8 @@
+     <string name="registration_status_invalid_credentials" msgid="8406872554323334182">"Registreringen af kontoen mislykkedes: Forkert brugernavn eller adgangskode."</string>
+     <string name="registration_status_server_unreachable" msgid="7710275557045148634">"Registreringen af kontoen mislykkedes. Tjek servernavn."</string>
+     <string name="third_party_account_summary" msgid="9041060473615403041">"Denne konto benyttes i øjeblikket af appen <xliff:g id="ACCOUNT_OWNER">%s</xliff:g>."</string>
+-    <string name="sip_edit_title" msgid="1967247832635750410">"Oplysninger om SIP-konto"</string>
+-    <string name="sip_edit_new_title" msgid="266414118302574305">"Oplysninger om SIP-konto"</string>
++    <string name="sip_edit_title" msgid="1967247832635750410">"Info om SIP-konto"</string>
++    <string name="sip_edit_new_title" msgid="266414118302574305">"Info om SIP-konto"</string>
+     <string name="domain_address_title" msgid="1968479941328225423">"Server"</string>
+     <string name="username_title" msgid="6770064611005663470">"Brugernavn"</string>
+     <string name="password_title" msgid="5289013731515564295">"Adgangskode"</string>
+-- 
+2.17.1
+

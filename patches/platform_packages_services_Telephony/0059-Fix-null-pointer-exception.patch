@@ -1,0 +1,44 @@
+From 842461a4b894f6306f1b8cbe88f3d950886fb627 Mon Sep 17 00:00:00 2001
+From: Michele Berionne <mberionne@google.com>
+Date: Tue, 11 Dec 2018 18:47:49 -0800
+Subject: [PATCH 59/70] Fix null pointer exception
+
+Fix null pointer exception when SubscriptionManager.getSubId() returns
+null to verify the result before accessing the first item.
+
+Bug: 120649066
+Test: Verified compilation and tested on device.
+Change-Id: I4d36837ac58fdb7beb7eeaef0c2f967c3c4676bd
+Merged-In: I5ed2dc7f0da3611f502d602d15b3b3d1a7ccddcb
+---
+ src/com/android/phone/PhoneInterfaceManager.java | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/phone/PhoneInterfaceManager.java b/src/com/android/phone/PhoneInterfaceManager.java
+index 393168b5b..21d1502fc 100755
+--- a/src/com/android/phone/PhoneInterfaceManager.java
++++ b/src/com/android/phone/PhoneInterfaceManager.java
+@@ -3971,7 +3971,8 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+             throw new NullPointerException("carriers cannot be null");
+         }
+ 
+-        int subId = SubscriptionManager.getSubId(slotIndex)[0];
++        int[] subIds = SubscriptionManager.getSubId(slotIndex);
++        int subId = (subIds != null ? subIds[0] : SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+         int[] retVal = (int[]) sendRequest(CMD_SET_ALLOWED_CARRIERS, carriers, subId);
+         return retVal[0];
+     }
+@@ -3987,7 +3988,9 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
+     @Override
+     public List<CarrierIdentifier> getAllowedCarriers(int slotIndex) {
+         enforceReadPrivilegedPermission();
+-        int subId = SubscriptionManager.getSubId(slotIndex)[0];
++
++        int[] subIds = SubscriptionManager.getSubId(slotIndex);
++        int subId = (subIds != null ? subIds[0] : SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+         return (List<CarrierIdentifier>) sendRequest(CMD_GET_ALLOWED_CARRIERS, null, subId);
+     }
+ 
+-- 
+2.17.1
+

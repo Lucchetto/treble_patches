@@ -1,0 +1,395 @@
+From e60e0d22916bdf6af214b2f3ff0237b6daf71ac7 Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Sat, 19 Jan 2019 11:34:19 -0800
+Subject: [PATCH 62/71] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: Ie074fc1d702ed2775866c82a126bd8efa8b2865b
+---
+ res/values-ar/strings.xml     |  4 ++--
+ res/values-bs/strings.xml     |  4 ++--
+ res/values-da/strings.xml     | 12 ++++++------
+ res/values-eu/strings.xml     |  2 +-
+ res/values-gl/strings.xml     |  4 ++--
+ res/values-km/strings.xml     |  4 ++--
+ res/values-kn/strings.xml     | 14 +++++++-------
+ res/values-nl/strings.xml     |  2 +-
+ res/values-pt-rBR/strings.xml |  4 ++--
+ res/values-pt/strings.xml     |  4 ++--
+ res/values-te/strings.xml     | 12 ++++++------
+ res/values-tr/strings.xml     |  4 ++--
+ res/values-zh-rHK/strings.xml |  4 ++--
+ 13 files changed, 37 insertions(+), 37 deletions(-)
+
+diff --git a/res/values-ar/strings.xml b/res/values-ar/strings.xml
+index b5ef7f839d..9ffd0f5e18 100644
+--- a/res/values-ar/strings.xml
++++ b/res/values-ar/strings.xml
+@@ -1510,7 +1510,7 @@
+     <string name="reset_network_button_text" msgid="2035676527471089853">"إعادة ضبط الإعدادات"</string>
+     <string name="reset_network_final_desc" msgid="6388371121099245116">"هل تريد إعادة تعيين كل إعدادات الشبكة؟ لا يمكنك التراجع عن هذا الإجراء!"</string>
+     <string name="reset_network_final_button_text" msgid="1797434793741744635">"إعادة ضبط الإعدادات"</string>
+-    <string name="reset_network_confirm_title" msgid="1759888886976962773">"هل تريد إعادة التعيين؟"</string>
++    <string name="reset_network_confirm_title" msgid="1759888886976962773">"هل تريد إعادة الضبط؟"</string>
+     <string name="network_reset_not_available" msgid="7188610385577164676">"إعادة ضبط الشبكة ليست متاحة لهذا المستخدم"</string>
+     <string name="reset_network_complete_toast" msgid="787829973559541880">"تمت إعادة تعيين إعدادات الشبكة"</string>
+     <string name="reset_esim_error_title" msgid="1464195710538232590">"‏تتعذّر إعادة تعيين شرائح eSIM"</string>
+@@ -2504,7 +2504,7 @@
+     <string name="tts_install_voices_text" msgid="5292606786380069134">"متابعة استخدام تطبيق <xliff:g id="TTS_APP_NAME">%s</xliff:g> لتثبيت الأصوات"</string>
+     <string name="tts_install_voices_open" msgid="667467793360277465">"فتح التطبيق"</string>
+     <string name="tts_install_voices_cancel" msgid="4711492804851107459">"إلغاء"</string>
+-    <string name="tts_reset" msgid="2661752909256313270">"إعادة التعيين"</string>
++    <string name="tts_reset" msgid="2661752909256313270">"إعادة الضبط"</string>
+     <string name="tts_play" msgid="2628469503798633884">"تشغيل"</string>
+     <string name="gadget_title" msgid="5519037532720577836">"التحكم في الطاقة"</string>
+     <string name="gadget_toggle_wifi" msgid="319262861956544493">"‏تحديث إعداد Wi-Fi"</string>
+diff --git a/res/values-bs/strings.xml b/res/values-bs/strings.xml
+index b511b9a2c6..4ba03bfe29 100644
+--- a/res/values-bs/strings.xml
++++ b/res/values-bs/strings.xml
+@@ -855,7 +855,7 @@
+     <string name="passpoint_label" msgid="6381371313076009926">"Sačuvano pomoću"</string>
+     <string name="passpoint_content" msgid="8447207162397870483">"<xliff:g id="NAME">%1$s</xliff:g> – vjerodajnice"</string>
+     <string name="wifi_eap_method" msgid="8529436133640730382">"EAP metoda"</string>
+-    <string name="please_select_phase2" msgid="5231074529772044898">"Provjera vjerodostojnosti Faza 2"</string>
++    <string name="please_select_phase2" msgid="5231074529772044898">"Autentifikacija Faza 2"</string>
+     <string name="wifi_eap_ca_cert" msgid="3521574865488892851">"CA certifikat"</string>
+     <string name="wifi_eap_domain" msgid="8471124344218082064">"Domena"</string>
+     <string name="wifi_eap_user_cert" msgid="1291089413368160789">"Korisnički certifikat"</string>
+@@ -1435,7 +1435,7 @@
+     <string name="apn_mms_port" msgid="4074188088199243040">"MMS priključak"</string>
+     <string name="apn_mcc" msgid="4258628382260674636">"MCC"</string>
+     <string name="apn_mnc" msgid="8629374076888809874">"MNC"</string>
+-    <string name="apn_auth_type" msgid="6167205395676037015">"Vrsta provjere vjerodostojnosti"</string>
++    <string name="apn_auth_type" msgid="6167205395676037015">"Vrsta autentifikacije"</string>
+     <string name="apn_auth_type_none" msgid="5069592676845549926">"Ništa"</string>
+     <string name="apn_auth_type_pap" msgid="1666934536996033383">"PAP"</string>
+     <string name="apn_auth_type_chap" msgid="3369626283789068360">"CHAP"</string>
+diff --git a/res/values-da/strings.xml b/res/values-da/strings.xml
+index f1a367fa5e..b149e821df 100644
+--- a/res/values-da/strings.xml
++++ b/res/values-da/strings.xml
+@@ -1151,7 +1151,7 @@
+     <string name="doze_title" msgid="2375510714460456687">"Nye notifikationer"</string>
+     <string name="doze_summary" msgid="3846219936142814032">"Væk skærmen, når du modtager notifikationer"</string>
+     <string name="doze_always_on_title" msgid="1046222370442629646">"Altid aktiveret"</string>
+-    <string name="doze_always_on_summary" msgid="6978257596231155345">"Vis klokkeslæt, notifikationsikoner og andre oplysninger. Øget batteriforbrug."</string>
++    <string name="doze_always_on_summary" msgid="6978257596231155345">"Vis klokkeslæt, notifikationsikoner og anden info. Øget batteriforbrug."</string>
+     <string name="title_font_size" msgid="4405544325522105222">"Skriftstørrelse"</string>
+     <string name="short_summary_font_size" msgid="6819778801232989076">"Gør teksten større eller mindre"</string>
+     <string name="sim_lock_settings" msgid="3392331196873564292">"Indstillinger for låst SIM-kort"</string>
+@@ -1340,7 +1340,7 @@
+     <string name="storage_detail_explore" msgid="7911344011431568294">"Åbn <xliff:g id="NAME">^1</xliff:g>"</string>
+     <string name="storage_detail_dialog_other" msgid="8845766044697204852">"Andre omfatter bl.a. delte filer, der er gemt af apps, filer, som er downloadet fra internettet eller via Bluetooth, og Android-filer. \n\nDu kan se synligt indhold på <xliff:g id="NAME">^1</xliff:g> ved at trykke på Udforsk."</string>
+     <string name="storage_detail_dialog_system" msgid="862835644848361569">"System omfatter filer, der anvendes til at køre Android <xliff:g id="VERSION">%s</xliff:g>"</string>
+-    <string name="storage_detail_dialog_user" msgid="3267254783294197804">"<xliff:g id="USER_0">^1</xliff:g> kan have gemt billeder, musik, apps eller andre data på <xliff:g id="SIZE">^2</xliff:g> af lagerpladsen. \n\nSkift til <xliff:g id="USER_1">^1</xliff:g> for at se oplysninger."</string>
++    <string name="storage_detail_dialog_user" msgid="3267254783294197804">"<xliff:g id="USER_0">^1</xliff:g> kan have gemt billeder, musik, apps eller andre data på <xliff:g id="SIZE">^2</xliff:g> af lagerpladsen. \n\nSkift til <xliff:g id="USER_1">^1</xliff:g> for at se info."</string>
+     <string name="storage_wizard_init_title" msgid="5085400514028585772">"Konfigurer dit <xliff:g id="NAME">^1</xliff:g>"</string>
+     <string name="storage_wizard_init_external_title" msgid="4867326438945303598">"Brug som ekstern lagerplads"</string>
+     <string name="storage_wizard_init_external_summary" msgid="7476105886344565074">"Til flytning af billeder og andre medier mellem enheder."</string>
+@@ -1560,7 +1560,7 @@
+     <string name="about_settings" product="default" msgid="1743378368185371685">"Om telefonen"</string>
+     <string name="about_settings" product="device" msgid="6717640957897546887">"Om enheden"</string>
+     <string name="about_settings" product="emulator" msgid="221313099578564438">"Om efterlignet enhed"</string>
+-    <string name="about_settings_summary" msgid="3371517697156165959">"Vis juridiske oplysninger, status, softwareversion"</string>
++    <string name="about_settings_summary" msgid="3371517697156165959">"Se juridisk info, status, softwareversion"</string>
+     <string name="legal_information" msgid="5769301644270604095">"Juridiske oplysninger"</string>
+     <string name="contributors_title" msgid="5917703088825286504">"Bidragydere"</string>
+     <string name="manual" msgid="3025943393642974445">"Brugervejledning"</string>
+@@ -1784,7 +1784,7 @@
+     <string name="app_disable_notifications_dlg_title" msgid="7669264654851761857">"Vil du deaktivere notifikationer?"</string>
+     <string name="app_disable_notifications_dlg_text" msgid="5088484670924769845">"Hvis du deaktiverer notifikationer for denne app, kan du gå glip af vigtige beskeder og opdateringer."</string>
+     <string name="app_install_details_group_title" msgid="7084623031296083574">"Butik"</string>
+-    <string name="app_install_details_title" msgid="6905279702654975207">"Oplysninger om appen"</string>
++    <string name="app_install_details_title" msgid="6905279702654975207">"Info om appen"</string>
+     <string name="app_install_details_summary" msgid="6464796332049327547">"Appen er installeret fra <xliff:g id="APP_STORE">%1$s</xliff:g>"</string>
+     <string name="instant_app_details_summary" msgid="4529934403276907045">"Flere oplysninger i <xliff:g id="APP_STORE">%1$s</xliff:g>"</string>
+     <string name="app_ops_running" msgid="7706949900637284122">"Kører"</string>
+@@ -3617,7 +3617,7 @@
+     <string name="maximum_memory_use" msgid="7493720799710132496">"Maksimal hukommelsesforbrug"</string>
+     <string name="memory_usage" msgid="1781358557214390033">"Hukommelsesforbrug"</string>
+     <string name="app_list_memory_use" msgid="6987417883876419338">"Appbrug"</string>
+-    <string name="memory_details" msgid="5943436005716991782">"Oplysninger"</string>
++    <string name="memory_details" msgid="5943436005716991782">"Info"</string>
+     <string name="memory_use_summary" msgid="5608257211903075754">"Der er i gennemsnit brugt <xliff:g id="SIZE">%1$s</xliff:g> hukommelse inden for de sidste tre timer"</string>
+     <string name="no_memory_use_summary" msgid="2016900536806235588">"Der er ikke brugt hukommelse inden for de sidste tre timer"</string>
+     <string name="sort_avg_use" msgid="3998036180505143129">"Sortér efter gennemsnitligt forbrug"</string>
+@@ -3832,7 +3832,7 @@
+     <string name="carrier_and_update_now_text" msgid="4057997726060106722">"Netop opdateret af <xliff:g id="ID_1">^1</xliff:g>"</string>
+     <string name="no_carrier_update_now_text" msgid="1766859656868932996">"Netop opdateret"</string>
+     <string name="launch_mdp_app_text" msgid="6751296320061773169">"Se abonnement"</string>
+-    <string name="launch_wifi_text" msgid="2311424914664372687">"Se yderligere oplysninger"</string>
++    <string name="launch_wifi_text" msgid="2311424914664372687">"Se info"</string>
+     <string name="data_saver_title" msgid="8034286939200289826">"Datasparefunktion"</string>
+     <string name="unrestricted_data_saver" msgid="952796077540228711">"Ubegrænset data"</string>
+     <string name="restrict_background_blacklisted" msgid="3995443391711013068">"Baggrundsdata er slået fra"</string>
+diff --git a/res/values-eu/strings.xml b/res/values-eu/strings.xml
+index 1dce5ae48d..89b8c46920 100644
+--- a/res/values-eu/strings.xml
++++ b/res/values-eu/strings.xml
+@@ -2855,7 +2855,7 @@
+     <string name="help_label" msgid="6886837949306318591">"Laguntza eta iritziak"</string>
+     <string name="support_summary" msgid="2705726826263742491">"Laguntza-artikuluak, telefono eta txat bidezko laguntza, lehen urratsen gidak"</string>
+     <string name="user_account_title" msgid="1127193807312271167">"Edukia gordetzeko kontua"</string>
+-    <string name="user_picture_title" msgid="7297782792000291692">"Argazkiaren IDa"</string>
++    <string name="user_picture_title" msgid="7297782792000291692">"Nortasun-agiri argazkiduna"</string>
+     <string name="extreme_threats_title" msgid="6549541803542968699">"Mehatxu oso larriak"</string>
+     <string name="extreme_threats_summary" msgid="8777860706500920667">"Jaso bizitza eta jabetzen aurkako mehatxu oso larrien alertak"</string>
+     <string name="severe_threats_title" msgid="8362676353803170963">"Mehatxu larriak"</string>
+diff --git a/res/values-gl/strings.xml b/res/values-gl/strings.xml
+index 913f17c60c..2da2b78bfe 100644
+--- a/res/values-gl/strings.xml
++++ b/res/values-gl/strings.xml
+@@ -3754,8 +3754,8 @@
+     <string name="condition_device_muted_summary" msgid="5445341185705628047">"As chamadas e as notificacións estarán silenciadas"</string>
+     <string name="condition_device_vibrate_title" product="tablet" msgid="1983420639621523345">"O dispositivo está configurado para vibrar"</string>
+     <string name="condition_device_vibrate_title" product="default" msgid="1087633233379991925">"O teléfono está configurado para vibrar"</string>
+-    <string name="condition_device_vibrate_summary" product="tablet" msgid="433514444618164607">"Activarase a vibración das chamadas e as notificacións no dispositivo"</string>
+-    <string name="condition_device_vibrate_summary" product="default" msgid="5877034997839162763">"Activarase a vibración das chamadas e as notificacións no teléfono"</string>
++    <string name="condition_device_vibrate_summary" product="tablet" msgid="433514444618164607">"As chamadas e as notificacións farán vibrar o dispositivo"</string>
++    <string name="condition_device_vibrate_summary" product="default" msgid="5877034997839162763">"As chamadas e as notificacións farán vibrar o dispositivo"</string>
+     <string name="night_display_suggestion_title" msgid="6602129097059325291">"Define a programación da Luz nocturna"</string>
+     <string name="night_display_suggestion_summary" msgid="228346372178218442">"Cambia automaticamente o ton da pantalla pola noite"</string>
+     <string name="condition_night_display_title" msgid="5599814941976856183">"A luz nocturna está activada"</string>
+diff --git a/res/values-km/strings.xml b/res/values-km/strings.xml
+index 4dce13f5a2..366e3912d7 100644
+--- a/res/values-km/strings.xml
++++ b/res/values-km/strings.xml
+@@ -88,7 +88,7 @@
+     <string name="font_size_preview_text_headline" msgid="7955317408475392247">"អត្ថបទគំរូ"</string>
+     <string name="font_size_preview_text_title" msgid="1310536233106975546">"មេធ្មប់ដ៏អស្ចារ្យនៃទឹកដីពិសិដ្ឋ"</string>
+     <string name="font_size_preview_text_subtitle" msgid="4231671528173110093">"ជំពូកទី 11៖ ទីក្រុងមរកតដ៏អស្ចារ្យនៃទឹកដីពិសិដ្ឋ"</string>
+-    <string name="font_size_preview_text_body" msgid="2846183528684496723">"មុនដំបូង ដូរ៉ូធី និង​មិត្តភក្តិ​របស់​នាង​មាន​ភាព​ភ្ញាក់​ផ្អើលយ៉ាងខ្លាំង​​ចំពោះ​ភាព​ស្រស់ស្អាត​នៃ​ទីក្រុង​ដ៏អស្ចារ្យ​នេះ​ បើ​ទោះ​បី​ជា​ពួកគេ​ពាក់វ៉ែនតា​ការពារ​ភ្នែក​ដែល​មាន​ពណ៌បៃតង​ក៏ដោយ។ ​នៅ​តាមដង​ផ្លូវ មាន​ផ្ទះ​ដ៏​ស្រស់​ស្អាត ដែល​ធ្វើ​ឡើង​ពី​ថ្ម​ម៉ាប​ពណ៌បៃតង និង​លម្អ​ដោយ​ត្បូង​មរកត​ដ៏​ចែងចាំង​នៅគ្រប់​ទីកន្លែង​តម្រៀប​ជួរគ្នា។ \n\n ពួកគេ​ដើរ​នៅ​លើ​ដង​ផ្លូវ​ដែល​ធ្វើ​ពី​ថ្ម​ម៉ាប​ពណ៌បៃតងដូចគ្នា ហើយ​នៅ​ត្រង់កន្លែង​ដែល​ប្លុក​​អគារ​​តភ្ជាប់​គ្នាមាន​​ត្បូង​មរកតតម្រៀបជាជួរក្បែរៗគ្នា និង​មាន​ពន្លឺចែង​ចាំង​នៅក្រោម​ពន្លឺ​ព្រះអាទិត្យ។ ផ្ទាំង​បង្អួច​ធ្វើ​ឡើង​ពីកញ្ចក់​ពណ៌បៃតង ហើយ​សូម្បី​​តែ​ផ្ទៃមេឃគ្របដណ្ដប់ដោយ​ស្រមោលពណ៌បៃតង ហើយកាំរស្មីនៃ​​ពន្លឺ​ព្រះអាទិត្យ​ក៏មាន​​ពណ៌​បៃតង​ដែរ។ មាន​មនុស្ស​ម្នាកុះករទាំងប្រុស ទាំងស្រី ទាំងកុមារា ទាំងកុមារី​ដើរ​ទៅ​មក​ក្នុង​សំលៀក​បំពាក់​ពណ៌បៃតង ហើយ​ពួកគេ​ទាំងអស់​សុទ្ធ​តែមាន​ស្បែករាងបៃតង។ ពួកគេ​មើលទៅ​កាន់ដូរ៉ូធី និង​អ្នក​រួមដំណើរ​ជាមួយ​នាង​ដ៏ចម្លែក​ដោយ​បង្ហាញកែវភ្នែកដែលពោរពេញដោយ​ក្តី​ងឿងឆ្ងល់ ហើយ​ក្មេងៗទាំងអស់​រត់​ទៅ​ពួន​នៅ​ខាងក្រោយ​ម្តាយ​របស់​ពួកគេ នៅ​ពេល​ដែល​គេឃើញ​សត្វតោ ប៉ុន្តែ​គ្មាន​នរណាម្នាក់​និយាយ​ទៅកាន់​ពួកគេ​នោះទេ។ មាន​ហាង​ជា​ច្រើន​នៅ​តាម​ផ្លូវ ហើយ​ដូរ៉ូធីបាន​សង្កេត​ឃើញ​ថា ​អ្វីៗទាំងអស់​នៅ​ក្នុង​ហាងទាំងនោះ​សុទ្ធតែ​មាន​ពណ៌បៃតង។ ​ស្ករគ្រាប់ពណ៌បៃតង និង​ពោតលីង​ពណ៌បៃតង ក៏​ដូចជា​ស្បែកជើងពណ៌បៃតង មួកពណ៌បៃតង និង​សម្លៀកបំពាក់ពណ៌បៃតង​គ្រប់ប្រភេទ​សុទ្ធតែមានលក់នៅក្នុងហាង។ នៅកន្លែងមួយ មានបុរសម្នាក់​លក់​ទឹកក្រូចឆ្មាពណ៌បៃតង ហើយនៅ​​ពេលក្មេង​ៗ​ទិញ​ទឹកក្រូចឆ្មា​នោះ ដូរ៉ូធី​បាន​សង្កេត​ឃើញថា ពួកគេ​បានប្រើកាក់ពណ៌បៃតងទៅទិញ។ \n\nនៅ​ទីនោះ​ហាក់ដូចជា​គ្មាន​សត្វសេះ ឬ​សត្វផ្សេង​ទៀតសោះ។ ពួកគេ​ដឹក​ជញ្ជូន​សម្ភារៈ​ទាំងអស់​តាម​រយៈ​រទេះ​​រុញ​ពណ៌បៃតង។ ពួកគេ​គ្រប់គ្នា​ហាក់បី​ដូចជា​រស់នៅ​ប្រកប​ដោយក្ដី​រីករាយ និង​ភាពសម្បូរ​សប្បាយ​ណាស់។"</string>
++    <string name="font_size_preview_text_body" msgid="2846183528684496723">"មុនដំបូង ដូរ៉ូធី និង​មិត្តភក្តិ​របស់​នាង​មាន​ភាព​ភ្ញាក់​ផ្អើលយ៉ាងខ្លាំង​​ចំពោះ​ភាព​ស្រស់ស្អាត​នៃ​ទីក្រុង​ដ៏អស្ចារ្យ​នេះ​ បើ​ទោះ​បី​ជា​ពួកគេ​ពាក់វ៉ែនតា​ការពារ​ភ្នែក​ដែល​មាន​ពណ៌បៃតង​ក៏ដោយ។ ​នៅ​តាមដង​ផ្លូវ មាន​ផ្ទះ​ដ៏​ស្រស់​ស្អាត ដែល​ធ្វើ​ឡើង​ពី​ថ្ម​ម៉ាប​ពណ៌បៃតង និង​លម្អ​ដោយ​ត្បូង​មរកត​ដ៏​ចែងចាំង​នៅគ្រប់​ទីកន្លែង​តម្រៀប​ជួរគ្នា។ ពួកគេ​ដើរ​នៅ​លើ​ដង​ផ្លូវ​ដែល​ធ្វើ​ពី​ថ្ម​ម៉ាប​ពណ៌បៃតងដូចគ្នា ហើយ​នៅ​ត្រង់កន្លែង​ដែល​ប្លុក​​អគារ​​តភ្ជាប់​គ្នាមាន​​ត្បូង​មរកតតម្រៀបជាជួរក្បែរៗគ្នា និង​មាន​ពន្លឺចែង​ចាំង​នៅក្រោម​ពន្លឺ​ព្រះអាទិត្យ។ ផ្ទាំង​បង្អួច​ធ្វើ​ឡើង​ពីកញ្ចក់​ពណ៌បៃតង ហើយ​សូម្បី​​តែ​ផ្ទៃមេឃគ្របដណ្ដប់ដោយ​ស្រមោលពណ៌បៃតង ហើយកាំរស្មីនៃ​​ពន្លឺ​ព្រះអាទិត្យ​ក៏មាន​​ពណ៌​បៃតង​ដែរ។ \n\nមាន​មនុស្ស​ម្នាកុះករទាំងប្រុស ទាំងស្រី ទាំងកុមារា ទាំងកុមារី​ដើរ​ទៅ​មក​ក្នុង​សម្លៀក​បំពាក់​ពណ៌បៃតង ហើយ​ពួកគេ​ទាំងអស់​សុទ្ធ​តែមាន​ស្បែករាងបៃតង។ ពួកគេ​មើលទៅ​កាន់ដូរ៉ូធី និង​អ្នក​រួមដំណើរ​ជាមួយ​នាង​ដ៏ចម្លែក​ដោយ​បង្ហាញកែវភ្នែកដែលពោរពេញដោយ​ក្តី​ងឿងឆ្ងល់ ហើយ​ក្មេងៗទាំងអស់​រត់​ទៅ​ពួន​នៅ​ខាងក្រោយ​ម្តាយ​របស់​ពួកគេ នៅ​ពេល​ដែល​គេឃើញ​សត្វតោ ប៉ុន្តែ​គ្មាន​នរណាម្នាក់​និយាយ​ទៅកាន់​ពួកគេ​នោះទេ។ មាន​ហាង​ជា​ច្រើន​នៅ​តាម​ផ្លូវ ហើយ​ដូរ៉ូធីបាន​សង្កេត​ឃើញ​ថា ​អ្វីៗទាំងអស់​នៅ​ក្នុង​ហាងទាំងនោះ​សុទ្ធតែ​មាន​ពណ៌បៃតង។ ​ស្ករគ្រាប់ពណ៌បៃតង និង​ពោតលីង​ពណ៌បៃតង ក៏​ដូចជា​ស្បែកជើងពណ៌បៃតង មួកពណ៌បៃតង និង​សម្លៀកបំពាក់ពណ៌បៃតង​គ្រប់ប្រភេទ​សុទ្ធតែមានលក់នៅក្នុងហាង។ នៅកន្លែងមួយ មានបុរសម្នាក់​លក់​ទឹកក្រូចឆ្មាពណ៌បៃតង ហើយនៅ​​ពេលក្មេង​ៗ​ទិញ​ទឹកក្រូចឆ្មា​នោះ ដូរ៉ូធី​បាន​សង្កេត​ឃើញថា ពួកគេ​បានប្រើកាក់ពណ៌បៃតងទៅទិញ។ \n\nនៅ​ទីនោះ​ហាក់ដូចជា​គ្មាន​សត្វសេះ ឬ​សត្វផ្សេង​ទៀតសោះ។ ពួកគេ​ដឹក​ជញ្ជូន​សម្ភារទាំងអស់​តាម​រយៈ​រទេះ​​រុញ​ពណ៌បៃតង។ ពួកគេ​គ្រប់គ្នា​ហាក់បី​ដូចជា​រស់នៅ​ប្រកប​ដោយក្ដី​រីករាយ និង​ភាពសម្បូរ​សប្បាយ​ណាស់។"</string>
+     <string name="font_size_save" msgid="3450855718056759095">"យល់​ព្រម​"</string>
+     <string name="sdcard_setting" product="nosdcard" msgid="8281011784066476192">"ឧបករណ៍​ផ្ទុក​យូអេសប៊ី"</string>
+     <string name="sdcard_setting" product="default" msgid="5922637503871474866">"កាត​អេសឌី"</string>
+@@ -1210,7 +1210,7 @@
+     <string name="device_status_activity_title" msgid="1411201799384697904">"ស្ថានភាព"</string>
+     <string name="device_status" msgid="607405385799807324">"ស្ថានភាព"</string>
+     <string name="device_status_summary" product="tablet" msgid="3292717754497039686">"ស្ថានភាព​ថ្ម បណ្ដាញ និង​ព័ត៌មាន​ផ្សេងៗ"</string>
+-    <string name="device_status_summary" product="default" msgid="2599162787451519618">"លេខ​ទូរស័ព្ទ សញ្ញា ។ល។"</string>
++    <string name="device_status_summary" product="default" msgid="2599162787451519618">"លេខ​ទូរសព្ទ សញ្ញា ។ល។"</string>
+     <string name="storage_settings" msgid="4211799979832404953">"ទំហំ​ផ្ទុក"</string>
+     <string name="storage_usb_settings" msgid="7293054033137078060">"ទំហំ​ផ្ទុក"</string>
+     <string name="storage_settings_title" msgid="8746016738388094064">"កំណត់​ការ​​ផ្ទុក"</string>
+diff --git a/res/values-kn/strings.xml b/res/values-kn/strings.xml
+index bb12565dcd..2260b02d0b 100644
+--- a/res/values-kn/strings.xml
++++ b/res/values-kn/strings.xml
+@@ -297,7 +297,7 @@
+     <string name="cancel" msgid="6859253417269739139">"ರದ್ದುಮಾಡಿ"</string>
+     <string name="okay" msgid="1997666393121016642">"ಸರಿ"</string>
+     <string name="forget" msgid="1400428660472591263">"ಮರೆತುಬಿಡಿ"</string>
+-    <string name="save" msgid="879993180139353333">"ಉಳಿಸು"</string>
++    <string name="save" msgid="879993180139353333">"ಉಳಿಸಿ"</string>
+     <string name="done" msgid="6942539184162713160">"ಮುಗಿದಿದೆ"</string>
+     <string name="apply" msgid="1577045208487259229">"ಅನ್ವಯಿಸಿ"</string>
+     <string name="settings_label" msgid="1626402585530130914">"ಸೆಟ್ಟಿಂಗ್‌ಗಳು"</string>
+@@ -895,7 +895,7 @@
+     <string name="wifi_forget" msgid="8168174695608386644">"ಮರೆತುಬಿಡು"</string>
+     <string name="wifi_modify" msgid="6100248070440710782">"ಮಾರ್ಪಡಿಸಿ"</string>
+     <string name="wifi_failed_forget_message" msgid="1348172929201654986">"ನೆಟ್‌ವರ್ಕ್‌ ಮರೆಯಲು ವಿಫಲವಾಗಿದೆ"</string>
+-    <string name="wifi_save" msgid="3331121567988522826">"ಉಳಿಸು"</string>
++    <string name="wifi_save" msgid="3331121567988522826">"ಉಳಿಸಿ"</string>
+     <string name="wifi_failed_save_message" msgid="6650004874143815692">"ನೆಟ್‌ವರ್ಕ್‌ ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ"</string>
+     <string name="wifi_cancel" msgid="6763568902542968964">"ರದ್ದುಮಾಡಿ"</string>
+     <string name="wifi_forget_dialog_title" msgid="6224151903586192426">"ನೆಟ್‌ವರ್ಕ್‌ ಮರೆತಿರುವಿರಾ?"</string>
+@@ -915,7 +915,7 @@
+     <string name="wifi_saved_access_points_label" msgid="2013409399392285262">"ಉಳಿಸಿದ ನೆಟ್‌ವರ್ಕ್‌"</string>
+     <string name="wifi_advanced_settings_label" msgid="3654366894867838338">"IP ಸೆಟ್ಟಿಂಗ್‌ಗಳು"</string>
+     <string name="wifi_advanced_not_available" msgid="5823045095444154586">"ಈ ಬಳಕೆದಾರರಿಗೆ ವೈ ಫೈ ಸುಧಾರಿತ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಲಭ್ಯವಿಲ್ಲ"</string>
+-    <string name="wifi_ip_settings_menu_save" msgid="7296724066102908366">"ಉಳಿಸು"</string>
++    <string name="wifi_ip_settings_menu_save" msgid="7296724066102908366">"ಉಳಿಸಿ"</string>
+     <string name="wifi_ip_settings_menu_cancel" msgid="6582567330136502340">"ರದ್ದುಮಾಡಿ"</string>
+     <string name="wifi_ip_settings_invalid_ip_address" msgid="2513142355364274970">"ಮಾನ್ಯವಾದ IP ವಿಳಾಸವನ್ನು ಟೈಪ್‌ ಮಾಡಿ."</string>
+     <string name="wifi_ip_settings_invalid_gateway" msgid="8164264988361096450">"ಮಾನ್ಯವಾದ ಗೇಟ್‌ವೇ ವಿಳಾಸವನ್ನು ಟೈಪ್‌ ಮಾಡಿ."</string>
+@@ -1438,7 +1438,7 @@
+     <string name="mvno_match_data" msgid="4560671695220540466">"MVNO ಮೌಲ್ಯ"</string>
+     <string name="menu_delete" msgid="6981294422841124659">"APN ಅಳಿಸಿ"</string>
+     <string name="menu_new" msgid="3014205883303921729">"ಹೊಸ APN"</string>
+-    <string name="menu_save" msgid="8109345640668285399">"ಉಳಿಸು"</string>
++    <string name="menu_save" msgid="8109345640668285399">"ಉಳಿಸಿ"</string>
+     <string name="menu_cancel" msgid="2194502410474697474">"ತ್ಯಜಿಸು"</string>
+     <string name="error_title" msgid="7631322303341024692"></string>
+     <string name="error_name_empty" msgid="5508155943840201232">"ಹೆಸರಿನ ಕ್ಷೇತ್ರವು ಖಾಲಿ ಇರುವಂತಿಲ್ಲ."</string>
+@@ -2436,7 +2436,7 @@
+     <string name="credentials_erased" msgid="2907836028586342969">"ರುಜುವಾತು ಸಂಗ್ರಹಣೆಯನ್ನು ಅಳಿಸಲಾಗಿದೆ."</string>
+     <string name="credentials_not_erased" msgid="7685932772284216097">"ರುಜುವಾತು ಸಂಗ್ರಹಣೆಯನ್ನು ಅಳಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ."</string>
+     <string name="credentials_enabled" msgid="7588607413349978930">"ರುಜುವಾತು ಸಂಗ್ರಹಣೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ."</string>
+-    <string name="credentials_configure_lock_screen_hint" msgid="8058230497337529036">"ನೀವು ರುಜುವಾತು ಸಂಗ್ರಹಣೆಯನ್ನು ಬಳಸುವ ಮೊದಲು, ನಿಮ್ಮ ಸಾಧನವು ಸುರಕ್ಷಿತ ಲಾಕ್ ಸ್ಕ್ರೀನ್ ಅನ್ನು ಹೊಂದುವುದು ಅಗತ್ಯವಿದೆ"</string>
++    <string name="credentials_configure_lock_screen_hint" msgid="8058230497337529036">"ನೀವು ರುಜುವಾತು ಸಂಗ್ರಹಣೆಯನ್ನು ಬಳಸುವುದಕ್ಕೂ ಮೊದಲು, ನಿಮ್ಮ ಸಾಧನವು ಸುರಕ್ಷಿತ ಲಾಕ್ ಸ್ಕ್ರೀನ್ ಅನ್ನು ಹೊಂದಿರಬೇಕಾಗಿದೆ"</string>
+     <string name="credentials_configure_lock_screen_button" msgid="253239765216055321">"ಲಾಕ್ ಸೆಟ್‌ ಮಾಡಿ"</string>
+     <string name="usage_access_title" msgid="332333405495457839">"ಬಳಕೆಯ ಪ್ರವೇಶದ ಆಪ್‌‌"</string>
+     <string name="emergency_tone_title" msgid="254495218194925271">"ತುರ್ತು ಡೈಯಲಿಂಗ್ ಸಿಗ್ನಲ್"</string>
+@@ -2493,7 +2493,7 @@
+     <string name="wifi_setup_detail" msgid="2336990478140503605">"ನೆಟ್‌ವರ್ಕ್‌ ವಿವರಗಳು"</string>
+     <string name="wifi_setup_connect" msgid="7954456989590237049">"ಸಂಪರ್ಕಪಡಿಸು"</string>
+     <string name="wifi_setup_forget" msgid="2562847595567347526">"ಮರೆತುಬಿಡು"</string>
+-    <string name="wifi_setup_save" msgid="3659235094218508211">"ಉಳಿಸು"</string>
++    <string name="wifi_setup_save" msgid="3659235094218508211">"ಉಳಿಸಿ"</string>
+     <string name="wifi_setup_cancel" msgid="3185216020264410239">"ರದ್ದುಮಾಡಿ"</string>
+     <string name="wifi_setup_status_scanning" msgid="5317003416385428036">"ನೆಟ್‌ವರ್ಕ್‌ಗಳನ್ನು ಸ್ಕ್ಯಾನ್‌ ಮಾಡಲಾಗುತ್ತಿದೆ…"</string>
+     <string name="wifi_setup_status_select_network" msgid="3960480613544747397">"ನೆಟ್‌ವರ್ಕ್‌ಗೆ ಸಂಪರ್ಕಗೊಳಿಸಲು ಅದನ್ನು ಟ್ಯಾಪ್ ಮಾಡಿ"</string>
+@@ -2687,7 +2687,7 @@
+     <string name="vpn_always_on_invalid_reason_other" msgid="5959352052515258208">"ನಮೂದಿಸಿದ ಮಾಹಿತಿಯು ಯಾವಾಗಲೂ-ಆನ್ VPN ಅನ್ನು ಬೆಂಬಲಿಸುವುದಿಲ್ಲ"</string>
+     <string name="vpn_cancel" msgid="1979937976123659332">"ರದ್ದುಮಾಡಿ"</string>
+     <string name="vpn_done" msgid="8678655203910995914">"ವಜಾಗೊಳಿಸಿ"</string>
+-    <string name="vpn_save" msgid="4233484051644764510">"ಉಳಿಸು"</string>
++    <string name="vpn_save" msgid="4233484051644764510">"ಉಳಿಸಿ"</string>
+     <string name="vpn_connect" msgid="8469608541746132301">"ಸಂಪರ್ಕಿಸು"</string>
+     <string name="vpn_replace" msgid="5442836256121957861">"ಸ್ಥಾನಾಂತರಿಸು"</string>
+     <string name="vpn_edit" msgid="8647191407179996943">"VPN ಪ್ರೊಫೈಲ್ ಎಡಿಟ್ ಮಾಡಿ"</string>
+diff --git a/res/values-nl/strings.xml b/res/values-nl/strings.xml
+index 1ef88f1606..7000903cb5 100644
+--- a/res/values-nl/strings.xml
++++ b/res/values-nl/strings.xml
+@@ -727,7 +727,7 @@
+     <string name="bluetooth_pan_nap_profile_summary_connected" msgid="1322694224800769308">"Lokale internetverbinding delen met apparaat"</string>
+     <string name="bluetooth_dock_settings" msgid="3218335822716052885">"Instellingen voor dockstation"</string>
+     <string name="bluetooth_dock_settings_title" msgid="5543069893044375188">"Dockstation gebruiken voor audio"</string>
+-    <string name="bluetooth_dock_settings_headset" msgid="1001821426078644650">"Als luidsprekertelefoon"</string>
++    <string name="bluetooth_dock_settings_headset" msgid="1001821426078644650">"Als luidspreker"</string>
+     <string name="bluetooth_dock_settings_a2dp" msgid="8791004998846630574">"Voor muziek en media"</string>
+     <string name="bluetooth_dock_settings_remember" msgid="5551459057010609115">"Instellingen onthouden"</string>
+     <string name="bluetooth_max_connected_audio_devices_string" msgid="6752690395207847881">"Maximum aantal verbonden Bluetooth-audioapparaten"</string>
+diff --git a/res/values-pt-rBR/strings.xml b/res/values-pt-rBR/strings.xml
+index 971ff7a7da..aeefafd0b8 100644
+--- a/res/values-pt-rBR/strings.xml
++++ b/res/values-pt-rBR/strings.xml
+@@ -2109,7 +2109,7 @@
+     <string name="power_usage_level_and_status" msgid="7449847570973811784">"<xliff:g id="LEVEL">%1$s</xliff:g> - <xliff:g id="STATUS">%2$s</xliff:g>"</string>
+     <string name="power_discharge_remaining" msgid="4925678997049911808">"<xliff:g id="REMAIN">%1$s</xliff:g> restantes"</string>
+     <string name="power_charge_remaining" msgid="6132074970943913135">"<xliff:g id="UNTIL_CHARGED">%1$s</xliff:g> até carregar"</string>
+-    <string name="background_activity_title" msgid="8482171736539410135">"Restrição para segundo plano"</string>
++    <string name="background_activity_title" msgid="8482171736539410135">"Restrição em segundo plano"</string>
+     <string name="background_activity_summary" msgid="8140094430510517362">"Permitir que o app seja executado em segundo plano"</string>
+     <string name="background_activity_summary_disabled" msgid="3710669050484599847">"Execução do app em segundo plano não permitida"</string>
+     <string name="background_activity_summary_whitelisted" msgid="1079899502347973947">"Não é possível restringir o uso em segundo plano"</string>
+@@ -2380,7 +2380,7 @@
+     <string name="voice_interaction_security_warning" msgid="6378608263983737325">"Este serviço de entrada por voz poderá executar monitoramento por voz sempre ativado e apps com o recurso de comando de voz em seu nome. Ele está incluído no app <xliff:g id="VOICE_INPUT_SERVICE_APP_NAME">%s</xliff:g>. Quer ativar o uso deste serviço?"</string>
+     <string name="tts_engine_preference_title" msgid="1578826947311494239">"Mecanismo preferencial"</string>
+     <string name="tts_engine_settings_title" msgid="6886964122861384818">"Configurações do mecanismo"</string>
+-    <string name="tts_sliders_title" msgid="992059150784095263">"Taxa e tom da fala"</string>
++    <string name="tts_sliders_title" msgid="992059150784095263">"Velocidade da fala e tom de voz"</string>
+     <string name="tts_engine_section_title" msgid="6289240207677024034">"Mecanismo"</string>
+     <string name="tts_install_voice_title" msgid="6275828614052514320">"Vozes"</string>
+     <string name="tts_spoken_language" msgid="5542499183472504027">"Idioma falado"</string>
+diff --git a/res/values-pt/strings.xml b/res/values-pt/strings.xml
+index 971ff7a7da..aeefafd0b8 100644
+--- a/res/values-pt/strings.xml
++++ b/res/values-pt/strings.xml
+@@ -2109,7 +2109,7 @@
+     <string name="power_usage_level_and_status" msgid="7449847570973811784">"<xliff:g id="LEVEL">%1$s</xliff:g> - <xliff:g id="STATUS">%2$s</xliff:g>"</string>
+     <string name="power_discharge_remaining" msgid="4925678997049911808">"<xliff:g id="REMAIN">%1$s</xliff:g> restantes"</string>
+     <string name="power_charge_remaining" msgid="6132074970943913135">"<xliff:g id="UNTIL_CHARGED">%1$s</xliff:g> até carregar"</string>
+-    <string name="background_activity_title" msgid="8482171736539410135">"Restrição para segundo plano"</string>
++    <string name="background_activity_title" msgid="8482171736539410135">"Restrição em segundo plano"</string>
+     <string name="background_activity_summary" msgid="8140094430510517362">"Permitir que o app seja executado em segundo plano"</string>
+     <string name="background_activity_summary_disabled" msgid="3710669050484599847">"Execução do app em segundo plano não permitida"</string>
+     <string name="background_activity_summary_whitelisted" msgid="1079899502347973947">"Não é possível restringir o uso em segundo plano"</string>
+@@ -2380,7 +2380,7 @@
+     <string name="voice_interaction_security_warning" msgid="6378608263983737325">"Este serviço de entrada por voz poderá executar monitoramento por voz sempre ativado e apps com o recurso de comando de voz em seu nome. Ele está incluído no app <xliff:g id="VOICE_INPUT_SERVICE_APP_NAME">%s</xliff:g>. Quer ativar o uso deste serviço?"</string>
+     <string name="tts_engine_preference_title" msgid="1578826947311494239">"Mecanismo preferencial"</string>
+     <string name="tts_engine_settings_title" msgid="6886964122861384818">"Configurações do mecanismo"</string>
+-    <string name="tts_sliders_title" msgid="992059150784095263">"Taxa e tom da fala"</string>
++    <string name="tts_sliders_title" msgid="992059150784095263">"Velocidade da fala e tom de voz"</string>
+     <string name="tts_engine_section_title" msgid="6289240207677024034">"Mecanismo"</string>
+     <string name="tts_install_voice_title" msgid="6275828614052514320">"Vozes"</string>
+     <string name="tts_spoken_language" msgid="5542499183472504027">"Idioma falado"</string>
+diff --git a/res/values-te/strings.xml b/res/values-te/strings.xml
+index a8ac9f4248..64d46f667e 100644
+--- a/res/values-te/strings.xml
++++ b/res/values-te/strings.xml
+@@ -383,7 +383,7 @@
+     <string name="account_settings_title" msgid="626177544686329806">"ఖాతాలు"</string>
+     <string name="security_settings_title" msgid="4918904614964215087">"భద్రత &amp; స్థానం"</string>
+     <string name="encryption_and_credential_settings_title" msgid="6514904533438791561">"ఎన్‌క్రిప్షన్ &amp; ఆధారాలు"</string>
+-    <string name="encryption_and_credential_settings_summary" product="default" msgid="8721883002237981248">"ఫోన్ గుప్తీకరించబడింది"</string>
++    <string name="encryption_and_credential_settings_summary" product="default" msgid="8721883002237981248">"ఫోన్ ఎన్‌క్రిప్ట్ చేయబడింది"</string>
+     <string name="decryption_settings_summary" product="default" msgid="5671817824042639849">"ఫోన్ ఎన్‌క్రిప్ట్ చేయబడలేదు"</string>
+     <string name="encryption_and_credential_settings_summary" product="tablet" msgid="7200428573872395685">"డివైజ్ గుప్తీకరించబడింది"</string>
+     <string name="decryption_settings_summary" product="tablet" msgid="5794135636155570977">"పరికరం ఎన్‌క్రిప్ట్ చేయబడలేదు"</string>
+@@ -1063,7 +1063,7 @@
+     <string name="accessibility_personal_account_title" msgid="2169071663029067826">"వ్యక్తిగత ఖాతా - <xliff:g id="MANAGED_BY">%s</xliff:g>"</string>
+     <string name="search_settings" msgid="1910951467596035063">"వెతుకు"</string>
+     <string name="display_settings" msgid="7965901687241669598">"ప్రదర్శన"</string>
+-    <string name="accelerometer_title" msgid="7854608399547349157">"స్క్రీన్‌ను స్వయంచాలకంగా తిప్పు"</string>
++    <string name="accelerometer_title" msgid="7854608399547349157">"స్క్రీన్‌ను ఆటోమేటిక్‌గా తిప్పుతుంది"</string>
+     <string name="color_mode_title" msgid="9186249332902370471">"రంగులు"</string>
+     <string name="color_mode_option_natural" msgid="5013837483986772758">"సహజం"</string>
+     <string name="color_mode_option_boosted" msgid="8588223970257287524">"అభివృద్ధిపరచబడింది"</string>
+@@ -1314,7 +1314,7 @@
+     <string name="storage_volume_summary" msgid="7023441974367853372">"<xliff:g id="TOTAL">%2$s</xliff:g>లో <xliff:g id="USED">%1$s</xliff:g> ఉపయోగించబడింది"</string>
+     <string name="storage_size_large" msgid="5691585991420946254">"<xliff:g id="NUMBER">^1</xliff:g>"<small><small>" <xliff:g id="UNIT">^2</xliff:g>"</small></small>""</string>
+     <string name="storage_volume_used" msgid="1303803057698959872">"<xliff:g id="TOTAL">%1$s</xliff:g>లో ఉపయోగించినది"</string>
+-    <string name="storage_volume_used_total" msgid="6113121714019000244">"మొత్తం <xliff:g id="TOTAL">%1$s</xliff:g> ఉపయోగించబడింది"</string>
++    <string name="storage_volume_used_total" msgid="6113121714019000244">"<xliff:g id="TOTAL">%1$s</xliff:g>లో, ఈ మొత్తం వినియోగించబడింది"</string>
+     <string name="storage_mount_success" msgid="687641090137253647">"<xliff:g id="NAME">%1$s</xliff:g> మౌంట్ చేయబడింది"</string>
+     <string name="storage_mount_failure" msgid="1042621107954547316">"<xliff:g id="NAME">%1$s</xliff:g>ని మౌంట్ చేయలేకపోయింది"</string>
+     <string name="storage_unmount_success" msgid="5737203344673441677">"<xliff:g id="NAME">%1$s</xliff:g> సురక్షితంగా తొలగించబడింది"</string>
+@@ -2084,7 +2084,7 @@
+     <string name="print_menu_item_settings" msgid="6591330373682227082">"సెట్టింగ్‌లు"</string>
+     <string name="print_menu_item_add_printers" msgid="2890738028215834012">"ప్రింటర్‌లను జోడించు"</string>
+     <string name="print_feature_state_on" msgid="8098901852502441048">"ఆన్‌లో ఉంది"</string>
+-    <string name="print_feature_state_off" msgid="7294876968403966040">"ఆఫ్‌లో ఉంది"</string>
++    <string name="print_feature_state_off" msgid="7294876968403966040">"ఆఫ్"</string>
+     <string name="print_menu_item_add_service" msgid="3811645167869797802">"సేవను జోడించు"</string>
+     <string name="print_menu_item_add_printer" msgid="8251218970577291032">"ప్రింటర్‌ను జోడించు"</string>
+     <string name="print_menu_item_search" msgid="7025589328240514553">"వెతుకు"</string>
+@@ -3988,7 +3988,7 @@
+     <string name="automatic_storage_manager_activation_warning" msgid="6353100011690933254">"మీ నిల్వ ఇప్పుడు నిల్వ నిర్వాహికి ద్వారా నిర్వహించబడుతోంది"</string>
+     <string name="account_for_section_header" msgid="5356566418548737121">"<xliff:g id="USER_NAME">%1$s</xliff:g> యొక్క ఖాతాలు"</string>
+     <string name="configure_section_header" msgid="7391183586410814450">"కాన్ఫిగర్ చేయండి"</string>
+-    <string name="auto_sync_account_title" msgid="898796354710116383">"డేటాని ఆటోమేటిక్‌గా సమకాలీకరించు"</string>
++    <string name="auto_sync_account_title" msgid="898796354710116383">"డేటాను ఆటోమేటిక్‌గా సింక్ చేయి"</string>
+     <string name="auto_sync_personal_account_title" msgid="8496263182646100610">"వ్యక్తిగత డేటాని స్వయంచాలకంగా సమకాలీకరించు"</string>
+     <string name="auto_sync_work_account_title" msgid="4489172450037434152">"కార్యాలయ డేటాని స్వయంచాలకంగా సమకాలీకరించు"</string>
+     <string name="auto_sync_account_summary" msgid="692499211629185107">"డేటాని ఆటోమేటిక్‌గా రిఫ్రెష్ చేసేలా యాప్‌లు అనుమతించబడతాయి"</string>
+@@ -4149,7 +4149,7 @@
+     <string name="prevent_ringing_option_none" msgid="4656046650769569175">"ఏమీ చేయవద్దు"</string>
+     <string name="prevent_ringing_option_vibrate_summary" msgid="1157524435626890116">"ఆన్ చేయి (వైబ్రేట్)"</string>
+     <string name="prevent_ringing_option_mute_summary" msgid="4472465110708640980">"ఆన్ చేయి (మ్యూట్)"</string>
+-    <string name="prevent_ringing_option_none_summary" msgid="5013718946609276137">"ఆఫ్ చేయి"</string>
++    <string name="prevent_ringing_option_none_summary" msgid="5013718946609276137">"ఆఫ్"</string>
+     <string name="pref_title_network_details" msgid="7186418845727358964">"నెట్‌వర్క్ వివరాలు"</string>
+     <string name="about_phone_device_name_warning" msgid="8885670415541365348">"మీ ఫోన్‌లోని యాప్‌లకు మీ పరికరం పేరు కనిపిస్తుంది. మీరు బ్లూటూత్ పరికరాలకు కనెక్ట్ చేసినప్పుడు లేదా Wi-Fi హాట్‌స్పాట్‌ని సెటప్ చేసినప్పుడు ఇతర వ్యక్తులకు కూడా ఇది కనిపించవచ్చు."</string>
+     <string name="devices_title" msgid="7701726109334110391">"పరికరాలు"</string>
+diff --git a/res/values-tr/strings.xml b/res/values-tr/strings.xml
+index e802abd222..708d783787 100644
+--- a/res/values-tr/strings.xml
++++ b/res/values-tr/strings.xml
+@@ -1108,11 +1108,11 @@
+     <string name="night_display_status_title" msgid="1784041143360286267">"Durum"</string>
+     <string name="night_display_temperature_title" msgid="1435292789272017136">"Yoğunluk"</string>
+     <string name="night_display_summary_off" msgid="1792750041697946539">"Kapalı / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+-    <string name="night_display_summary_off_auto_mode_never" msgid="3583590137322963513">"Hiçbir zaman otomatik olarak açılmayacak"</string>
++    <string name="night_display_summary_off_auto_mode_never" msgid="3583590137322963513">"hiçbir zaman otomatik olarak açılmayacak"</string>
+     <string name="night_display_summary_off_auto_mode_custom" msgid="6365668239253173208">"Şu saatte otomatik olarak açılacak: <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+     <string name="night_display_summary_off_auto_mode_twilight" msgid="3596291693781757392">"Güneş battığında otomatik olarak açılacak"</string>
+     <string name="night_display_summary_on" msgid="1355713529996456744">"Açık / <xliff:g id="ID_1">%1$s</xliff:g>"</string>
+-    <string name="night_display_summary_on_auto_mode_never" msgid="9117830821363119835">"Hiçbir zaman otomatik olarak kapatılmayacak"</string>
++    <string name="night_display_summary_on_auto_mode_never" msgid="9117830821363119835">"hiçbir zaman otomatik olarak kapatılmayacak"</string>
+     <string name="night_display_summary_on_auto_mode_custom" msgid="5510753572245577263">"Şu saatte otomatik olarak kapatılacak: <xliff:g id="ID_1">%1$s</xliff:g>."</string>
+     <string name="night_display_summary_on_auto_mode_twilight" msgid="852270120144683507">"Güneş doğduğunda otomatik olarak kapatılacak"</string>
+     <string name="night_display_activation_on_manual" msgid="277343561277625826">"Şimdi aç"</string>
+diff --git a/res/values-zh-rHK/strings.xml b/res/values-zh-rHK/strings.xml
+index 5cc0ac4825..5535585585 100644
+--- a/res/values-zh-rHK/strings.xml
++++ b/res/values-zh-rHK/strings.xml
+@@ -2439,8 +2439,8 @@
+     <string name="credentials_erased" msgid="2907836028586342969">"憑證儲存空間已清除。"</string>
+     <string name="credentials_not_erased" msgid="7685932772284216097">"無法清除憑證儲存空間。"</string>
+     <string name="credentials_enabled" msgid="7588607413349978930">"已啟用認證儲存空間。"</string>
+-    <string name="credentials_configure_lock_screen_hint" msgid="8058230497337529036">"您的裝置必須設有安全螢幕鎖定功能，才能使用認證儲存空間"</string>
+-    <string name="credentials_configure_lock_screen_button" msgid="253239765216055321">"設定上鎖方式"</string>
++    <string name="credentials_configure_lock_screen_hint" msgid="8058230497337529036">"您必須為裝置設定安全的螢幕鎖定功能，才能使用認證儲存空間"</string>
++    <string name="credentials_configure_lock_screen_button" msgid="253239765216055321">"設定螢幕鎖定"</string>
+     <string name="usage_access_title" msgid="332333405495457839">"可存取使用狀況的應用程式"</string>
+     <string name="emergency_tone_title" msgid="254495218194925271">"緊急撥號訊號"</string>
+     <string name="emergency_tone_summary" msgid="722259232924572153">"設定撥打緊急電話時的運作方式"</string>
+-- 
+2.17.1
+

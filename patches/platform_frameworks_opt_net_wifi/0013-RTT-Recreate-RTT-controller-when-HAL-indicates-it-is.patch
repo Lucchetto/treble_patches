@@ -1,0 +1,216 @@
+From 0ebd13f268eaca16e396089983475674620632f3 Mon Sep 17 00:00:00 2001
+From: Etan Cohen <etancohen@google.com>
+Date: Tue, 10 Jul 2018 08:47:36 -0700
+Subject: [PATCH 13/32] [RTT] Recreate RTT controller when HAL indicates it is
+ invalid
+
+When there is a HAL mode transition the RTT controller is destroyed.
+Mode transition is STA - SAP and back transitions for non-DBS devices.
+
+Modification to allow framework to detect when the controller is
+currently invalid and try to recreate it. Will allow recovery for
+non-DBS devices: otherwise RTT would only recover when Wi-Fi is
+toggled.
+
+Note: not a full solution since the availability APIs (broadcast +
+API) do not perform correctly in such transitions. That fix will
+be deeper and require HalDeviceManager mods.
+
+Bug: 111218083
+Test: (new) unit test
+Test: new ACTS - RangeApSupporting11McTest:test_rtt_in_and_after_softap_mode
+Change-Id: I6d28ef7a50b02fe42e23b9172621bd83452658f1
+(cherry picked from commit dfa13f1f48895759f77e5522e9c106765de327c8)
+---
+ .../android/server/wifi/rtt/RttNative.java    | 18 ++++
+ .../server/wifi/rtt/RttNativeTest.java        | 84 ++++++++++++++++++-
+ 2 files changed, 101 insertions(+), 1 deletion(-)
+
+diff --git a/service/java/com/android/server/wifi/rtt/RttNative.java b/service/java/com/android/server/wifi/rtt/RttNative.java
+index accd1a2f8..34fd2e3e7 100644
+--- a/service/java/com/android/server/wifi/rtt/RttNative.java
++++ b/service/java/com/android/server/wifi/rtt/RttNative.java
+@@ -166,6 +166,11 @@ public class RttNative extends IWifiRttControllerEventCallback.Stub {
+      */
+     public boolean rangeRequest(int cmdId, RangingRequest request,
+             boolean isCalledFromPrivilegedContext) {
++        return rangeRequestInternal(cmdId, request, isCalledFromPrivilegedContext, true);
++    }
++
++    private boolean rangeRequestInternal(int cmdId, RangingRequest request,
++            boolean isCalledFromPrivilegedContext, boolean tryToReinitIfNecessary) {
+         if (mDbg) {
+             Log.v(TAG,
+                     "rangeRequest: cmdId=" + cmdId + ", # of requests=" + request.mRttPeers.size());
+@@ -175,6 +180,11 @@ public class RttNative extends IWifiRttControllerEventCallback.Stub {
+         synchronized (mLock) {
+             if (!isReady()) {
+                 Log.e(TAG, "rangeRequest: RttController is null");
++                if (tryToReinitIfNecessary) {
++                    updateController();
++                    return rangeRequestInternal(cmdId, request, isCalledFromPrivilegedContext,
++                            false);
++                }
+                 return false;
+             }
+ 
+@@ -192,6 +202,14 @@ public class RttNative extends IWifiRttControllerEventCallback.Stub {
+ 
+             try {
+                 WifiStatus status = mIWifiRttController.rangeRequest(cmdId, rttConfig);
++                if (status.code == WifiStatusCode.ERROR_WIFI_RTT_CONTROLLER_INVALID
++                        && tryToReinitIfNecessary) {
++                    Log.d(TAG, "rangeRequest: RTT controller invalidated from under us - reinit!");
++                    mIWifiRttController = null;
++                    updateController();
++                    return rangeRequestInternal(cmdId, request, isCalledFromPrivilegedContext,
++                            false);
++                }
+                 if (status.code != WifiStatusCode.SUCCESS) {
+                     Log.e(TAG, "rangeRequest: cannot issue range request -- code=" + status.code);
+                     return false;
+diff --git a/tests/wifitests/src/com/android/server/wifi/rtt/RttNativeTest.java b/tests/wifitests/src/com/android/server/wifi/rtt/RttNativeTest.java
+index 3f5aa5f2d..7bbe6bb79 100644
+--- a/tests/wifitests/src/com/android/server/wifi/rtt/RttNativeTest.java
++++ b/tests/wifitests/src/com/android/server/wifi/rtt/RttNativeTest.java
+@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyInt;
+ import static org.mockito.ArgumentMatchers.eq;
++import static org.mockito.Mockito.inOrder;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.verifyNoMoreInteractions;
+ import static org.mockito.Mockito.when;
+@@ -50,10 +51,13 @@ import org.junit.Rule;
+ import org.junit.Test;
+ import org.junit.rules.ErrorCollector;
+ import org.mockito.ArgumentCaptor;
++import org.mockito.InOrder;
+ import org.mockito.Mock;
++import org.mockito.Mockito;
+ import org.mockito.MockitoAnnotations;
+ 
+ import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.List;
+ 
+ /**
+@@ -62,6 +66,7 @@ import java.util.List;
+ public class RttNativeTest {
+     private RttNative mDut;
+     private WifiStatus mStatusSuccess;
++    private WifiStatus mStatusRttControllerInvalid;
+ 
+     private ArgumentCaptor<ArrayList> mRttConfigCaptor = ArgumentCaptor.forClass(ArrayList.class);
+     private ArgumentCaptor<List> mRttResultCaptor = ArgumentCaptor.forClass(List.class);
+@@ -97,6 +102,9 @@ public class RttNativeTest {
+         when(mockRttController.rangeCancel(anyInt(), any(ArrayList.class))).thenReturn(
+                 mStatusSuccess);
+ 
++        mStatusRttControllerInvalid = new WifiStatus();
++        mStatusRttControllerInvalid.code = WifiStatusCode.ERROR_WIFI_RTT_CONTROLLER_INVALID;
++
+         mDut = new RttNative(mockRttServiceImpl, mockHalDeviceManager);
+         mDut.start(null);
+         verify(mockHalDeviceManager).registerStatusListener(mHdmStatusListener.capture(), any());
+@@ -324,15 +332,18 @@ public class RttNativeTest {
+         int cmdId = 55;
+         RangingRequest request = RttTestUtils.getDummyRangingRequest((byte) 0);
+ 
++        InOrder order = inOrder(mockRttServiceImpl);
++
+         // (1) configure Wi-Fi down and send a status change indication
+         when(mockHalDeviceManager.isStarted()).thenReturn(false);
+         mHdmStatusListener.getValue().onStatusChanged();
+-        verify(mockRttServiceImpl).disable();
++        order.verify(mockRttServiceImpl).disable();
+         assertFalse(mDut.isReady());
+ 
+         // (2) issue range request
+         mDut.rangeRequest(cmdId, request, true);
+ 
++        order.verify(mockRttServiceImpl).disable(); // due to re-init attempt
+         verifyNoMoreInteractions(mockRttServiceImpl, mockRttController);
+     }
+ 
+@@ -436,6 +447,77 @@ public class RttNativeTest {
+         }
+     }
+ 
++    /**
++     * Validate correct re-initialization when the RTT Controller is invalid (which can happen
++     * due to mode change in the HAL). Expect a re-initialization and a rerun of the range request.
++     */
++    @Test
++    public void testRangeRequestInvalidRttControllerOnce() throws Exception {
++        int cmdId = 55;
++        RangingRequest request = RttTestUtils.getDummyRangingRequest((byte) 0);
++
++        InOrder inOrder = Mockito.inOrder(mockRttController);
++
++        // configure failure then success
++        when(mockRttController.rangeRequest(anyInt(), any(ArrayList.class))).thenReturn(
++                mStatusRttControllerInvalid).thenReturn(mStatusSuccess);
++
++        // issue range request
++        boolean result = mDut.rangeRequest(cmdId, request, true);
++        assertTrue("rangeRequest should succeeed", result);
++
++        // verify HAL call
++        inOrder.verify(mockRttController).rangeRequest(eq(cmdId), mRttConfigCaptor.capture());
++        ArrayList<RttConfig> halRequest1 = mRttConfigCaptor.getValue();
++
++        // verify re-initialization (i.e. callback re-registered)
++        inOrder.verify(mockRttController).registerEventCallback(any());
++
++        // verify HAL call
++        inOrder.verify(mockRttController).rangeRequest(eq(cmdId), mRttConfigCaptor.capture());
++        ArrayList<RttConfig> halRequest2 = mRttConfigCaptor.getValue();
++
++        assertTrue("HAL parameters different between calls!",
++                Arrays.equals(halRequest1.toArray(), halRequest2.toArray()));
++        verifyNoMoreInteractions(mockRttController);
++    }
++
++    /**
++     * Validate correct re-initialization when the RTT Controller is invalid (which can happen
++     * due to mode change in the HAL). Expect a re-initialization and a rerun of the range request -
++     * but only once (no infinite loop).
++     */
++    @Test
++    public void testRangeRequestInvalidRttControllerForever() throws Exception {
++        int cmdId = 55;
++        RangingRequest request = RttTestUtils.getDummyRangingRequest((byte) 0);
++
++        InOrder inOrder = Mockito.inOrder(mockRttController);
++
++        // configure failure
++        when(mockRttController.rangeRequest(anyInt(), any(ArrayList.class))).thenReturn(
++                mStatusRttControllerInvalid);
++
++        // issue range request
++        boolean result = mDut.rangeRequest(cmdId, request, true);
++        assertFalse("rangeRequest should fail", result);
++
++        // verify HAL call
++        inOrder.verify(mockRttController).rangeRequest(eq(cmdId), mRttConfigCaptor.capture());
++        ArrayList<RttConfig> halRequest1 = mRttConfigCaptor.getValue();
++
++        // verify re-initialization (i.e. callback re-registered)
++        inOrder.verify(mockRttController).registerEventCallback(any());
++
++        // verify HAL call
++        inOrder.verify(mockRttController).rangeRequest(eq(cmdId), mRttConfigCaptor.capture());
++        ArrayList<RttConfig> halRequest2 = mRttConfigCaptor.getValue();
++
++        assertTrue("HAL parameters different between calls!",
++                Arrays.equals(halRequest1.toArray(), halRequest2.toArray()));
++        verifyNoMoreInteractions(mockRttController);
++    }
++
+     // Utilities
+ 
+     /**
+-- 
+2.17.1
+

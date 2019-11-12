@@ -1,0 +1,155 @@
+From 13f6522bc0a403d6efc2269d00fee33817734ed2 Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Mon, 5 Nov 2018 09:36:25 -0800
+Subject: [PATCH 48/70] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: I40327827d26691f2285c49fe6967b70aa2787ee6
+---
+ res/values-da/strings.xml     | 6 +++---
+ res/values-de/strings.xml     | 2 +-
+ res/values-el/strings.xml     | 4 ++--
+ res/values-es-rUS/strings.xml | 2 +-
+ res/values-fr/strings.xml     | 2 +-
+ res/values-ko/strings.xml     | 2 +-
+ res/values-pt/strings.xml     | 4 ++--
+ res/values-tl/strings.xml     | 2 +-
+ 8 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/res/values-da/strings.xml b/res/values-da/strings.xml
+index b37170fba..8f3ccdcaa 100644
+--- a/res/values-da/strings.xml
++++ b/res/values-da/strings.xml
+@@ -248,14 +248,14 @@
+     <string name="roaming_warning" msgid="1603164667540144353">"Du kan risikere at skulle betale høje gebyrer."</string>
+     <string name="roaming_check_price_warning" msgid="7497570906830902550">"Kontakt din netværksudbyder for at få oplyst priser."</string>
+     <string name="roaming_alert_title" msgid="3654815360303826008">"Vil du tillade dataroaming?"</string>
+-    <string name="data_usage_title" msgid="4042209259808900283">"Appens dataforbrug"</string>
++    <string name="data_usage_title" msgid="4042209259808900283">"Dataforbrug fra apps"</string>
+     <string name="data_usage_template" msgid="8526428824844656364">"<xliff:g id="ID_1">%1$s</xliff:g> mobildata er brugt i perioden <xliff:g id="ID_2">%2$s</xliff:g>"</string>
+     <string name="advanced_options_title" msgid="8074895510265488035">"Avanceret"</string>
+     <string name="carrier_settings_euicc" msgid="6714062862127226405">"Mobilselskab"</string>
+     <string name="keywords_carrier_settings_euicc" msgid="6861505396475991277">"mobilselskab, esim, sim-kort, euicc, skift mobilselskab, tilføj mobilselskab"</string>
+     <string name="carrier_settings_euicc_summary" msgid="5115001942761995457">"<xliff:g id="CARRIER_NAME">%1$s</xliff:g> – <xliff:g id="PHONE_NUMBER">%2$s</xliff:g>"</string>
+     <string name="mobile_data_settings_title" msgid="4661165467914727157">"Mobildata"</string>
+-    <string name="mobile_data_settings_summary" msgid="5087255915840576895">"Få adgang til data via mobilnetværk"</string>
++    <string name="mobile_data_settings_summary" msgid="5087255915840576895">"Brug data via mobilnetværk"</string>
+     <string name="data_usage_disable_mobile" msgid="3577275288809667615">"Vil du deaktivere mobildata?"</string>
+     <string name="sim_selection_required_pref" msgid="7049424902961844236">"Du har ikke valgt endnu"</string>
+     <string name="sim_change_data_title" msgid="5332425991853799280">"Skift SIM-kortet til data?"</string>
+@@ -509,7 +509,7 @@
+     <string name="incall_error_supp_service_hold" msgid="7967020511232222078">"Opkald kan ikke sættes i venteposition."</string>
+     <string name="incall_error_wfc_only_no_wireless_network" msgid="1782466780452640089">"Opret forbindelse til et trådløst netværk for at foretage et opkald."</string>
+     <string name="incall_error_promote_wfc" msgid="106510757624022064">"Aktivér Wi-Fi-opkald for at foretage et opkald."</string>
+-    <string name="emergency_information_hint" msgid="399011533038204351">"Oplysninger i nødsituationer"</string>
++    <string name="emergency_information_hint" msgid="399011533038204351">"Info til nødsituationer"</string>
+     <string name="emergency_information_owner_hint" msgid="688331472291637149">"Ejer"</string>
+     <string name="emergency_information_confirm_hint" msgid="4039012670779853030">"Tryk igen for at se oplysninger"</string>
+     <string name="emergency_enable_radio_dialog_title" msgid="4627849966634578257">"Nødopkald"</string>
+diff --git a/res/values-de/strings.xml b/res/values-de/strings.xml
+index af87d865f..d0ed79afb 100644
+--- a/res/values-de/strings.xml
++++ b/res/values-de/strings.xml
+@@ -523,7 +523,7 @@
+     <string name="dial_emergency_calling_not_available" msgid="5675557523782491826">"Notruf nicht verfügbar"</string>
+     <string name="police_type_description" msgid="5324410799919829693">"Polizei"</string>
+     <string name="ambulance_type_description" msgid="4114815025408089866">"Krankenwagen"</string>
+-    <string name="fire_type_description" msgid="7145996705197064710">"Feuer"</string>
++    <string name="fire_type_description" msgid="7145996705197064710">"Feuerwehr"</string>
+     <string name="description_concat_format" msgid="7141070875487870177">"%1$s, %2$s"</string>
+     <string name="dialerKeyboardHintText" msgid="9192914825413747792">"Zum Wählen Tastatur verwenden"</string>
+     <string name="onscreenHoldText" msgid="2285258239691145872">"Halten"</string>
+diff --git a/res/values-el/strings.xml b/res/values-el/strings.xml
+index 24216fa8c..2cf3453f2 100644
+--- a/res/values-el/strings.xml
++++ b/res/values-el/strings.xml
+@@ -249,7 +249,7 @@
+     <string name="roaming_check_price_warning" msgid="7497570906830902550">"Επικοινωνήστε με τον πάροχο του δικτύου για τις τιμές."</string>
+     <string name="roaming_alert_title" msgid="3654815360303826008">"Να επιτρέπεται η περιαγωγή δεδομένων;"</string>
+     <string name="data_usage_title" msgid="4042209259808900283">"Χρήση δεδομένων εφαρμογής"</string>
+-    <string name="data_usage_template" msgid="8526428824844656364">"<xliff:g id="ID_1">%1$s</xliff:g> δεδομένα κινητής τηλεφωνίας σε χρήση μεταξύ <xliff:g id="ID_2">%2$s</xliff:g>"</string>
++    <string name="data_usage_template" msgid="8526428824844656364">"<xliff:g id="ID_1">%1$s</xliff:g> δεδομένων κινητής τηλεφωνίας χρησιμοποιήθηκαν μεταξύ <xliff:g id="ID_2">%2$s</xliff:g>"</string>
+     <string name="advanced_options_title" msgid="8074895510265488035">"Σύνθετες ρυθμίσεις"</string>
+     <string name="carrier_settings_euicc" msgid="6714062862127226405">"Εταιρεία κινητής τηλεφωνίας"</string>
+     <string name="keywords_carrier_settings_euicc" msgid="6861505396475991277">"εταιρεία κινητής τηλεφωνίας, esim, sim, euicc, αλλαγή εταιρείας κινητής τηλεφωνίας, προσθήκη εταιρείας κινητής τηλεφωνίας"</string>
+@@ -519,7 +519,7 @@
+     <string name="dial_emergency_calling_not_available" msgid="5675557523782491826">"Η δυνατότητα κλήσεων έκτακτης ανάγκης δεν είναι διαθέσιμη"</string>
+     <string name="police_type_description" msgid="5324410799919829693">"Αστυνομία"</string>
+     <string name="ambulance_type_description" msgid="4114815025408089866">"Ασθενοφόρο"</string>
+-    <string name="fire_type_description" msgid="7145996705197064710">"Πυρκαγιά"</string>
++    <string name="fire_type_description" msgid="7145996705197064710">"Πυροσβεστική"</string>
+     <string name="description_concat_format" msgid="7141070875487870177">"%1$s, %2$s"</string>
+     <string name="dialerKeyboardHintText" msgid="9192914825413747792">"Χρησιμοποιήστε το πληκτρολόγιο για να πραγματοποιήσετε καλέσετε έναν αριθμό"</string>
+     <string name="onscreenHoldText" msgid="2285258239691145872">"Αναμονή"</string>
+diff --git a/res/values-es-rUS/strings.xml b/res/values-es-rUS/strings.xml
+index 97161e7aa..0e8ea047c 100644
+--- a/res/values-es-rUS/strings.xml
++++ b/res/values-es-rUS/strings.xml
+@@ -519,7 +519,7 @@
+     <string name="dial_emergency_calling_not_available" msgid="5675557523782491826">"Las llamadas de emergencia no están disponibles"</string>
+     <string name="police_type_description" msgid="5324410799919829693">"Policía"</string>
+     <string name="ambulance_type_description" msgid="4114815025408089866">"Ambulancia"</string>
+-    <string name="fire_type_description" msgid="7145996705197064710">"Fuego"</string>
++    <string name="fire_type_description" msgid="7145996705197064710">"Bomberos"</string>
+     <string name="description_concat_format" msgid="7141070875487870177">"%1$s, %2$s"</string>
+     <string name="dialerKeyboardHintText" msgid="9192914825413747792">"Utilizar teclado para marcar"</string>
+     <string name="onscreenHoldText" msgid="2285258239691145872">"Retener"</string>
+diff --git a/res/values-fr/strings.xml b/res/values-fr/strings.xml
+index 8ab0d63ee..9700e4bf9 100644
+--- a/res/values-fr/strings.xml
++++ b/res/values-fr/strings.xml
+@@ -519,7 +519,7 @@
+     <string name="dial_emergency_calling_not_available" msgid="5675557523782491826">"Appels d\'urgence non disponibles"</string>
+     <string name="police_type_description" msgid="5324410799919829693">"Police"</string>
+     <string name="ambulance_type_description" msgid="4114815025408089866">"Ambulance"</string>
+-    <string name="fire_type_description" msgid="7145996705197064710">"Feu"</string>
++    <string name="fire_type_description" msgid="7145996705197064710">"Pompiers"</string>
+     <string name="description_concat_format" msgid="7141070875487870177">"%1$s, %2$s"</string>
+     <string name="dialerKeyboardHintText" msgid="9192914825413747792">"Utilisez le clavier pour composer un numéro."</string>
+     <string name="onscreenHoldText" msgid="2285258239691145872">"En attente"</string>
+diff --git a/res/values-ko/strings.xml b/res/values-ko/strings.xml
+index a9daf9972..b47564997 100644
+--- a/res/values-ko/strings.xml
++++ b/res/values-ko/strings.xml
+@@ -131,7 +131,7 @@
+     <string name="stk_cc_ss_to_ussd_error" msgid="6095812685884176176">"SS 요청이 USSD 요청으로 변경됨"</string>
+     <string name="stk_cc_ss_to_ss_error" msgid="7920654012697945858">"새 SS 요청으로 변경됨"</string>
+     <string name="stk_cc_ss_to_dial_video_error" msgid="3873905132181743781">"SS 요청이 화상 통화로 변경됨"</string>
+-    <string name="fdn_check_failure" msgid="18200614306525434">"휴대전화 앱의 발신 제한 번호 설정을 사용하기 때문에 일부 통화 관련 기능이 작동되지 않습니다."</string>
++    <string name="fdn_check_failure" msgid="18200614306525434">"전화 앱의 발신 제한 번호 설정을 사용하기 때문에 일부 통화 관련 기능이 작동되지 않습니다."</string>
+     <string name="radio_off_error" msgid="2304459933248513376">"이러한 설정을 보려면 무선을 사용해야 합니다."</string>
+     <string name="close_dialog" msgid="2365884406356986917">"확인"</string>
+     <string name="enable" msgid="7248657275000173526">"사용"</string>
+diff --git a/res/values-pt/strings.xml b/res/values-pt/strings.xml
+index 521466659..39745b117 100644
+--- a/res/values-pt/strings.xml
++++ b/res/values-pt/strings.xml
+@@ -547,8 +547,8 @@
+   <string-array name="tty_mode_entries">
+     <item msgid="512950011423868021">"TTY desativado"</item>
+     <item msgid="3971695875449640648">"TTY completo"</item>
+-    <item msgid="1937509904407445684">"TTY HCO"</item>
+-    <item msgid="5644925873488772224">"TTY VCO"</item>
++    <item msgid="1937509904407445684">"TTD HCO"</item>
++    <item msgid="5644925873488772224">"TTD VCO"</item>
+   </string-array>
+     <string name="dtmf_tones_title" msgid="5163153771291340803">"Tons DTMF"</string>
+     <string name="dtmf_tones_summary" msgid="3351820372864020331">"Definir duração dos tons DTMF"</string>
+diff --git a/res/values-tl/strings.xml b/res/values-tl/strings.xml
+index 524145fdc..1ef48cb6b 100644
+--- a/res/values-tl/strings.xml
++++ b/res/values-tl/strings.xml
+@@ -519,7 +519,7 @@
+     <string name="dial_emergency_calling_not_available" msgid="5675557523782491826">"Hindi available ang emergency na pagtawag"</string>
+     <string name="police_type_description" msgid="5324410799919829693">"Pulis"</string>
+     <string name="ambulance_type_description" msgid="4114815025408089866">"Ambulansya"</string>
+-    <string name="fire_type_description" msgid="7145996705197064710">"Apoy"</string>
++    <string name="fire_type_description" msgid="7145996705197064710">"Sunog"</string>
+     <string name="description_concat_format" msgid="7141070875487870177">"%1$s, %2$s"</string>
+     <string name="dialerKeyboardHintText" msgid="9192914825413747792">"Gamitin ang keyboard upang mag-dial"</string>
+     <string name="onscreenHoldText" msgid="2285258239691145872">"I-hold"</string>
+-- 
+2.17.1
+

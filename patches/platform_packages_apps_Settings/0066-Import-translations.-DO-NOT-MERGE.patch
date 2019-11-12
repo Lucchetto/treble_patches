@@ -1,0 +1,581 @@
+From e6d11ed962c90500527393e242e85fc77741b2ad Mon Sep 17 00:00:00 2001
+From: Bill Yi <byi@google.com>
+Date: Sun, 24 Mar 2019 15:43:53 -0700
+Subject: [PATCH 66/71] Import translations. DO NOT MERGE
+
+Auto-generated-cl: translation import
+
+Bug: 64712476
+Change-Id: Id87c2f36401630b5a5e6b1537ec2a44340cadbec
+---
+ res/values-az/strings.xml     |  4 ++--
+ res/values-bs/strings.xml     |  2 +-
+ res/values-ca/strings.xml     |  2 +-
+ res/values-cs/strings.xml     |  8 ++++----
+ res/values-de/strings.xml     | 18 +++++++++---------
+ res/values-en-rAU/strings.xml |  2 +-
+ res/values-en-rCA/strings.xml |  2 +-
+ res/values-en-rGB/strings.xml |  2 +-
+ res/values-en-rIN/strings.xml |  2 +-
+ res/values-es-rUS/strings.xml |  6 +++---
+ res/values-es/strings.xml     |  4 ++--
+ res/values-eu/strings.xml     |  8 ++++----
+ res/values-hi/strings.xml     |  2 +-
+ res/values-hr/strings.xml     |  2 +-
+ res/values-hy/strings.xml     | 22 +++++++++++-----------
+ res/values-ja/strings.xml     |  8 +++++---
+ res/values-mk/strings.xml     |  2 +-
+ res/values-mr/strings.xml     |  2 +-
+ res/values-nl/strings.xml     |  4 ++--
+ res/values-or/strings.xml     |  4 ++--
+ res/values-pl/strings.xml     |  2 +-
+ res/values-ta/strings.xml     |  2 +-
+ res/values-te/strings.xml     |  4 ++--
+ res/values-zh-rCN/strings.xml |  4 ++--
+ res/values-zh-rTW/arrays.xml  |  2 +-
+ 25 files changed, 61 insertions(+), 59 deletions(-)
+
+diff --git a/res/values-az/strings.xml b/res/values-az/strings.xml
+index 5de95c83cd..41e0cd4763 100644
+--- a/res/values-az/strings.xml
++++ b/res/values-az/strings.xml
+@@ -381,7 +381,7 @@
+     <string name="location_settings_title" msgid="1369675479310751735">"Yer"</string>
+     <string name="location_settings_master_switch_title" msgid="3560242980335542411">"Məkan istifadə edin"</string>
+     <string name="account_settings_title" msgid="626177544686329806">"Hesablar"</string>
+-    <string name="security_settings_title" msgid="4918904614964215087">"Təhlükəsizlik &amp; yeri"</string>
++    <string name="security_settings_title" msgid="4918904614964215087">"Güvənlik və məkan"</string>
+     <string name="encryption_and_credential_settings_title" msgid="6514904533438791561">"Şifrələmə və kredensiallar"</string>
+     <string name="encryption_and_credential_settings_summary" product="default" msgid="8721883002237981248">"Telefon şifrələnib"</string>
+     <string name="decryption_settings_summary" product="default" msgid="5671817824042639849">"Telefon şifrələnmədi"</string>
+@@ -2923,7 +2923,7 @@
+     <string name="color_orange" msgid="4417567658855022517">"Narıncı"</string>
+     <string name="color_purple" msgid="3888532466427762504">"Bənövşəyi"</string>
+     <string name="sim_no_inserted_msg" msgid="210316755353227087">"Heç bir SIM kart taxılmayıb"</string>
+-    <string name="sim_status_title" msgid="6744870675182447160">"SIM status"</string>
++    <string name="sim_status_title" msgid="6744870675182447160">"SIM statusu"</string>
+     <string name="sim_status_title_sim_slot" msgid="5725659316463979194">"SIM statusu (sim slot %1$d)"</string>
+     <string name="sim_call_back_title" msgid="5181549885999280334">"Defolt SIM-dən geri zəng edin"</string>
+     <string name="sim_outgoing_call_title" msgid="1019763076116874255">"Gedən zənglər üçün SIM"</string>
+diff --git a/res/values-bs/strings.xml b/res/values-bs/strings.xml
+index 94c24bc6b4..3575a66d11 100644
+--- a/res/values-bs/strings.xml
++++ b/res/values-bs/strings.xml
+@@ -1013,7 +1013,7 @@
+     <item msgid="2339246858001475047">"2"</item>
+     <item msgid="6200207341126893791">"1"</item>
+   </string-array>
+-    <string name="wifi_calling_off_explanation" msgid="2597566001655908391">"Kada je opcija pozivanje putem WiFi-ja uključena, telefon može preusmjeravati pozive preko WiFi mreža ili mreže vašeg operatera, u zavisnosti od toga kakve su vaše postavke i koji signal je jači. Prije nego što uključite ovu funkciju, raspitajte se o naknadi i drugim informacijama kod operatera."</string>
++    <string name="wifi_calling_off_explanation" msgid="2597566001655908391">"Kada je opcija Pozivanje putem WiFi-ja uključena, telefon može preusmjeravati pozive putem WiFi mreža ili mreže vašeg operatera, u zavisnosti od toga kakve su vaše postavke i koji signal je jači. Prije nego što uključite ovu funkciju, raspitajte se o naknadi i drugim informacijama kod operatera."</string>
+     <string name="wifi_calling_off_explanation_2" msgid="2329334487851497223"></string>
+     <string name="emergency_address_title" msgid="932729250447887545">"Adresa za hitne slučajeve"</string>
+     <string name="emergency_address_summary" msgid="7751971156196115129">"Koristi se kao vaša lokacija prilikom hitnog poziva putem Wi‑Fi mreže"</string>
+diff --git a/res/values-ca/strings.xml b/res/values-ca/strings.xml
+index 8aac922841..4496f2a655 100644
+--- a/res/values-ca/strings.xml
++++ b/res/values-ca/strings.xml
+@@ -2455,7 +2455,7 @@
+     <string name="backup_erase_dialog_title" msgid="1027640829482174106"></string>
+     <string name="backup_erase_dialog_message" msgid="5221011285568343155">"Vols deixar de crear còpies de seguretat de les contrasenyes de Wi-Fi, de les adreces d\'interès, d\'altres opcions i dades d\'aplicacions i, a més, esborrar totes les còpies dels servidors de Google?"</string>
+     <string name="fullbackup_erase_dialog_message" msgid="694766389396659626">"Vols deixar de crear còpies de seguretat de les dades del dispositiu (com ara les contrasenyes de Wi-Fi o l\'historial de trucades) i de les aplicacions (com ara les configuracions i els fitxers que desin) i, a més, esborrar totes les còpies dels servidors remots?"</string>
+-    <string name="fullbackup_data_summary" msgid="960850365007767734">"Crea còpies de seguretat automàtiques de les dades del dispositiu (com ara les contrasenyes de la Wi-Fi o l\'historial de trucades) i de les aplicacions (com ara les configuracions i els fitxers que desin) de manera remota.\n\nQuan activis les còpies de seguretat automàtiques, les dades dels dispositius i de les aplicacions s\'emmagatzemaran periòdicament de manera remota. Les dades de les aplicacions poden ser qualsevol tipus de dades que hagi desat una aplicació (en funció de la configuració del desenvolupador), incloses les dades potencialment confidencials, com ara contactes, missatges i fotos."</string>
++    <string name="fullbackup_data_summary" msgid="960850365007767734">"Crea còpies de seguretat automàtiques de les dades del dispositiu (com ara les contrasenyes de la Wi-Fi o l\'historial de trucades) i de les aplicacions (com ara les configuracions i els fitxers que desin) de manera remota.\n\nQuan activis les còpies de seguretat automàtiques, les dades dels dispositius i de les aplicacions s\'emmagatzemaran periòdicament de manera remota. Les dades de les aplicacions poden ser qualsevol informació que desin (en funció de la configuració del desenvolupador), incloses les dades potencialment confidencials, com ara contactes, missatges i fotos."</string>
+     <string name="device_admin_settings_title" msgid="4960761799560705902">"Configuració de l\'administrador del dispositiu"</string>
+     <string name="active_device_admin_msg" msgid="578748451637360192">"Aplicació d\'administració del dispositiu"</string>
+     <string name="remove_device_admin" msgid="9207368982033308173">"Desactiva aquesta aplicació d\'administració del dispositiu"</string>
+diff --git a/res/values-cs/strings.xml b/res/values-cs/strings.xml
+index 30dcb6b747..bfa4b30ad0 100644
+--- a/res/values-cs/strings.xml
++++ b/res/values-cs/strings.xml
+@@ -4190,10 +4190,10 @@
+     <string name="default_calendar_app_title" msgid="3545972964391065220">"Kalendářová aplikace"</string>
+     <string name="default_contacts_app_title" msgid="3497370557378660098">"Aplikace pro kontakty"</string>
+     <plurals name="default_email_app_title" formatted="false" msgid="42826975161049245">
+-      <item quantity="few">Aplikace pro práci s e-maily</item>
+-      <item quantity="many">Aplikace pro práci s e-maily</item>
+-      <item quantity="other">Aplikace pro práci s e-maily</item>
+-      <item quantity="one">Aplikace pro práci s e-maily</item>
++      <item quantity="few">Aplikace pro práci s e‑maily</item>
++      <item quantity="many">Aplikace pro práci s e‑maily</item>
++      <item quantity="other">Aplikace pro práci s e‑maily</item>
++      <item quantity="one">Aplikace pro práci s e‑maily</item>
+     </plurals>
+     <string name="default_map_app_title" msgid="7560143381633608567">"Mapová aplikace"</string>
+     <plurals name="default_phone_app_title" formatted="false" msgid="6714041230953195024">
+diff --git a/res/values-de/strings.xml b/res/values-de/strings.xml
+index 357cbcaf59..033b1f59cf 100644
+--- a/res/values-de/strings.xml
++++ b/res/values-de/strings.xml
+@@ -546,20 +546,20 @@
+     <string name="unlock_disable_lock_title" msgid="1427036227416979120">"Displaysperre deaktivieren"</string>
+     <string name="unlock_disable_frp_warning_title" msgid="264008934468492550">"Geräteschutz entfernen?"</string>
+     <string name="unlock_disable_frp_warning_title_profile" msgid="5507136301904313583">"Profilschutz entfernen?"</string>
+-    <string name="unlock_disable_frp_warning_content_pattern" msgid="8869767290771023461">"Die Geräteschutzeinstellungen funktionieren ohne dein Muster nicht."</string>
+-    <string name="unlock_disable_frp_warning_content_pattern_fingerprint" msgid="2986105377420905314">"Die Geräteschutzeinstellungen funktionieren ohne dein Muster nicht.<xliff:g id="EMPTY_LINE">
++    <string name="unlock_disable_frp_warning_content_pattern" msgid="8869767290771023461">"Der Geräteschutz funktioniert ohne dein Muster nicht."</string>
++    <string name="unlock_disable_frp_warning_content_pattern_fingerprint" msgid="2986105377420905314">"Der Geräteschutz funktioniert ohne dein Muster nicht.<xliff:g id="EMPTY_LINE">
+ 
+ </xliff:g>Deine gespeicherten Fingerabdrücke werden ebenfalls von diesem Gerät entfernt und du kannst mit ihnen weder dein Smartphone entsperren noch Käufe autorisieren oder dich in Apps anmelden."</string>
+-    <string name="unlock_disable_frp_warning_content_pin" msgid="586996206210265131">"Die Geräteschutzeinstellungen funktionieren ohne deine PIN nicht."</string>
+-    <string name="unlock_disable_frp_warning_content_pin_fingerprint" msgid="3370462835533123695">"Die Geräteschutzeinstellungen funktionieren ohne deine PIN nicht.<xliff:g id="EMPTY_LINE">
++    <string name="unlock_disable_frp_warning_content_pin" msgid="586996206210265131">"Der Geräteschutz funktioniert ohne deine PIN nicht."</string>
++    <string name="unlock_disable_frp_warning_content_pin_fingerprint" msgid="3370462835533123695">"Der Geräteschutz funktioniert ohne deine PIN nicht.<xliff:g id="EMPTY_LINE">
+ 
+ </xliff:g>Deine gespeicherten Fingerabdrücke werden ebenfalls von diesem Gerät entfernt und du kannst mit ihnen weder dein Smartphone entsperren noch Käufe autorisieren oder dich in Apps anmelden."</string>
+-    <string name="unlock_disable_frp_warning_content_password" msgid="5420612686852555537">"Die Geräteschutzeinstellungen funktionieren ohne dein Passwort nicht."</string>
+-    <string name="unlock_disable_frp_warning_content_password_fingerprint" msgid="3595476296430536798">"Die Geräteschutzeinstellungen funktionieren ohne dein Passwort nicht.<xliff:g id="EMPTY_LINE">
++    <string name="unlock_disable_frp_warning_content_password" msgid="5420612686852555537">"Der Geräteschutz funktioniert ohne dein Passwort nicht."</string>
++    <string name="unlock_disable_frp_warning_content_password_fingerprint" msgid="3595476296430536798">"Der Geräteschutz funktioniert ohne dein Passwort nicht.<xliff:g id="EMPTY_LINE">
+ 
+ </xliff:g>Deine gespeicherten Fingerabdrücke werden ebenfalls von diesem Gerät entfernt und du kannst mit ihnen weder dein Smartphone entsperren noch Käufe autorisieren oder dich in Apps anmelden."</string>
+-    <string name="unlock_disable_frp_warning_content_unknown" msgid="1550718040483548220">"Die Geräteschutzeinstellungen funktionieren ohne deine Displaysperre nicht."</string>
+-    <string name="unlock_disable_frp_warning_content_unknown_fingerprint" msgid="3679351662094349506">"Die Geräteschutzeinstellungen funktionieren ohne deine Displaysperre nicht.<xliff:g id="EMPTY_LINE">
++    <string name="unlock_disable_frp_warning_content_unknown" msgid="1550718040483548220">"Der Geräteschutz funktioniert ohne deine Displaysperre nicht."</string>
++    <string name="unlock_disable_frp_warning_content_unknown_fingerprint" msgid="3679351662094349506">"Der Geräteschutz funktioniert ohne deine Displaysperre nicht.<xliff:g id="EMPTY_LINE">
+ 
+ </xliff:g>Deine gespeicherten Fingerabdrücke werden ebenfalls von diesem Gerät entfernt und du kannst mit ihnen weder dein Smartphone entsperren noch Käufe autorisieren oder dich in Apps anmelden."</string>
+     <string name="unlock_disable_frp_warning_content_pattern_profile" msgid="8682200103576359918">"Die Profilschutzeinstellungen funktionieren ohne dein Muster nicht."</string>
+@@ -3015,7 +3015,7 @@
+     <string name="keywords_fingerprint_settings" msgid="239222512315619538">"Fingerabdruck"</string>
+     <string name="keywords_auto_rotate" msgid="5620879898668211494">"drehen, spiegeln, drehung, hochformat, querformat, ausrichtung, vertikal, horizontal"</string>
+     <string name="keywords_system_update_settings" msgid="7752189778843741773">"upgrade, android"</string>
+-    <string name="keywords_zen_mode_settings" msgid="6526742836231604995">"dnd, zeitplan, benachrichtigungen, blockieren, lautlos, vibrieren, schlaf, arbeit, fokus, ton, stumm, tag, wochentag, wochenende, wochenende, ereignis"</string>
++    <string name="keywords_zen_mode_settings" msgid="6526742836231604995">"dnd, zeitplan, benachrichtigungen, blockieren, lautlos, vibrieren, schlaf, arbeit, fokus, ton, stumm, tag, wochentag, wochenende, wochenende, ereignis, bns"</string>
+     <string name="keywords_screen_timeout" msgid="8161370660970309476">"display, sperrzeit, timeout, lockscreen"</string>
+     <string name="keywords_storage_settings" msgid="1642340184392317296">"speicher, daten, löschen, entfernen, frei machen, platz"</string>
+     <string name="keywords_bluetooth_settings" msgid="6804844062789439858">"verbunden, gerät, kopfhörer, headset, lautsprecher, drahtlos, koppeln, ohrhörer, musik, medien"</string>
+diff --git a/res/values-en-rAU/strings.xml b/res/values-en-rAU/strings.xml
+index 108c3b0519..de7d7abbc6 100644
+--- a/res/values-en-rAU/strings.xml
++++ b/res/values-en-rAU/strings.xml
+@@ -3289,7 +3289,7 @@
+     <string name="notification_badge_title" msgid="6370122441168519809">"Allow notification dot"</string>
+     <string name="notification_channel_badge_title" msgid="2240827899882847087">"Show notification dot"</string>
+     <string name="app_notification_override_dnd_title" msgid="7867458246395884830">"Override Do not disturb"</string>
+-    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do Not Disturb is on"</string>
++    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do not disturb is on"</string>
+     <string name="app_notification_visibility_override_title" msgid="7821124557634786985">"On lock screen"</string>
+     <string name="app_notification_row_banned" msgid="5983655258784814773">"Blocked"</string>
+     <string name="app_notification_row_priority" msgid="7723839972982746568">"Priority"</string>
+diff --git a/res/values-en-rCA/strings.xml b/res/values-en-rCA/strings.xml
+index 5a88b901a4..cb0c061346 100644
+--- a/res/values-en-rCA/strings.xml
++++ b/res/values-en-rCA/strings.xml
+@@ -3289,7 +3289,7 @@
+     <string name="notification_badge_title" msgid="6370122441168519809">"Allow notification dot"</string>
+     <string name="notification_channel_badge_title" msgid="2240827899882847087">"Show notification dot"</string>
+     <string name="app_notification_override_dnd_title" msgid="7867458246395884830">"Override Do not disturb"</string>
+-    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do Not Disturb is on"</string>
++    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do not disturb is on"</string>
+     <string name="app_notification_visibility_override_title" msgid="7821124557634786985">"On lock screen"</string>
+     <string name="app_notification_row_banned" msgid="5983655258784814773">"Blocked"</string>
+     <string name="app_notification_row_priority" msgid="7723839972982746568">"Priority"</string>
+diff --git a/res/values-en-rGB/strings.xml b/res/values-en-rGB/strings.xml
+index 108c3b0519..de7d7abbc6 100644
+--- a/res/values-en-rGB/strings.xml
++++ b/res/values-en-rGB/strings.xml
+@@ -3289,7 +3289,7 @@
+     <string name="notification_badge_title" msgid="6370122441168519809">"Allow notification dot"</string>
+     <string name="notification_channel_badge_title" msgid="2240827899882847087">"Show notification dot"</string>
+     <string name="app_notification_override_dnd_title" msgid="7867458246395884830">"Override Do not disturb"</string>
+-    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do Not Disturb is on"</string>
++    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do not disturb is on"</string>
+     <string name="app_notification_visibility_override_title" msgid="7821124557634786985">"On lock screen"</string>
+     <string name="app_notification_row_banned" msgid="5983655258784814773">"Blocked"</string>
+     <string name="app_notification_row_priority" msgid="7723839972982746568">"Priority"</string>
+diff --git a/res/values-en-rIN/strings.xml b/res/values-en-rIN/strings.xml
+index 108c3b0519..de7d7abbc6 100644
+--- a/res/values-en-rIN/strings.xml
++++ b/res/values-en-rIN/strings.xml
+@@ -3289,7 +3289,7 @@
+     <string name="notification_badge_title" msgid="6370122441168519809">"Allow notification dot"</string>
+     <string name="notification_channel_badge_title" msgid="2240827899882847087">"Show notification dot"</string>
+     <string name="app_notification_override_dnd_title" msgid="7867458246395884830">"Override Do not disturb"</string>
+-    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do Not Disturb is on"</string>
++    <string name="app_notification_override_dnd_summary" msgid="2612502099373472686">"Let these notifications continue to interrupt when Do not disturb is on"</string>
+     <string name="app_notification_visibility_override_title" msgid="7821124557634786985">"On lock screen"</string>
+     <string name="app_notification_row_banned" msgid="5983655258784814773">"Blocked"</string>
+     <string name="app_notification_row_priority" msgid="7723839972982746568">"Priority"</string>
+diff --git a/res/values-es-rUS/strings.xml b/res/values-es-rUS/strings.xml
+index e541bd6a65..b9e3c39aa2 100644
+--- a/res/values-es-rUS/strings.xml
++++ b/res/values-es-rUS/strings.xml
+@@ -416,13 +416,13 @@
+     <string name="security_settings_fingerprint_enroll_introduction_continue_setup" msgid="1961957425135180242">"Siguiente"</string>
+     <string name="setup_fingerprint_enroll_skip_title" msgid="362050541117362034">"¿Omitir huella digital?"</string>
+     <string name="setup_fingerprint_enroll_skip_after_adding_lock_text" msgid="958990414356204763">"La configuración de la huella digital solo toma unos minutos. Si omites este paso, puedes agregarla más tarde en la configuración."</string>
+-    <string name="lock_screen_intro_skip_title" msgid="4988210105913705679">"¿Omitir bloqueo de pantalla?"</string>
++    <string name="lock_screen_intro_skip_title" msgid="4988210105913705679">"¿Omitir bloqueo de la pantalla?"</string>
+     <string name="lock_screen_intro_skip_dialog_text_frp" product="tablet" msgid="1581834104051243425">"No se activarán las funciones de protección del dispositivo. No podrás evitar que otras personas usen esta tablet si la pierdes, te la roban o se restablece."</string>
+     <string name="lock_screen_intro_skip_dialog_text_frp" product="device" msgid="4629503416877189572">"No se activarán las funciones de protección del dispositivo. No podrás evitar que otras personas lo usen si lo pierdes, te lo roban o se restablece."</string>
+-    <string name="lock_screen_intro_skip_dialog_text_frp" product="default" msgid="2423428240245737909">"No se activarán las funciones de protección del dispositivo. No podrás evitar que otras personas usen este teléfono si lo pierdes, te lo roban o se restablece."</string>
++    <string name="lock_screen_intro_skip_dialog_text_frp" product="default" msgid="2423428240245737909">"No se activarán las funciones de protección del dispositivo. No podrás impedir que otras personas usen este teléfono si lo pierdes, te lo roban o se restablece."</string>
+     <string name="lock_screen_intro_skip_dialog_text" product="tablet" msgid="5219287483885558525">"No se activarán las funciones de protección del dispositivo. No podrás evitar que otras personas usen esta tablet si la pierdes o te la roban."</string>
+     <string name="lock_screen_intro_skip_dialog_text" product="device" msgid="1466238255429527112">"No se activarán las funciones de protección del dispositivo. No podrás evitar que otras personas usen este dispositivo si lo pierdes o te lo roban."</string>
+-    <string name="lock_screen_intro_skip_dialog_text" product="default" msgid="3008526710555416125">"No se activarán las funciones de protección del dispositivo. No podrás evitar que otras personas usen este teléfono si lo pierdes o te lo roban."</string>
++    <string name="lock_screen_intro_skip_dialog_text" product="default" msgid="3008526710555416125">"No se activarán las funciones de protección del dispositivo. No podrás impedir que otras personas usen este teléfono si lo pierdes o te lo roban."</string>
+     <string name="skip_anyway_button_label" msgid="2323522873558834513">"Omitir"</string>
+     <string name="go_back_button_label" msgid="4745265266186209467">"Atrás"</string>
+     <string name="security_settings_fingerprint_enroll_find_sensor_title" msgid="3051496861358227199">"Toca el sensor"</string>
+diff --git a/res/values-es/strings.xml b/res/values-es/strings.xml
+index 7482c98a8c..172875aa80 100644
+--- a/res/values-es/strings.xml
++++ b/res/values-es/strings.xml
+@@ -977,7 +977,7 @@
+   <string-array name="wifi_calling_mode_choices">
+     <item msgid="2124257075906188844">"Dar prioridad a Wi-Fi"</item>
+     <item msgid="1335127656328817518">"Dar prioridad a datos móviles"</item>
+-    <item msgid="3132912693346866895">"Solo conexión Wi-Fi"</item>
++    <item msgid="3132912693346866895">"Solo Wi-Fi"</item>
+   </string-array>
+   <string-array name="wifi_calling_mode_choices_v2">
+     <item msgid="742988808283756263">"Wi-Fi"</item>
+@@ -3526,7 +3526,7 @@
+     <string name="system_default_app" msgid="3091113402349739037">"(Predeterminados del sistema)"</string>
+     <string name="apps_storage" msgid="4353308027210435513">"Almacenamiento de apps"</string>
+     <string name="usage_access" msgid="5479504953931038165">"Acceso al uso"</string>
+-    <string name="permit_usage_access" msgid="4012876269445832300">"Permitir acceso de uso"</string>
++    <string name="permit_usage_access" msgid="4012876269445832300">"Permitir acceso a los datos de uso"</string>
+     <string name="app_usage_preference" msgid="7065701732733134991">"Preferencias de uso de aplicaciones"</string>
+     <string name="time_spent_in_app_pref_title" msgid="649419747540933845">"Tiempo en la aplicación"</string>
+     <string name="usage_access_description" msgid="1352111094596416795">"El acceso a los datos de uso permite que una aplicación controle qué otras aplicaciones utilizas y con qué frecuencia, así como tu operador, los ajustes de idioma y otros detalles."</string>
+diff --git a/res/values-eu/strings.xml b/res/values-eu/strings.xml
+index fba8d12c34..418a47d75d 100644
+--- a/res/values-eu/strings.xml
++++ b/res/values-eu/strings.xml
+@@ -672,7 +672,7 @@
+     <string name="bluetooth_confirm_passkey_msg" msgid="3708312912841950052">"Gailu honekin parekatzeko:&lt;br&gt;&lt;b&gt;<xliff:g id="DEVICE_NAME">%1$s</xliff:g>&lt;/b&gt;&lt;br&gt;&lt;br&gt;Ziurtatu pasakode hau erakusten duela:&lt;br&gt;&lt;b&gt;<xliff:g id="PASSKEY">%2$s</xliff:g>&lt;/b&gt;"</string>
+     <string name="bluetooth_incoming_pairing_msg" msgid="1615930853859551491">"Igorlea:&lt;br&gt;&lt;b&gt;<xliff:g id="DEVICE_NAME">%1$s</xliff:g>&lt;/b&gt;&lt;br&gt;&lt;br&gt;Gailuarekin parekatu?"</string>
+     <string name="bluetooth_display_passkey_pin_msg" msgid="2796550001376088433">"Honekin parekatzeko:<xliff:g id="BOLD1_0">&lt;br&gt;&lt;b&gt;</xliff:g><xliff:g id="DEVICE_NAME">%1$s</xliff:g><xliff:g id="END_BOLD1">&lt;/b&gt;&lt;br&gt;&lt;br&gt;</xliff:g>Idatzi hau bertan:<xliff:g id="BOLD2_1">&lt;br&gt;&lt;b&gt;</xliff:g><xliff:g id="PASSKEY">%2$s</xliff:g><xliff:g id="END_BOLD2">&lt;/b&gt;</xliff:g>, eta sakatu Itzuli edo Sartu."</string>
+-    <string name="bluetooth_pairing_shares_phonebook" msgid="9082518313285787097">"Baimendu kontaktuetarako eta deien historiarako sarbidea"</string>
++    <string name="bluetooth_pairing_shares_phonebook" msgid="9082518313285787097">"Eman kontaktuak eta deien historia erabiltzeko baimena"</string>
+     <string name="bluetooth_error_title" msgid="6850384073923533096"></string>
+     <string name="bluetooth_connecting_error_message" msgid="1397388344342081090">"Ezin izan da <xliff:g id="DEVICE_NAME">%1$s</xliff:g> gailura konektatu."</string>
+     <string name="bluetooth_preference_scan_title" msgid="2277464653118896016">"Bilatu gailuak"</string>
+@@ -723,7 +723,7 @@
+     <string name="bluetooth_device_advanced_profile_header_title" msgid="102745381968579605">"Erabilera"</string>
+     <string name="bluetooth_device_advanced_rename_device" msgid="5148578059584955791">"Aldatu izena"</string>
+     <string name="bluetooth_device_advanced_enable_opp_title" msgid="8222550640371627365">"Onartu sarrerako fitxategi-transferentziak"</string>
+-    <string name="bluetooth_pan_user_profile_summary_connected" msgid="6436258151814414028">"Gailura konektatuta Interneteko sarbiderako"</string>
++    <string name="bluetooth_pan_user_profile_summary_connected" msgid="6436258151814414028">"Gailura konektatuta Internet atzitzeko"</string>
+     <string name="bluetooth_pan_nap_profile_summary_connected" msgid="1322694224800769308">"Tokiko Interneteko konexioa gailu batekin partekatzea"</string>
+     <string name="bluetooth_dock_settings" msgid="3218335822716052885">"Oinarriaren ezarpenak"</string>
+     <string name="bluetooth_dock_settings_title" msgid="5543069893044375188">"Erabili oinarria audiorako"</string>
+@@ -1340,7 +1340,7 @@
+     <string name="storage_detail_explore" msgid="7911344011431568294">"Arakatu <xliff:g id="NAME">^1</xliff:g>"</string>
+     <string name="storage_detail_dialog_other" msgid="8845766044697204852">"Hauek dira \"Beste fitxategi batzuk\" atalean gordetzen diren fitxategiak: aplikazioek gordetako fitxategi partekatuak, Internetetik edo Bluetooth konexioaren bidez deskargatutakoak, Android fitxategiak, etab.\n\n<xliff:g id="NAME">^1</xliff:g> honetan ikusgai dagoen edukia ikusteko, sakatu Arakatu."</string>
+     <string name="storage_detail_dialog_system" msgid="862835644848361569">"Android-en <xliff:g id="VERSION">%s</xliff:g> bertsioa exekutatzeko balio duten fitxategiak daude sisteman"</string>
+-    <string name="storage_detail_dialog_user" msgid="3267254783294197804">"Baliteke <xliff:g id="USER_0">^1</xliff:g> erabiltzaileak argazkiak, musika, aplikazioak edo bestelako datuak gorde izana, memorian <xliff:g id="SIZE">^2</xliff:g> hartuta. \n\nXehetasunak ikusteko, aldatu <xliff:g id="USER_1">^1</xliff:g> erabiltzailearen kontura."</string>
++    <string name="storage_detail_dialog_user" msgid="3267254783294197804">"Baliteke <xliff:g id="USER_0">^1</xliff:g> erabiltzaileak argazkiak, musika, aplikazioak edo bestelako datuak gorde izatea, memorian <xliff:g id="SIZE">^2</xliff:g> hartuta. \n\nXehetasunak ikusteko, aldatu <xliff:g id="USER_1">^1</xliff:g> erabiltzailearen kontura."</string>
+     <string name="storage_wizard_init_title" msgid="5085400514028585772">"Konfiguratu <xliff:g id="NAME">^1</xliff:g> memoria"</string>
+     <string name="storage_wizard_init_external_title" msgid="4867326438945303598">"Erabili biltegiratze-gailu eramangarri gisa"</string>
+     <string name="storage_wizard_init_external_summary" msgid="7476105886344565074">"Argazkiak eta bestelako multimedia-fitxategiak gailu batetik bestera eramateko."</string>
+@@ -3634,7 +3634,7 @@
+     <string name="running_frequency" msgid="6622624669948277693">"Maiztasuna"</string>
+     <string name="memory_maximum_usage" msgid="6513785462055278341">"Gehieneko erabilera"</string>
+     <string name="no_data_usage" msgid="9131454024293628063">"Ez da erabili daturik"</string>
+-    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> aplikazioari \"Ez molestatu\" modurako sarbidea eman?"</string>
++    <string name="zen_access_warning_dialog_title" msgid="1198189958031157142">"<xliff:g id="APP">%1$s</xliff:g> aplikazioari \"Ez molestatu\" modua erabiltzeko baimena eman?"</string>
+     <string name="zen_access_warning_dialog_summary" msgid="4015885767653010873">"Aplikazioak \"Ez molestatu\" egoera aktibatu eta desaktibatu ahal izango du, eta erlazionatutako ezarpenetan aldaketak egin ahal izango ditu."</string>
+     <string name="zen_access_disabled_package_warning" msgid="302820100078584431">"Aktibatuta egon behar du, jakinarazpenetarako sarbidea aktibatuta dagoelako"</string>
+     <string name="zen_access_revoke_warning_dialog_title" msgid="558779234015793950">"Ez molestatzeko arauetarako sarbidea kendu nahi diozu <xliff:g id="APP">%1$s</xliff:g> aplikazioari?"</string>
+diff --git a/res/values-hi/strings.xml b/res/values-hi/strings.xml
+index aa04982966..4105c847be 100644
+--- a/res/values-hi/strings.xml
++++ b/res/values-hi/strings.xml
+@@ -3333,7 +3333,7 @@
+     <string name="zen_mode_rule_summary_provider_combination" msgid="2101201392041867409">"<xliff:g id="PACKAGE">%1$s</xliff:g>\n<xliff:g id="SUMMARY">%2$s</xliff:g>"</string>
+     <string name="zen_mode_schedule_rule_days" msgid="3195058680641389948">"दिन"</string>
+     <string name="zen_mode_schedule_rule_days_none" msgid="4954143628634166317">"कोई नहीं"</string>
+-    <string name="zen_mode_schedule_rule_days_all" msgid="146511166522076034">"प्रत्येक दिन"</string>
++    <string name="zen_mode_schedule_rule_days_all" msgid="146511166522076034">"हर दिन"</string>
+     <string name="zen_mode_schedule_alarm_title" msgid="767054141267122030">"अलार्म, खत्म होने के समय से ज़्यादा देर बज सकता है"</string>
+     <string name="zen_mode_schedule_alarm_summary" msgid="4597050434723180422">"खत्म होने का समय या अगला अलार्म, दोनों में से जो भी पहले आए, उस पर रुक जाएं"</string>
+     <string name="summary_divider_text" msgid="7228986578690919294">", "</string>
+diff --git a/res/values-hr/strings.xml b/res/values-hr/strings.xml
+index 540b68e510..a8c081e968 100644
+--- a/res/values-hr/strings.xml
++++ b/res/values-hr/strings.xml
+@@ -602,7 +602,7 @@
+     <string name="lock_failed_attempts_now_wiping_profile" msgid="1745475043685915442">"Previše netočnih pokušaja. Ovaj će se radni profil izbrisati zajedno sa svim svojim podacima."</string>
+     <string name="lock_failed_attempts_now_wiping_dialog_dismiss" msgid="8246716090548717312">"Odbaci"</string>
+     <string name="lockpassword_password_too_short" msgid="2726090378672764986">"Broj znakova ne smije biti manji od <xliff:g id="COUNT">%d</xliff:g>"</string>
+-    <string name="lockpassword_pin_too_short" msgid="3638188874397727648">"Broj znamenki u PIN-u ne smije biti maji od <xliff:g id="COUNT">%d</xliff:g>"</string>
++    <string name="lockpassword_pin_too_short" msgid="3638188874397727648">"Broj znamenki u PIN-u ne smije biti manji od <xliff:g id="COUNT">%d</xliff:g>"</string>
+     <string name="lockpassword_continue_label" msgid="4602203784934526940">"Nastavi"</string>
+     <string name="lockpassword_password_too_long" msgid="4591720174765403476">"Mora imati manje od ovoliko znakova: <xliff:g id="NUMBER">%d</xliff:g>"</string>
+     <string name="lockpassword_pin_too_long" msgid="2079396149560490458">"Mora imati manje od ovoliko znamenki: <xliff:g id="NUMBER">%d</xliff:g>"</string>
+diff --git a/res/values-hy/strings.xml b/res/values-hy/strings.xml
+index f733f5d9eb..5d141c3d0d 100644
+--- a/res/values-hy/strings.xml
++++ b/res/values-hy/strings.xml
+@@ -304,7 +304,7 @@
+     <string name="settings_label_launcher" msgid="8344735489639482340">"Կարգավորումներ"</string>
+     <string name="settings_shortcut" msgid="3936651951364030415">"Կարգավորումների դյուրանցում"</string>
+     <string name="activity_list_empty" msgid="6428823323471264836">"Համընկնող գործողություններ չգտնվեցին:"</string>
+-    <string name="airplane_mode" msgid="8837269988154128601">"Ինքնաթիռի ռեժիմ"</string>
++    <string name="airplane_mode" msgid="8837269988154128601">"Ավիառեժիմ"</string>
+     <string name="radio_controls_title" msgid="3447085191369779032">"Ավելին"</string>
+     <string name="wireless_networks_settings_title" msgid="3643009077742794212">"Անլար կապ և ցանցեր"</string>
+     <string name="radio_controls_summary" msgid="1838624369870907268">"Կառավարել WiFi-ը, Bluetooth-ը, թռիչքային ռեժիմը, շարժական ցանցերը, &amp; VPN-ները"</string>
+@@ -774,7 +774,7 @@
+     <string name="wifi_stopping" msgid="8952524572499500804">"Wi‑Fi-ն անջատվում է..."</string>
+     <string name="wifi_error" msgid="3207971103917128179">"Սխալ"</string>
+     <string name="wifi_sap_no_channel_error" msgid="3108445199311817111">"5 ԳՀց հաճախականության շերտը հասանելի չէ այս երկրում"</string>
+-    <string name="wifi_in_airplane_mode" msgid="8652520421778203796">"Ինքնաթիռի ռեժիմում"</string>
++    <string name="wifi_in_airplane_mode" msgid="8652520421778203796">"Ավիառեժիմում"</string>
+     <string name="wifi_notify_open_networks" msgid="76298880708051981">"Ծանուցումներ բաց ցանցերի մասին"</string>
+     <string name="wifi_notify_open_networks_summary" msgid="2761326999921366960">"Տեղեկացնել բարձր որակի հանրային ցանցի հասանելիության մասին"</string>
+     <string name="wifi_wakeup" msgid="8815640989361538036">"Ավտոմատ կերպով միացնել Wi‑Fi-ը"</string>
+@@ -790,7 +790,7 @@
+     <string name="use_open_wifi_automatically_summary_scoring_disabled" msgid="593964217679325831">"Օգտագործելու համար ընտրեք ցանցի վարկանիշի մատակարարը"</string>
+     <string name="use_open_wifi_automatically_summary_scorer_unsupported_disabled" msgid="8472122600853650258">"Օգտագործելու համար ընտրեք համատեղելի ցանցի վարկանիշի մատակարարը"</string>
+     <string name="wifi_install_credentials" msgid="3551143317298272860">"Հավաստագրերի տեղադրում"</string>
+-    <string name="wifi_scan_notify_text" msgid="5544778734762998889">"Տեղադրության որոշման ճշգրտությունը բարելավելու նպատակով հավելվածներն ու ծառայությունները կորոնեն Wi‑Fi ցանցեր՝ նույնիսկ, երբ Wi‑Fi-ն անջատած է: Դա կարող է լավացնել տեղորոշում օգտագործող գործառույթների ու ծառայություննեի աշխատանքը։ Այս ընտրանքը կարող եք փոխել <xliff:g id="LINK_BEGIN_0">LINK_BEGIN</xliff:g>որոնման կարգավորումներում<xliff:g id="LINK_END_1">LINK_END</xliff:g>։"</string>
++    <string name="wifi_scan_notify_text" msgid="5544778734762998889">"Տեղորոշման ճշգրտությունը բարելավելու նպատակով հավելվածներն ու ծառայությունները կորոնեն Wi‑Fi ցանցեր՝ նույնիսկ, երբ Wi‑Fi-ն անջատած է: Դա կարող է օգտագործվել, օրինակ, տեղորոշում օգտագործող գործառույթների ու ծառայությունների աշխատանքն օպտիմալացնելու համար։ Այս պարամետրը կարող եք փոխել <xliff:g id="LINK_BEGIN_0">LINK_BEGIN</xliff:g>որոնման կարգավորումներում<xliff:g id="LINK_END_1">LINK_END</xliff:g>։"</string>
+     <string name="wifi_scan_notify_text_scanning_off" msgid="3426075479272242098">"Տեղորոշման ճշգրտությունը բարելավելու համար միացրեք Wi-Fi ցանցերի որոնումը <xliff:g id="LINK_BEGIN_0">LINK_BEGIN</xliff:g>որոնման կարգավորումներում<xliff:g id="LINK_END_1">LINK_END</xliff:g>։"</string>
+     <string name="wifi_scan_notify_remember_choice" msgid="7104867814641144485">"Նորից ցույց չտալ"</string>
+     <string name="wifi_setting_sleep_policy_title" msgid="5149574280392680092">"Միացված պահել Wi‑Fi-ը քնի ռեժիմում"</string>
+@@ -964,7 +964,7 @@
+     <string name="wifi_hotspot_configure_ap_text" msgid="5478614731464220432">"Wi-Fi թեժ կետի կարգավորում"</string>
+     <string name="wifi_hotspot_configure_ap_text_summary" msgid="5560680057727007011">"AndroidAP WPA2 PSK թեժ կետ"</string>
+     <string name="wifi_tether_configure_ssid_default" msgid="8467525402622138547">"Android թեժ կետ"</string>
+-    <string name="wifi_tether_disabled_by_airplane" msgid="414480185654767932">"Հասանելի չէ, քանի որ ինքնաթիռի ռեժիմ է միացված"</string>
++    <string name="wifi_tether_disabled_by_airplane" msgid="414480185654767932">"Հասանելի չէ, քանի որ Ավիառեժիմ է միացված"</string>
+     <string name="wifi_calling_settings_title" msgid="4102921303993404577">"Զանգեր Wi-Fi-ի միջոցով"</string>
+     <string name="wifi_calling_suggestion_title" msgid="5702964371483390024">"Ընդլայնեք ծածկույթը Wi‑Fi-ի միջոցով"</string>
+     <string name="wifi_calling_suggestion_summary" msgid="1331793267608673739">"Զանգեք Wi-Fi-ի միջոցով՝ ծածկույթն ընդլայնելու համար"</string>
+@@ -1005,7 +1005,7 @@
+     <string name="wifi_calling_off_explanation_2" msgid="2329334487851497223"></string>
+     <string name="emergency_address_title" msgid="932729250447887545">"Արտակարգ իրավիճակների հասցե"</string>
+     <string name="emergency_address_summary" msgid="7751971156196115129">"Օգտագործվում է որպես ձեր հասցեն, երբ Wi‑Fi-ի միջոցով շտապ կանչ եք կատարում"</string>
+-    <string name="private_dns_help_message" msgid="3299567069152568958"><annotation id="url">"Մանրամասն"</annotation>" անհատական DNS սերվերի մասին"</string>
++    <string name="private_dns_help_message" msgid="3299567069152568958"><annotation id="url">"Մանրամասն"</annotation>" մասնավոր DNS սերվերի մասին"</string>
+     <string name="wifi_calling_pref_managed_by_carrier" msgid="6845711858866828986">"Կարգավորումը կառավարվում է օպերատորի կողմից"</string>
+     <string name="wifi_calling_settings_activation_instructions" msgid="7492509632478260955">"Ակտիվացրեք Wi-Fi-ի միջոցով զանգերը"</string>
+     <string name="wifi_calling_turn_on" msgid="1171403510313983983">"Միացրեք Wi-Fi-ի միջոցով զանգերը"</string>
+@@ -1185,7 +1185,7 @@
+     <string name="sim_change_data_message" msgid="5854582807996717811">"Բջջային ինտերնետի համար ցանկանո՞ւմ եք <xliff:g id="OLD_SIM">%2$s</xliff:g>-ի փոխարեն օգտագործել <xliff:g id="NEW_SIM">%1$s</xliff:g>-ը:"</string>
+     <string name="sim_preferred_title" msgid="5567909634636045268">"Փոխե՞լ նախընտրելի SIM քարտը:"</string>
+     <string name="sim_preferred_message" msgid="8466930554330635780">"Ձեր սարքում միակ SIM քարտը <xliff:g id="NEW_SIM">%1$s</xliff:g> է: Ցանկանո՞ւմ եք օգտագործել այս SIM-ը բջջային ինտերնետի, զանգերի և SMS հաղորդագրությունների համար:"</string>
+-    <string name="wrong_pin_code_pukked" msgid="4003655226832658066">"SIM PIN կոդը սխալ է: Պետք է դիմեք ձեր օպերատորին՝ սարքն արգելաբացելու համար:"</string>
++    <string name="wrong_pin_code_pukked" msgid="4003655226832658066">"SIM PIN կոդը սխալ է: Պետք է դիմեք ձեր օպերատորին՝ սարքն արգելահանելու համար:"</string>
+     <plurals name="wrong_pin_code" formatted="false" msgid="1582398808893048097">
+       <item quantity="one">SIM PIN կոդը սխալ է: Մնաց <xliff:g id="NUMBER_1">%d</xliff:g> փորձ:</item>
+       <item quantity="other">SIM PIN կոդը սխալ է: Մնաց <xliff:g id="NUMBER_1">%d</xliff:g> փորձ:</item>
+@@ -1367,7 +1367,7 @@
+     <string name="storage_wizard_ready_internal_body" msgid="122532674037860197">"Նոր <xliff:g id="NAME">^1</xliff:g>-ն աշխատում է: \n\nԼուսանկարներ, ֆայլեր և հավելվածների տվյալներ այս սարք տեղափոխելու համար անցեք Կարգավորումներ &gt; Տարածք:"</string>
+     <string name="storage_wizard_move_confirm_title" msgid="292782012677890250">"Տեղափոխել <xliff:g id="APP">^1</xliff:g> հավելվածը"</string>
+     <string name="storage_wizard_move_confirm_body" msgid="5176432115206478941">"<xliff:g id="APP">^1</xliff:g> հավելվածի և նրա տվյալների տեղափոխումը <xliff:g id="NAME_0">^2</xliff:g> ընդամենը մի քանի վայրկյան կտևի: Դուք չեք կարողանա օգտագործել հավելվածը մինչև տեղափոխումը չավարտվի: \n\nՏեղափոխման ընթացքում չհեռացնեք <xliff:g id="NAME_1">^2</xliff:g>-ը:"</string>
+-    <string name="storage_wizard_move_unlock" msgid="1526216561023200694">"Տվյալները տեղափոխելու համար արգելաբացեք <xliff:g id="APP">^1</xliff:g> օգտատիրոջը:"</string>
++    <string name="storage_wizard_move_unlock" msgid="1526216561023200694">"Տվյալները տեղափոխելու համար արգելահանեք <xliff:g id="APP">^1</xliff:g> օգտատիրոջը:"</string>
+     <string name="storage_wizard_move_progress_title" msgid="4443920302548035674">"<xliff:g id="APP">^1</xliff:g> հավելվածի տեղափոխում…"</string>
+     <string name="storage_wizard_move_progress_body" msgid="7802577486578105609">"Տեղափոխման ընթացքում չհեռացնեք <xliff:g id="NAME">^1</xliff:g>-ը: \n\n<xliff:g id="APP">^2</xliff:g> հավելվածը հասանելի չի լինի մինչև տեղափոխումը չավարտվի:"</string>
+     <string name="storage_wizard_move_progress_cancel" msgid="542047237524588792">"Չեղարկել տեղափոխումը"</string>
+@@ -1784,7 +1784,7 @@
+     <string name="app_disable_notifications_dlg_title" msgid="7669264654851761857">"Անջատե՞լ ծանուցումները:"</string>
+     <string name="app_disable_notifications_dlg_text" msgid="5088484670924769845">"Եթե դուք անջատեք ծամուցումները այս ծրագրի համար, հնարավոր է` բաց թողնեք կարևոր զգուշացումները և թարմացումները:"</string>
+     <string name="app_install_details_group_title" msgid="7084623031296083574">"Խանութ"</string>
+-    <string name="app_install_details_title" msgid="6905279702654975207">"Հավելվածի մանրամասները"</string>
++    <string name="app_install_details_title" msgid="6905279702654975207">"Հավելվածի մասին"</string>
+     <string name="app_install_details_summary" msgid="6464796332049327547">"Հավելվածը տեղադրվել է <xliff:g id="APP_STORE">%1$s</xliff:g>ից"</string>
+     <string name="instant_app_details_summary" msgid="4529934403276907045">"Մանրամասները՝ <xliff:g id="APP_STORE">%1$s</xliff:g>-ում"</string>
+     <string name="app_ops_running" msgid="7706949900637284122">"Աշխատեցվում է"</string>
+@@ -3055,7 +3055,7 @@
+     <string name="other_sound_settings" msgid="3151004537006844718">"Այլ ձայներ"</string>
+     <string name="dial_pad_tones_title" msgid="1999293510400911558">"Թվաշարի հնչերանգներ"</string>
+     <string name="screen_locking_sounds_title" msgid="1340569241625989837">"Էկրանի կողպման ձայներ"</string>
+-    <string name="charging_sounds_title" msgid="1132272552057504251">"Լիցքավորման ազդանշաններ"</string>
++    <string name="charging_sounds_title" msgid="1132272552057504251">"Լիցքավորման ձայներ"</string>
+     <string name="docking_sounds_title" msgid="155236288949940607">"Միակցման ձայներ"</string>
+     <string name="touch_sounds_title" msgid="5326587106892390176">"Հպման ձայներ"</string>
+     <string name="vibrate_on_touch_title" msgid="1510405818894719079">"Թրթռոց հպելիս"</string>
+@@ -3736,8 +3736,8 @@
+     <string name="condition_expand_hide" msgid="948507739223760667">"Թաքցնել"</string>
+     <string name="condition_hotspot_title" msgid="7778958849468560027">"Թեժ կետը միացված է"</string>
+     <string name="condition_hotspot_summary" msgid="3433182779269409683">"<xliff:g id="ID_1">%1$s</xliff:g> շարժական Wi-Fi թեժ կետն ակտիվ է: Wi-Fi-ն այս սարքի համար անջատված է:"</string>
+-    <string name="condition_airplane_title" msgid="287356299107070503">"Ինքնաթիռի ռեժիմը միացված է"</string>
+-    <string name="condition_airplane_summary" msgid="7098837989877102577">"Ինքնաթիռի ռեժիմը միացնելիս Wi‑Fi-ը, Bluetooth-ը և բջջային ցանցը անջատվում են: Wi‑Fi-ը և Bluetooth-ը կարող եք նորից միացնել:"</string>
++    <string name="condition_airplane_title" msgid="287356299107070503">"Ավիառեժիմը միացված է"</string>
++    <string name="condition_airplane_summary" msgid="7098837989877102577">"Ավիառեժիմը միացնելիս Wi‑Fi-ը, Bluetooth-ը և բջջային ցանցը անջատվում են: Wi‑Fi-ը և Bluetooth-ը կարող եք նորից միացնել:"</string>
+     <string name="condition_zen_title" msgid="2897779738211625">"«Չանհանգստացնել» ռեժիմն ակտիվ է"</string>
+     <string name="condition_battery_title" msgid="3272131008388575349">"Մարտկոցի տնտեսումը միացված է"</string>
+     <string name="condition_battery_summary" msgid="507347940746895275">"Մարտկոցի տնտեսման ռեժիմում սարքի որոշ գործառույթներ անջատվում են, և սահմանափակվում է հավելվածների աշխատանքը"</string>
+diff --git a/res/values-ja/strings.xml b/res/values-ja/strings.xml
+index 7b24728bc4..01c0669f8e 100644
+--- a/res/values-ja/strings.xml
++++ b/res/values-ja/strings.xml
+@@ -1557,7 +1557,7 @@
+     <string name="location_access_summary" msgid="69031404093194341">"ユーザーの許可をリクエストしたアプリに位置情報の使用を許可する"</string>
+     <string name="location_sources_heading" msgid="1278732419851088319">"位置情報源"</string>
+     <string name="about_settings" product="tablet" msgid="593457295516533765">"タブレット情報"</string>
+-    <string name="about_settings" product="default" msgid="1743378368185371685">"端末情報"</string>
++    <string name="about_settings" product="default" msgid="1743378368185371685">"デバイス情報"</string>
+     <string name="about_settings" product="device" msgid="6717640957897546887">"端末情報"</string>
+     <string name="about_settings" product="emulator" msgid="221313099578564438">"エミュレートされた端末について"</string>
+     <string name="about_settings_summary" msgid="3371517697156165959">"規約、ステータス、ソフトウェアバージョン"</string>
+@@ -1973,7 +1973,7 @@
+     <string name="accessibility_touch_vibration_title" msgid="7931823772673770492">"タップ操作時のバイブ"</string>
+     <string name="accessibility_service_master_switch_title" msgid="6835441300276358239">"サービスの使用"</string>
+     <string name="accessibility_daltonizer_master_switch_title" msgid="8655284637968823154">"色補正の使用"</string>
+-    <string name="accessibility_caption_master_switch_title" msgid="4010227386676077826">"字幕の使用"</string>
++    <string name="accessibility_caption_master_switch_title" msgid="4010227386676077826">"字幕を使用する"</string>
+     <string name="accessibility_hearingaid_title" msgid="8312145423610648518">"補聴器"</string>
+     <string name="accessibility_hearingaid_not_connected_summary" msgid="6240237523789614599">"接続されている補聴器なし"</string>
+     <string name="accessibility_hearingaid_adding_summary" msgid="6371077608778830020">"補聴器の追加"</string>
+@@ -2335,7 +2335,9 @@
+     <string name="battery_saver_turn_on_automatically_never" msgid="6610846456314373">"使用しない"</string>
+     <string name="battery_saver_turn_on_automatically_pct" msgid="8665950426992057191">"電池残量が <xliff:g id="PERCENT">%1$s</xliff:g> になったとき"</string>
+     <string name="battery_percentage" msgid="723291197508049369">"電池残量"</string>
+-    <string name="battery_percentage_description" msgid="8511658577507384014">"ステータスバーに電池残量を表示する"</string>
++    <!-- String.format failed for translation -->
++    <!-- no translation found for battery_percentage_description (8511658577507384014) -->
++    <skip />
+     <string name="process_stats_summary_title" msgid="1144688045609771677">"プロセスの統計情報"</string>
+     <string name="process_stats_summary" msgid="109387941605607762">"プロセスの実行に関する独自の統計情報"</string>
+     <string name="app_memory_use" msgid="7849258480392171939">"メモリ使用"</string>
+diff --git a/res/values-mk/strings.xml b/res/values-mk/strings.xml
+index 0980d8c4f8..1bd540b34e 100644
+--- a/res/values-mk/strings.xml
++++ b/res/values-mk/strings.xml
+@@ -1518,7 +1518,7 @@
+     <string name="sms_application_title" msgid="4903928270533250448">"Апликација за SMS"</string>
+     <string name="sms_change_default_dialog_title" msgid="1958688831875804286">"Избери апликација за SMS"</string>
+     <string name="sms_change_default_dialog_text" msgid="1522783933230274787">"Да се користи <xliff:g id="NEW_APP">%1$s</xliff:g> наместо <xliff:g id="CURRENT_APP">%2$s</xliff:g> како SMS-апликација?"</string>
+-    <string name="sms_change_default_no_previous_dialog_text" msgid="602683880284921998">"Користи <xliff:g id="NEW_APP">%s</xliff:g> како SMS апликација?"</string>
++    <string name="sms_change_default_no_previous_dialog_text" msgid="602683880284921998">"Користи <xliff:g id="NEW_APP">%s</xliff:g> како SMS-апликација?"</string>
+     <string name="network_scorer_picker_title" msgid="6383879578279046456">"Оператор за оценување мрежа"</string>
+     <string name="network_scorer_picker_none_preference" msgid="9028375117241790936">"Ниедно"</string>
+     <string name="network_scorer_change_active_dialog_title" msgid="3776301550387574975">"Да се промени помошникот за Wi‑Fi?"</string>
+diff --git a/res/values-mr/strings.xml b/res/values-mr/strings.xml
+index edace4e6d3..62949e9a6e 100644
+--- a/res/values-mr/strings.xml
++++ b/res/values-mr/strings.xml
+@@ -3334,7 +3334,7 @@
+     <string name="zen_mode_rule_summary_provider_combination" msgid="2101201392041867409">"<xliff:g id="PACKAGE">%1$s</xliff:g>\n<xliff:g id="SUMMARY">%2$s</xliff:g>"</string>
+     <string name="zen_mode_schedule_rule_days" msgid="3195058680641389948">"दिवस"</string>
+     <string name="zen_mode_schedule_rule_days_none" msgid="4954143628634166317">"काहीही नाही"</string>
+-    <string name="zen_mode_schedule_rule_days_all" msgid="146511166522076034">"दररोज"</string>
++    <string name="zen_mode_schedule_rule_days_all" msgid="146511166522076034">"प्रत्येक दिवशी"</string>
+     <string name="zen_mode_schedule_alarm_title" msgid="767054141267122030">"अलार्म समाप्ती वेळेस ओव्हरराइड करू शकतो."</string>
+     <string name="zen_mode_schedule_alarm_summary" msgid="4597050434723180422">"समाप्ती वेळ किंवा पुढील अलार्म जे प्रथम येते त्यावर थांबा"</string>
+     <string name="summary_divider_text" msgid="7228986578690919294">", "</string>
+diff --git a/res/values-nl/strings.xml b/res/values-nl/strings.xml
+index 2c18fd6e3b..4e69581d82 100644
+--- a/res/values-nl/strings.xml
++++ b/res/values-nl/strings.xml
+@@ -1549,8 +1549,8 @@
+     <string name="location_street_level" product="tablet" msgid="1669562198260860802">"Apps toestaan gps op je telefoon te gebruiken om je locatie te bepalen"</string>
+     <string name="location_street_level" product="default" msgid="4617445745492014203">"Apps toestaan gps op je telefoon te gebruiken om je locatie te bepalen"</string>
+     <string name="assisted_gps" msgid="4649317129586736885">"Ondersteunde gps gebruiken"</string>
+-    <string name="assisted_gps_enabled" msgid="8751899609589792803">"Server gebruiken ter ondersteuning van gps (uitschakelen om het netwerkgebruik te beperken)"</string>
+-    <string name="assisted_gps_disabled" msgid="6982698333968010748">"Server gebruiken ter ondersteuning van gps (uitschakelen om gps-prestaties te verbeteren)"</string>
++    <string name="assisted_gps_enabled" msgid="8751899609589792803">"Server gebruiken ter ondersteuning van gps (uitvinken om het netwerkgebruik te beperken)"</string>
++    <string name="assisted_gps_disabled" msgid="6982698333968010748">"Server gebruiken ter ondersteuning van gps (uitvinken om gps-prestaties te verbeteren)"</string>
+     <string name="use_location_title" msgid="5206937465504979977">"Locatie en Google Zoeken"</string>
+     <string name="use_location_summary" msgid="3978805802386162520">"Google toestaan je locatie te gebruiken om zoekresultaten en andere services te verbeteren"</string>
+     <string name="location_access_title" msgid="7064108942964081243">"Toegang tot mijn locatie"</string>
+diff --git a/res/values-or/strings.xml b/res/values-or/strings.xml
+index 5abce499c8..8fd60bc9f4 100644
+--- a/res/values-or/strings.xml
++++ b/res/values-or/strings.xml
+@@ -172,11 +172,11 @@
+     <string name="bluetooth_pref_summary" product="tablet" msgid="3520035819421024105">"ଆପଣଙ୍କର ଟାବଲେଟ୍‌କୁ ଆଖପାଖରେ ଥିବା ବ୍ଲୁ-ଟୂଥ୍‍ ଡିଭାଇସ୍ ସହ ଯୋଗାଯୋଗ କରିବାକୁ ଦିଅନ୍ତୁ"</string>
+     <string name="bluetooth_pref_summary" product="device" msgid="2205100629387332862">"ଆପଣଙ୍କର ଡିଭାଇସ୍‌କୁ ଆଖପାଖରେ ଥିବା ବ୍ଲୁ-ଟୂଥ୍‍ ଡିଭାଇସ୍ ସହ ଯୋଗାଯୋଗ କରିବାକୁ ଦିଅନ୍ତୁ"</string>
+     <string name="bluetooth_pref_summary" product="default" msgid="782032074675157079">"ଆପଣଙ୍କର ଫୋନ୍‌କୁ ଆଖପାଖରେ ଥିବା ବ୍ଲୁ-ଟୂଥ୍‍ ଡିଭାଇସ୍ ସହ ଯୋଗାଯୋଗ କରିବାକୁ ଦିଅନ୍ତୁ"</string>
+-    <string name="bluetooth_disable_a2dp_hw_offload" msgid="4936610906348223810">"Bluetooth A2DP ହାର୍ଡୱେର୍‍ ଅଫ୍‍ଲୋଡ୍‍ ଅକ୍ଷମ କରନ୍ତୁ"</string>
++    <string name="bluetooth_disable_a2dp_hw_offload" msgid="4936610906348223810">"Bluetooth A2DP ହାର୍ଡୱେର୍‍ ଅଫଲୋଡ୍ ଅକ୍ଷମ କରନ୍ତୁ"</string>
+     <string name="bluetooth_disable_a2dp_hw_offload_dialog_title" msgid="4340101417209145308">"ଡିଭାଇସ୍‍ ରିଷ୍ଟାର୍ଟ କରିବେ କି?"</string>
+     <string name="bluetooth_disable_a2dp_hw_offload_dialog_message" msgid="8827019472003234568">"ଏହି ସେଟିଂ ବଦଳାଇବାକୁ ଆପଣଙ୍କୁ ଆପଣଙ୍କର ଡିଭାଇସ୍‍ ରିଷ୍ଟାର୍ଟ କରିବାକୁ ହେବ।"</string>
+     <string name="bluetooth_disable_a2dp_hw_offload_dialog_confirm" msgid="2053793518537051975">"ପୁଣି ଆରମ୍ଭ କରନ୍ତୁ"</string>
+-    <string name="bluetooth_disable_a2dp_hw_offload_dialog_cancel" msgid="2382443064737856652">"କ୍ୟାନ୍ସଲ୍‍"</string>
++    <string name="bluetooth_disable_a2dp_hw_offload_dialog_cancel" msgid="2382443064737856652">"ବାତିଲ୍ କରନ୍ତୁ"</string>
+     <string name="connected_device_available_media_title" msgid="2560067541413280645">"ଉପଲବ୍ଧ ଥିବା ମେଡିଆ ଡିଭାଇସ୍"</string>
+     <string name="connected_device_available_call_title" msgid="697154660967595684">"କଲ୍ କରିବା ପାଇଁ ସୁବିଧା ଉପଲବ୍ଧ ଥିବା ଡିଭାଇସ୍"</string>
+     <string name="connected_device_connected_title" msgid="5871712271201945606">"ବର୍ତ୍ତମାନ କନେକ୍ଟ ଅଛି"</string>
+diff --git a/res/values-pl/strings.xml b/res/values-pl/strings.xml
+index eb333cf203..d30d4a8328 100644
+--- a/res/values-pl/strings.xml
++++ b/res/values-pl/strings.xml
+@@ -1725,7 +1725,7 @@
+     <string name="install_text" msgid="884360662922471113">"Zainstaluj"</string>
+     <string name="disable_text" msgid="6544054052049395202">"Wyłącz"</string>
+     <string name="enable_text" msgid="9217362512327828987">"Włącz"</string>
+-    <string name="clear_user_data_text" msgid="355574089263023363">"Wyczyść miejsce na dane"</string>
++    <string name="clear_user_data_text" msgid="355574089263023363">"Wyczyść pamięć"</string>
+     <string name="app_factory_reset" msgid="6635744722502563022">"Odinstaluj aktualizacje"</string>
+     <string name="auto_launch_enable_text" msgid="4275746249511874845">"Aplikacja jest domyślnie uruchamiana w przypadku niektórych działań."</string>
+     <string name="always_allow_bind_appwidgets_text" msgid="566822577792032925">"Zdecydowałeś, że ta aplikacja może tworzyć widgety i mieć dostęp do ich danych."</string>
+diff --git a/res/values-ta/strings.xml b/res/values-ta/strings.xml
+index 8f804c08b1..939c12fe9c 100644
+--- a/res/values-ta/strings.xml
++++ b/res/values-ta/strings.xml
+@@ -3333,7 +3333,7 @@
+     <string name="zen_mode_rule_summary_provider_combination" msgid="2101201392041867409">"<xliff:g id="PACKAGE">%1$s</xliff:g>\n<xliff:g id="SUMMARY">%2$s</xliff:g>"</string>
+     <string name="zen_mode_schedule_rule_days" msgid="3195058680641389948">"நாட்கள்"</string>
+     <string name="zen_mode_schedule_rule_days_none" msgid="4954143628634166317">"ஏதுமில்லை"</string>
+-    <string name="zen_mode_schedule_rule_days_all" msgid="146511166522076034">"தினமும்"</string>
++    <string name="zen_mode_schedule_rule_days_all" msgid="146511166522076034">"ஒவ்வொரு நாளும்"</string>
+     <string name="zen_mode_schedule_alarm_title" msgid="767054141267122030">"முடிவு நேரத்திற்கு முன்னும் அலாரம் இயங்கலாம்"</string>
+     <string name="zen_mode_schedule_alarm_summary" msgid="4597050434723180422">"முடிவு நேரம் அல்லது அடுத்த அலாரத்தில் நிறுத்து (எது முதலில் வருகிறதோ)"</string>
+     <string name="summary_divider_text" msgid="7228986578690919294">", "</string>
+diff --git a/res/values-te/strings.xml b/res/values-te/strings.xml
+index 64d46f667e..9e396675dd 100644
+--- a/res/values-te/strings.xml
++++ b/res/values-te/strings.xml
+@@ -1063,7 +1063,7 @@
+     <string name="accessibility_personal_account_title" msgid="2169071663029067826">"వ్యక్తిగత ఖాతా - <xliff:g id="MANAGED_BY">%s</xliff:g>"</string>
+     <string name="search_settings" msgid="1910951467596035063">"వెతుకు"</string>
+     <string name="display_settings" msgid="7965901687241669598">"ప్రదర్శన"</string>
+-    <string name="accelerometer_title" msgid="7854608399547349157">"స్క్రీన్‌ను ఆటోమేటిక్‌గా తిప్పుతుంది"</string>
++    <string name="accelerometer_title" msgid="7854608399547349157">"స్క్రీన్ ఆటో-రొటేట్‌"</string>
+     <string name="color_mode_title" msgid="9186249332902370471">"రంగులు"</string>
+     <string name="color_mode_option_natural" msgid="5013837483986772758">"సహజం"</string>
+     <string name="color_mode_option_boosted" msgid="8588223970257287524">"అభివృద్ధిపరచబడింది"</string>
+@@ -3270,7 +3270,7 @@
+       <item quantity="one"><xliff:g id="COUNT_0">%d</xliff:g> వర్గం</item>
+     </plurals>
+     <string name="no_channels" msgid="3077375508177744586">"ఈ యాప్ ఏ నోటిఫికేషన్‌లను పోస్ట్ చేయలేదు"</string>
+-    <string name="app_settings_link" msgid="8894946007543660906">"అనువర్తనంలో అదనపు సెట్టింగ్‌లు"</string>
++    <string name="app_settings_link" msgid="8894946007543660906">"యాప్‌లో అదనపు సెట్టింగ్‌లు"</string>
+     <string name="app_notification_listing_summary_zero" msgid="8046168435207424440">"అన్ని యాప్‌లలో ఆన్ చేయబడ్డాయి"</string>
+     <plurals name="app_notification_listing_summary_others" formatted="false" msgid="6709582776823665660">
+       <item quantity="other"><xliff:g id="COUNT_1">%d</xliff:g> యాప్‌లలో ఆఫ్ చేయబడింది</item>
+diff --git a/res/values-zh-rCN/strings.xml b/res/values-zh-rCN/strings.xml
+index 77c0de5348..aff35c6a9e 100644
+--- a/res/values-zh-rCN/strings.xml
++++ b/res/values-zh-rCN/strings.xml
+@@ -416,7 +416,7 @@
+     <string name="security_settings_fingerprint_enroll_introduction_continue_setup" msgid="1961957425135180242">"下一步"</string>
+     <string name="setup_fingerprint_enroll_skip_title" msgid="362050541117362034">"要跳过指纹设置？"</string>
+     <string name="setup_fingerprint_enroll_skip_after_adding_lock_text" msgid="958990414356204763">"指纹设置只需片刻时间。如果您跳过此设置，之后可以在设置中添加您的指纹。"</string>
+-    <string name="lock_screen_intro_skip_title" msgid="4988210105913705679">"要跳过屏幕锁定吗？"</string>
++    <string name="lock_screen_intro_skip_title" msgid="4988210105913705679">"要跳过屏幕锁定设置步骤吗？"</string>
+     <string name="lock_screen_intro_skip_dialog_text_frp" product="tablet" msgid="1581834104051243425">"系统将不会启用设备保护功能。如果您的平板电脑丢失、被盗或被重置，您将无法防止他人使用此平板电脑。"</string>
+     <string name="lock_screen_intro_skip_dialog_text_frp" product="device" msgid="4629503416877189572">"系统将不会启用设备保护功能。如果您的设备丢失、被盗或被重置，您将无法防止他人使用此设备。"</string>
+     <string name="lock_screen_intro_skip_dialog_text_frp" product="default" msgid="2423428240245737909">"系统将不会启用设备保护功能。如果您的手机丢失、被盗或被重置，您将无法防止他人使用此手机。"</string>
+@@ -2842,7 +2842,7 @@
+     <string name="nfc_payment_favor_open" msgid="1923314062109977944">"但其他付款应用开启时除外"</string>
+     <string name="nfc_payment_pay_with" msgid="7524904024378144072">"通过触碰付款终端进行付款时使用以下应用："</string>
+     <string name="nfc_how_it_works_title" msgid="1984068457698797207">"通过支付终端付款"</string>
+-    <string name="nfc_how_it_works_content" msgid="4749007806393224934">"设置付款应用，然后只需将手机背面靠近任何带有非接触标志的终端即可。"</string>
++    <string name="nfc_how_it_works_content" msgid="4749007806393224934">"设置付款应用，然后只需将手机背面靠近任何带有感应式标志的终端即可。"</string>
+     <string name="nfc_how_it_works_got_it" msgid="259653300203217402">"知道了"</string>
+     <string name="nfc_more_title" msgid="815910943655133280">"更多…"</string>
+     <string name="nfc_payment_set_default_label" msgid="7315817259485674542">"要设为您的偏好设置吗？"</string>
+diff --git a/res/values-zh-rTW/arrays.xml b/res/values-zh-rTW/arrays.xml
+index 741964cabb..d06e38c60d 100644
+--- a/res/values-zh-rTW/arrays.xml
++++ b/res/values-zh-rTW/arrays.xml
+@@ -262,7 +262,7 @@
+     <item msgid="514615766544675057">"撥打電話"</item>
+     <item msgid="8181415497109310680">"讀取 SMS"</item>
+     <item msgid="6816551144382117307">"撰寫 SMS"</item>
+-    <item msgid="4600463921908905030">"接收 SMS"</item>
++    <item msgid="4600463921908905030">"接收簡訊"</item>
+     <item msgid="5958926493289432745">"接收緊急 SMS"</item>
+     <item msgid="4945269495221089540">"接收 MMS"</item>
+     <item msgid="5570472453573929087">"接收 WAP PUSH 簡訊"</item>
+-- 
+2.17.1
+

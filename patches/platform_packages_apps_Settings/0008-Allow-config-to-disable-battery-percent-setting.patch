@@ -1,0 +1,40 @@
+From 7d9ec632f27b96eb9fa88ecbc6d169f64c0b4b57 Mon Sep 17 00:00:00 2001
+From: Evan Laird <evanlaird@google.com>
+Date: Wed, 13 Jun 2018 20:13:47 -0400
+Subject: [PATCH 08/71] Allow config to disable battery percent setting
+
+Respect config_battery_percentage_setting_available to determine whether
+or not to allow showing battery percentage in the status bar.
+
+Test: visual
+Bug: 80129194
+Change-Id: I23b0065ed99865a8df37c098b2f0f16d57799706
+---
+ .../display/BatteryPercentagePreferenceController.java        | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/com/android/settings/display/BatteryPercentagePreferenceController.java b/src/com/android/settings/display/BatteryPercentagePreferenceController.java
+index 449315873c..be676e3df1 100644
+--- a/src/com/android/settings/display/BatteryPercentagePreferenceController.java
++++ b/src/com/android/settings/display/BatteryPercentagePreferenceController.java
+@@ -20,6 +20,7 @@ import android.provider.Settings;
+ import android.support.v7.preference.Preference;
+ import android.support.v14.preference.SwitchPreference;
+ 
++import com.android.internal.R;
+ import com.android.settings.core.PreferenceControllerMixin;
+ import com.android.settingslib.core.AbstractPreferenceController;
+ 
+@@ -40,7 +41,8 @@ public class BatteryPercentagePreferenceController extends AbstractPreferenceCon
+ 
+     @Override
+     public boolean isAvailable() {
+-        return true;
++        return mContext.getResources()
++                .getBoolean(R.bool.config_battery_percentage_setting_available);
+     }
+ 
+     @Override
+-- 
+2.17.1
+

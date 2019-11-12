@@ -1,0 +1,34 @@
+From 0406c586e89af0a1cad52fb76c5fa70ef2a3a431 Mon Sep 17 00:00:00 2001
+From: Jack He <siyuanh@google.com>
+Date: Fri, 8 Dec 2017 12:21:37 -0800
+Subject: [PATCH 028/306] Bluetooth: Fix boolean logic in quiet mode enable
+
+* Change If97c454a8e5aff34c4f8550f7ade3da413a200b7 introduced a bug that
+  flipped the logic of quiet mode enable in the handler for
+  MESSAGE_BLUETOOTH_SERVICE_CONNECTED, causing quiet mode to be enabled
+  when toggling from Settings and system UI.
+
+Bug: 70395489
+Test: make, toggle bluetooth on/off
+Change-Id: I405fb462783df0d52d9ce84d2ebe959e56a1aa30
+(cherry picked from commit a6e031c9f5a39b40452d29c1ba91b02771960210)
+---
+ .../core/java/com/android/server/BluetoothManagerService.java   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/BluetoothManagerService.java b/services/core/java/com/android/server/BluetoothManagerService.java
+index 763a4e49459..d9713a517a9 100644
+--- a/services/core/java/com/android/server/BluetoothManagerService.java
++++ b/services/core/java/com/android/server/BluetoothManagerService.java
+@@ -1628,7 +1628,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
+ 
+                         //Do enable request
+                         try {
+-                            if (mQuietEnable) {
++                            if (!mQuietEnable) {
+                                 if (!mBluetooth.enable()) {
+                                     Slog.e(TAG, "IBluetooth.enable() returned false");
+                                 }
+-- 
+2.17.1
+

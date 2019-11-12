@@ -1,0 +1,37 @@
+From 22b61bbb5a2978387cd5bc9e016f2ba672535ecd Mon Sep 17 00:00:00 2001
+From: Patrick Baumann <patb@google.com>
+Date: Wed, 7 Feb 2018 15:26:52 -0800
+Subject: [PATCH 111/306] Fixes installed launch intent rewrite
+
+Logic that detected how to handle already installed apps was resulting
+in the instant app launching with the ephemral installer intent
+targeted directly at the already resolved component.
+
+This change reverts that logic to the original logic.
+Offending change: ag/3540305
+
+Change-Id: I4dec9bfd1282203229d03695e3a1b6ed5913696a
+Fixes: 73018868
+Test: manual - installed instant apps now launch as expected
+Test: manual - generic intent test app still works as expected
+(cherry picked from commit a89a172a715d4aeaae944b01ca67b5e9e3b3d1da)
+---
+ services/core/java/com/android/server/am/ActivityStarter.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/core/java/com/android/server/am/ActivityStarter.java b/services/core/java/com/android/server/am/ActivityStarter.java
+index b061ba4106d..055b89b6a6f 100644
+--- a/services/core/java/com/android/server/am/ActivityStarter.java
++++ b/services/core/java/com/android/server/am/ActivityStarter.java
+@@ -790,7 +790,7 @@ class ActivityStarter {
+         // Instead, launch the ephemeral installer. Once the installer is finished, it
+         // starts either the intent we resolved here [on install error] or the ephemeral
+         // app [on install success].
+-        if (rInfo != null && rInfo.isInstantAppAvailable) {
++        if (rInfo != null && rInfo.auxiliaryInfo != null) {
+             intent = createLaunchIntent(rInfo.auxiliaryInfo, ephemeralIntent,
+                     callingPackage, verificationBundle, resolvedType, userId);
+             resolvedType = null;
+-- 
+2.17.1
+

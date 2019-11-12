@@ -1,0 +1,303 @@
+From fa6b666b4d013f421c89da398824ddf986b09f44 Mon Sep 17 00:00:00 2001
+From: "Wesley.CW Wang" <wesleycwwang@google.com>
+Date: Tue, 17 Jul 2018 18:05:09 +0800
+Subject: [PATCH 28/70] Refine Emergency shortcut button UI
+
+ - Change the layout parameter to match UI guideline.
+ - Remove string "emergency_information_owner_content_description" for b/111492007.
+
+Test: Manually
+
+Bug: 112168722
+Bug: 80406570
+Bug: 111418029
+Bug: 111414720
+
+Change-Id: I849138d1db8ee7d4780dd7804224b30272eb2de0
+Merged-In: I849138d1db8ee7d4780dd7804224b30272eb2de0
+---
+ res/layout/emergency_information.xml          | 11 +++++---
+ res/layout/emergency_shortcut_button.xml      | 15 ++++++++---
+ .../emergency_shortcut_buttons_group.xml      | 13 +++++++---
+ res/values/dimens.xml                         | 10 +++++++-
+ res/values/strings.xml                        |  2 --
+ res/values/styles.xml                         |  2 --
+ src/com/android/phone/EmergencyInfoGroup.java | 25 ++++++++++++++++---
+ 7 files changed, 57 insertions(+), 21 deletions(-)
+
+diff --git a/res/layout/emergency_information.xml b/res/layout/emergency_information.xml
+index 881fb880c..c4ab74bc8 100644
+--- a/res/layout/emergency_information.xml
++++ b/res/layout/emergency_information.xml
+@@ -16,7 +16,7 @@
+ <com.android.phone.EmergencyInfoGroup
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:id="@+id/emergency_info_button"
+-    android:layout_height="@dimen/emergency_info_button_height"
++    android:layout_height="@dimen/emergency_info_button_singleline_height"
+     android:layout_width="match_parent"
+     android:layout_marginTop="@dimen/emergency_info_button_margin_top">
+     <LinearLayout
+@@ -38,7 +38,7 @@
+         </FrameLayout>
+         <LinearLayout
+             android:layout_height="wrap_content"
+-            android:layout_width="wrap_content"
++            android:layout_width="match_parent"
+             android:orientation="vertical"
+             android:layout_gravity="center_vertical">
+             <TextView
+@@ -46,13 +46,16 @@
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:includeFontPadding="false"
++                android:maxLines="1"
++                android:ellipsize="end"
+                 android:textAppearance="@style/HeadlineTextAppearance"/>
+             <TextView
+                 android:id="@+id/emergency_info_hint"
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+-                android:paddingTop="9dp"
+-                android:includeFontPadding="false"
++                android:maxLines="2"
++                android:ellipsize="end"
++                android:lineHeight="@dimen/emergency_info_hint_line_height"
+                 android:alpha="0.7"
+                 android:textAppearance="@style/SubtitleTextAppearance"
+                 android:text="@string/emergency_information_hint"/>
+diff --git a/res/layout/emergency_shortcut_button.xml b/res/layout/emergency_shortcut_button.xml
+index 5dc59af3d..6087dbaa0 100644
+--- a/res/layout/emergency_shortcut_button.xml
++++ b/res/layout/emergency_shortcut_button.xml
+@@ -28,6 +28,7 @@
+         <LinearLayout
+             android:layout_height="match_parent"
+             android:layout_width="wrap_content"
++            android:layout_marginEnd="@dimen/emergency_info_image_width"
+             android:layout_gravity="center_vertical|start"
+             android:orientation="horizontal">
+             <FrameLayout
+@@ -44,7 +45,7 @@
+             </FrameLayout>
+             <LinearLayout
+                 android:layout_height="wrap_content"
+-                android:layout_width="wrap_content"
++                android:layout_width="match_parent"
+                 android:layout_gravity="center_vertical"
+                 android:orientation="vertical">
+                 <TextView
+@@ -52,14 +53,16 @@
+                     android:layout_height="wrap_content"
+                     android:layout_width="wrap_content"
+                     android:includeFontPadding="false"
++                    android:maxLines="1"
++                    android:ellipsize="end"
+                     android:textAppearance="@style/HeadlineTextAppearance"/>
+                 <TextView
+                     android:id="@+id/phone_number_description"
+                     android:layout_height="wrap_content"
+                     android:layout_width="wrap_content"
+-                    android:includeFontPadding="false"
+-                    android:paddingTop="9dp"
+                     android:alpha="0.8"
++                    android:maxLines="1"
++                    android:ellipsize="end"
+                     android:textAppearance="@style/SubtitleTextAppearance"/>
+             </LinearLayout>
+         </LinearLayout>
+@@ -88,6 +91,7 @@
+         <LinearLayout
+             android:layout_height="match_parent"
+             android:layout_width="wrap_content"
++            android:layout_marginEnd="@dimen/emergency_info_image_width"
+             android:layout_gravity="center_vertical|start"
+             android:gravity="center_vertical"
+             android:orientation="horizontal">
+@@ -106,12 +110,15 @@
+             </FrameLayout>
+             <FrameLayout
+                 android:layout_height="wrap_content"
+-                android:layout_width="wrap_content"
++                android:layout_width="match_parent"
+                 android:gravity="center_vertical">
+                 <TextView
+                     android:id="@+id/phone_call_hint"
+                     android:layout_height="wrap_content"
+                     android:layout_width="wrap_content"
++                    android:maxLines="2"
++                    android:ellipsize="end"
++                    android:lineHeight="@dimen/phone_call_hint_line_height"
+                     android:textAppearance="@style/ShortcutsHintTextAppearance"/>
+             </FrameLayout>
+         </LinearLayout>
+diff --git a/res/layout/emergency_shortcut_buttons_group.xml b/res/layout/emergency_shortcut_buttons_group.xml
+index 86c521dc5..619eac69c 100644
+--- a/res/layout/emergency_shortcut_buttons_group.xml
++++ b/res/layout/emergency_shortcut_buttons_group.xml
+@@ -28,13 +28,15 @@
+         <FrameLayout
+             android:id="@+id/emergency_number_title_container"
+             android:layout_height="wrap_content"
+-            android:layout_width="wrap_content"
++            android:layout_width="@dimen/emergency_number_title_container_width"
+             android:layout_gravity="center_vertical|start">
+             <TextView
+                 android:id="@+id/emergency_number_title"
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+-                android:layout_gravity="center"
++                android:layout_gravity="start"
++                android:maxLines="1"
++                android:ellipsize="end"
+                 android:textAppearance="@style/SubtitleTextAppearance"
+                 android:text="@string/single_emergency_number_title"/>
+         </FrameLayout>
+@@ -42,9 +44,11 @@
+             android:id="@+id/location_info"
+             android:layout_height="wrap_content"
+             android:layout_width="wrap_content"
++            android:layout_marginStart="@dimen/emergency_number_title_container_width"
+             android:layout_gravity="center_vertical|end"
+             android:gravity="center_vertical"
+-            android:orientation="horizontal">
++            android:orientation="horizontal"
++            android:alpha="0.7">
+             <ImageView
+                 android:id="@+id/location_icon"
+                 android:layout_width="@dimen/location_image_width"
+@@ -55,7 +59,8 @@
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:paddingStart="4dp"
+-                android:alpha="0.7"
++                android:maxLines="1"
++                android:ellipsize="end"
+                 android:textAppearance="@style/SubtitleTextAppearance"/>
+         </LinearLayout>
+     </FrameLayout>
+diff --git a/res/values/dimens.xml b/res/values/dimens.xml
+index 2cb4e7a3a..97417bd62 100644
+--- a/res/values/dimens.xml
++++ b/res/values/dimens.xml
+@@ -130,8 +130,9 @@
+     <dimen name="emergency_number_title_group_padding_horizontal">16dp</dimen>
+ 
+     <!-- Height and top margin for the emergency information button. -->
+-    <dimen name="emergency_info_button_height">72dp</dimen>
++    <dimen name="emergency_info_button_singleline_height">72dp</dimen>
+     <dimen name="emergency_info_button_margin_top">56dp</dimen>
++    <dimen name="emergency_info_button_multiline_height">90dp</dimen>
+ 
+     <!-- The height and width for the image of emergency information. -->
+     <dimen name="emergency_info_image_height">56dp</dimen>
+@@ -167,4 +168,11 @@
+     <dimen name="phone_icon_height">24dp</dimen>
+     <dimen name="phone_icon_width">24dp</dimen>
+ 
++    <!-- The line height for emergency info hint and phone call hint.-->
++    <dimen name="emergency_info_hint_line_height">17dp</dimen>
++    <dimen name="phone_call_hint_line_height">20dp</dimen>
++
++    <!-- The width for emergency number title container.-->
++    <dimen name="emergency_number_title_container_width">210dp</dimen>
++
+ </resources>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 7feae6727..399fd5ed9 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -1131,8 +1131,6 @@
+     <string name="emergency_information_hint">Emergency information</string>
+     <!-- Hint for the owner of emergency information -->
+     <string name="emergency_information_owner_hint">Owner</string>
+-    <!-- Content description for the owner of emergency information -->
+-    <string name="emergency_information_owner_content_description"><xliff:g id="user_name">%s</xliff:g>\'s</string>
+     <!-- Dialog title for the "radio enable" UI for emergency calls -->
+     <string name="emergency_enable_radio_dialog_title">Emergency call</string>
+     <!-- Title for the emergency dialpad UI -->
+diff --git a/res/values/styles.xml b/res/values/styles.xml
+index a0a814ca5..73b5c400b 100644
+--- a/res/values/styles.xml
++++ b/res/values/styles.xml
+@@ -316,8 +316,6 @@
+ 
+     <style name="HeadlineTextAppearance">
+         <item name="android:textColor">@android:color/white</item>
+-        <item name="android:maxLines">1</item>
+-        <item name="android:ellipsize">end</item>
+         <item name="android:textSize">24sp</item>
+     </style>
+ 
+diff --git a/src/com/android/phone/EmergencyInfoGroup.java b/src/com/android/phone/EmergencyInfoGroup.java
+index 5a1d546f9..092bc41fa 100644
+--- a/src/com/android/phone/EmergencyInfoGroup.java
++++ b/src/com/android/phone/EmergencyInfoGroup.java
+@@ -32,6 +32,7 @@ import android.util.AttributeSet;
+ import android.view.View;
+ import android.widget.FrameLayout;
+ import android.widget.ImageView;
++import android.widget.LinearLayout;
+ import android.widget.TextView;
+ 
+ import com.android.internal.util.UserIcons;
+@@ -45,6 +46,7 @@ import java.util.List;
+ public class EmergencyInfoGroup extends FrameLayout {
+     private ImageView mEmergencyInfoImage;
+     private TextView mEmergencyInfoName;
++    private TextView mEmergencyInfoHint;
+     private View mEmergencyInfoButton;
+ 
+     public EmergencyInfoGroup(Context context, @Nullable AttributeSet attrs) {
+@@ -57,6 +59,7 @@ public class EmergencyInfoGroup extends FrameLayout {
+         mEmergencyInfoButton = findViewById(R.id.emergency_info_button);
+         mEmergencyInfoImage = (ImageView) findViewById(R.id.emergency_info_image);
+         mEmergencyInfoName = (TextView) findViewById(R.id.emergency_info_name);
++        mEmergencyInfoHint = (TextView) findViewById(R.id.emergency_info_hint);
+     }
+ 
+     @Override
+@@ -67,6 +70,12 @@ public class EmergencyInfoGroup extends FrameLayout {
+         }
+     }
+ 
++    @Override
++    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
++        super.onLayout(changed, left, top, right, bottom);
++        updateLayoutHeight();
++    }
++
+     private void setupButtonInfo() {
+         List<ResolveInfo> infos;
+ 
+@@ -129,14 +138,22 @@ public class EmergencyInfoGroup extends FrameLayout {
+         return drawableUserIcon;
+     }
+ 
++    private void updateLayoutHeight() {
++        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) getLayoutParams();
++        // Update height if mEmergencyInfoHint text line more than 1.
++        // EmergencyInfoGroup max line is 2, eclipse type "end" will be adopt if string too long.
++        params.height =
++                mEmergencyInfoHint.getLineCount() > 1 ? getResources().getDimensionPixelSize(
++                        R.dimen.emergency_info_button_multiline_height)
++                        : getResources().getDimensionPixelSize(
++                                R.dimen.emergency_info_button_singleline_height);
++        setLayoutParams(params);
++    }
++
+     void updateEmergencyInfo(String emergencyInfoName) {
+         if (TextUtils.isEmpty(emergencyInfoName)) {
+             emergencyInfoName = getContext().getString(R.string.emergency_information_owner_hint);
+         }
+         mEmergencyInfoName.setText(emergencyInfoName);
+-
+-        final String infoNameDescription = getContext().getString(
+-                R.string.emergency_information_owner_content_description, emergencyInfoName);
+-        mEmergencyInfoName.setContentDescription(infoNameDescription);
+     }
+ }
+\ No newline at end of file
+-- 
+2.17.1
+

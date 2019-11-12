@@ -1,0 +1,41 @@
+From 256bb66d02e3cae7a439594a16228d6f462ff9a1 Mon Sep 17 00:00:00 2001
+From: Lloyd Pique <lpique@google.com>
+Date: Fri, 2 Nov 2018 14:18:40 -0700
+Subject: [PATCH 28/48] SF: Fix DisplayTransactionTest
+
+SetupNewDisplayDeviceInternalTest.createHwcVirtualDisplay was failing
+after presubmit unit tests were enabled on pi-dev-plus-aosp.
+
+It turned out somehow the test had gotten out of sync with the
+implementation, and the expectations did not match for one of the cases
+tested.
+
+This patch simply fixes the test to use the correct expectations for
+what calls are made for a HWC supported virtual display when one is
+created.
+
+Bug: 118887786
+Test: Presubmit passes
+
+Change-Id: I366e51d81ae3cb048e7a287e4f859ac92c55a20f
+---
+ .../surfaceflinger/tests/unittests/DisplayTransactionTest.cpp  | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/services/surfaceflinger/tests/unittests/DisplayTransactionTest.cpp b/services/surfaceflinger/tests/unittests/DisplayTransactionTest.cpp
+index 9ac5f3b73..9b308bfcc 100644
+--- a/services/surfaceflinger/tests/unittests/DisplayTransactionTest.cpp
++++ b/services/surfaceflinger/tests/unittests/DisplayTransactionTest.cpp
+@@ -658,7 +658,8 @@ using NonHwcVirtualDisplayCase =
+ using SimpleHwcVirtualDisplayVariant = HwcVirtualDisplayVariant<1024, 768, Secure::TRUE>;
+ using HwcVirtualDisplayCase =
+         Case<SimpleHwcVirtualDisplayVariant, WideColorSupportNotConfiguredVariant,
+-             NonHwcDisplayHdrSupportVariant, NonHwcPerFrameMetadataSupportVariant>;
++             HdrNotSupportedVariant<SimpleHwcVirtualDisplayVariant>,
++             NoPerFrameMetadataSupportVariant<SimpleHwcVirtualDisplayVariant>>;
+ using WideColorP3ColorimetricDisplayCase =
+         Case<PrimaryDisplayVariant, WideColorP3ColorimetricSupportedVariant<PrimaryDisplayVariant>,
+              HdrNotSupportedVariant<PrimaryDisplayVariant>,
+-- 
+2.17.1
+

@@ -1,0 +1,36 @@
+From 299276785787a35effa829f3f9d507cbde266dea Mon Sep 17 00:00:00 2001
+From: Yifan Hong <elsk@google.com>
+Date: Thu, 14 Jun 2018 15:12:26 -0700
+Subject: [PATCH 03/29] healthd: add stem to health@2.0-service.override [DO
+ NOT MERGE]
+
+The override module should have the same name as the -service
+module; the only difference is that healthd is installed or not.
+Without this change, the binary is completely useless due to
+incorrect rc files and sepolicy file_contexts.
+
+This allows emulator to use this module correctly.
+
+Bug: 110228707
+
+Test: builds on emulator, boots
+Change-Id: Id2062925ec3567c4fde70358184bb790541bf83b
+---
+ healthd/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/healthd/Android.bp b/healthd/Android.bp
+index cefe09d5e..0f6e8372c 100644
+--- a/healthd/Android.bp
++++ b/healthd/Android.bp
+@@ -61,6 +61,7 @@ cc_binary {
+ 
+ cc_binary {
+     name: "android.hardware.health@2.0-service.override",
++    stem: "android.hardware.health@2.0-service",
+     defaults: ["android.hardware.health@2.0-service_defaults"],
+ 
+     overrides: [
+-- 
+2.17.1
+

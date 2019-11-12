@@ -1,0 +1,92 @@
+From 75057f07bd7ad967a6cb22a1225b2a2b4121b390 Mon Sep 17 00:00:00 2001
+From: Lorenzo Colitti <lorenzo@google.com>
+Date: Thu, 26 Jul 2018 17:20:57 +0900
+Subject: [PATCH 04/12] Avoid infinite loop in NetlinkListener.
+
+Currently, NetlinkListener only reads from its socket if it gets
+POLLIN. This means that if the kernel returns POLLERR without
+POLLIN, it will get into an infinite loop.
+
+Fix this by responding to POLLERR by issuing a recvfrom, which
+clears the socket error, and continuing. The only error we expect
+to see here is ENOBUFS, and there's nothing we can do about that.
+There is no functional change because before we'd just call
+forEachNetlinkMessage on an empty Slice, which does nothing.
+
+Also increase the socket buffer to 1MB to reduce the chance of
+getting ENOBUFS and thus leaking some mCookieTagMap entries. This
+buffer size is equivalent to half the buffer size of a single TCP
+socket on LTE.
+
+While we're at it, don't pass POLLRDHUP, POLLERR, and POLLHUP to
+poll, since these are ignored in events and are only meaningful
+in revents.
+
+Bug: 111479770
+Test: netd_{unit,integration}_test pass
+Test: builds, boots, cell and wifi work
+Test: stress test does not cause infinite loop in netd
+Change-Id: I847aeb9a53095c1dfdeddadcd20c0e750b6513ff
+---
+ server/NetlinkListener.cpp   | 14 +++++++++-----
+ server/TrafficController.cpp | 11 +++++++++++
+ 2 files changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/server/NetlinkListener.cpp b/server/NetlinkListener.cpp
+index 82ed6d86..38d12df1 100644
+--- a/server/NetlinkListener.cpp
++++ b/server/NetlinkListener.cpp
+@@ -107,7 +107,7 @@ Status NetlinkListener::run() {
+ 
+     const auto& sys = sSyscalls.get();
+     const std::array<Fd, 2> fds{{{mEvent}, {mSock}}};
+-    const int events = POLLIN | POLLRDHUP | POLLERR | POLLHUP;
++    const int events = POLLIN;
+     const double timeout = 3600;
+     while (true) {
+         ASSIGN_OR_RETURN(auto revents, sys.ppoll(fds, events, timeout));
+@@ -115,11 +115,15 @@ Status NetlinkListener::run() {
+         if (revents[0] & POLLIN) {
+             break;
+         }
+-        if (revents[1] & POLLIN) {
++        if (revents[1] & (POLLIN|POLLERR)) {
+             auto rx = sys.recvfrom(mSock, makeSlice(rxbuf), 0);
+-            if (rx.status().code() == ENOBUFS) {
+-                // Ignore ENOBUFS - the socket is still usable
+-                // TODO: Users other than NFLOG may need to know about this
++            int err = rx.status().code();
++            if (err) {
++                // Ignore errors. The only error we expect to see here is ENOBUFS, and there's
++                // nothing we can do about that. The recvfrom above will already have cleared the
++                // error indication and ensured we won't get EPOLLERR again.
++                // TODO: Consider using NETLINK_NO_ENOBUFS.
++                ALOGE("Failed to read from netlink socket: %s", strerror(err));
+                 continue;
+             }
+             forEachNetlinkMessage(rx.value(), rxHandler);
+diff --git a/server/TrafficController.cpp b/server/TrafficController.cpp
+index d6a64802..0268f9b0 100644
+--- a/server/TrafficController.cpp
++++ b/server/TrafficController.cpp
+@@ -80,6 +80,17 @@ StatusOr<std::unique_ptr<NetlinkListenerInterface>> makeSkDestroyListener() {
+     const int protocol = NETLINK_INET_DIAG;
+     ASSIGN_OR_RETURN(auto sock, sys.socket(domain, type, protocol));
+ 
++    // TODO: if too many sockets are closed too quickly, we can overflow the socket buffer, and
++    // some entries in mCookieTagMap will not be freed. In order to fix this we would need to
++    // periodically dump all sockets and remove the tag entries for sockets that have been closed.
++    // For now, set a large-enough buffer that we can close hundreds of sockets without getting
++    // ENOBUFS and leaking mCookieTagMap entries.
++    int rcvbuf = 512 * 1024;
++    auto ret = sys.setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf));
++    if (!ret.ok()) {
++        ALOGW("Failed to set SkDestroyListener buffer size to %d: %s", rcvbuf, ret.msg().c_str());
++    }
++
+     sockaddr_nl addr = {
+         .nl_family = AF_NETLINK,
+         .nl_groups = 1 << (SKNLGRP_INET_TCP_DESTROY - 1) | 1 << (SKNLGRP_INET_UDP_DESTROY - 1) |
+-- 
+2.17.1
+

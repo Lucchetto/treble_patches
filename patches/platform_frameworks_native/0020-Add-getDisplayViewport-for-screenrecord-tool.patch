@@ -1,0 +1,193 @@
+From 1d465af5fce0678c1d269f626f61178da72602bc Mon Sep 17 00:00:00 2001
+From: Yiwei Zhang <zzyiwei@google.com>
+Date: Tue, 21 Aug 2018 15:15:42 -0700
+Subject: [PATCH 20/48] Add getDisplayViewport for screenrecord tool
+
+Bug: b/112869712
+Test: adb shell screenrecord
+Change-Id: I9f3f99de1a5bafc5318b24484f1916d28dcdfaa7
+Merged-In: I9f3f99de1a5bafc5318b24484f1916d28dcdfaa7
+---
+ libs/gui/ISurfaceComposer.cpp                | 48 ++++++++++++++++++++
+ libs/gui/SurfaceComposerClient.cpp           |  4 ++
+ libs/gui/include/gui/ISurfaceComposer.h      |  6 ++-
+ libs/gui/include/gui/SurfaceComposerClient.h |  3 ++
+ libs/gui/tests/Surface_test.cpp              |  3 ++
+ services/surfaceflinger/SurfaceFlinger.cpp   | 15 ++++++
+ services/surfaceflinger/SurfaceFlinger.h     |  1 +
+ 7 files changed, 79 insertions(+), 1 deletion(-)
+
+diff --git a/libs/gui/ISurfaceComposer.cpp b/libs/gui/ISurfaceComposer.cpp
+index e22bc708c..d2d27e823 100644
+--- a/libs/gui/ISurfaceComposer.cpp
++++ b/libs/gui/ISurfaceComposer.cpp
+@@ -332,6 +332,34 @@ public:
+         return result;
+     }
+ 
++    virtual status_t getDisplayViewport(const sp<IBinder>& display, Rect* outViewport) {
++        Parcel data, reply;
++        status_t result = data.writeInterfaceToken(ISurfaceComposer::getInterfaceDescriptor());
++        if (result != NO_ERROR) {
++            ALOGE("getDisplayViewport failed to writeInterfaceToken: %d", result);
++            return result;
++        }
++        result = data.writeStrongBinder(display);
++        if (result != NO_ERROR) {
++            ALOGE("getDisplayViewport failed to writeStrongBinder: %d", result);
++            return result;
++        }
++        result = remote()->transact(BnSurfaceComposer::GET_DISPLAY_VIEWPORT, data, &reply);
++        if (result != NO_ERROR) {
++            ALOGE("getDisplayViewport failed to transact: %d", result);
++            return result;
++        }
++        result = reply.readInt32();
++        if (result == NO_ERROR) {
++            result = reply.read(*outViewport);
++            if (result != NO_ERROR) {
++                ALOGE("getDisplayViewport failed to read: %d", result);
++                return result;
++            }
++        }
++        return result;
++    }
++
+     virtual int getActiveConfig(const sp<IBinder>& display)
+     {
+         Parcel data, reply;
+@@ -724,6 +752,26 @@ status_t BnSurfaceComposer::onTransact(
+             }
+             return NO_ERROR;
+         }
++        case GET_DISPLAY_VIEWPORT: {
++            CHECK_INTERFACE(ISurfaceComposer, data, reply);
++            Rect outViewport;
++            sp<IBinder> display = nullptr;
++            status_t result = data.readStrongBinder(&display);
++            if (result != NO_ERROR) {
++                ALOGE("getDisplayViewport failed to readStrongBinder: %d", result);
++                return result;
++            }
++            result = getDisplayViewport(display, &outViewport);
++            result = reply->writeInt32(result);
++            if (result == NO_ERROR) {
++                result = reply->write(outViewport);
++                if (result != NO_ERROR) {
++                    ALOGE("getDisplayViewport failed to write: %d", result);
++                    return result;
++                }
++            }
++            return NO_ERROR;
++        }
+         case GET_ACTIVE_CONFIG: {
+             CHECK_INTERFACE(ISurfaceComposer, data, reply);
+             sp<IBinder> display = data.readStrongBinder();
+diff --git a/libs/gui/SurfaceComposerClient.cpp b/libs/gui/SurfaceComposerClient.cpp
+index 63560c4b8..f3c6fd2f8 100644
+--- a/libs/gui/SurfaceComposerClient.cpp
++++ b/libs/gui/SurfaceComposerClient.cpp
+@@ -718,6 +718,10 @@ status_t SurfaceComposerClient::getDisplayInfo(const sp<IBinder>& display,
+     return NO_ERROR;
+ }
+ 
++status_t SurfaceComposerClient::getDisplayViewport(const sp<IBinder>& display, Rect* outViewport) {
++    return ComposerService::getComposerService()->getDisplayViewport(display, outViewport);
++}
++
+ int SurfaceComposerClient::getActiveConfig(const sp<IBinder>& display) {
+     return ComposerService::getComposerService()->getActiveConfig(display);
+ }
+diff --git a/libs/gui/include/gui/ISurfaceComposer.h b/libs/gui/include/gui/ISurfaceComposer.h
+index e40157206..99a3a7550 100644
+--- a/libs/gui/include/gui/ISurfaceComposer.h
++++ b/libs/gui/include/gui/ISurfaceComposer.h
+@@ -157,6 +157,9 @@ public:
+     virtual status_t getDisplayStats(const sp<IBinder>& display,
+             DisplayStatInfo* stats) = 0;
+ 
++    /* returns display viewport information of the given display */
++    virtual status_t getDisplayViewport(const sp<IBinder>& display, Rect* outViewport) = 0;
++
+     /* indicates which of the configurations returned by getDisplayInfo is
+      * currently active */
+     virtual int getActiveConfig(const sp<IBinder>& display) = 0;
+@@ -250,7 +253,8 @@ public:
+         ENABLE_VSYNC_INJECTIONS,
+         INJECT_VSYNC,
+         GET_LAYER_DEBUG_INFO,
+-        CREATE_SCOPED_CONNECTION
++        CREATE_SCOPED_CONNECTION,
++        GET_DISPLAY_VIEWPORT
+     };
+ 
+     virtual status_t onTransact(uint32_t code, const Parcel& data,
+diff --git a/libs/gui/include/gui/SurfaceComposerClient.h b/libs/gui/include/gui/SurfaceComposerClient.h
+index 377fe68c4..ad8a8b09d 100644
+--- a/libs/gui/include/gui/SurfaceComposerClient.h
++++ b/libs/gui/include/gui/SurfaceComposerClient.h
+@@ -79,6 +79,9 @@ public:
+     static status_t getDisplayInfo(const sp<IBinder>& display,
+             DisplayInfo* info);
+ 
++    // Get the display viewport for the given display
++    static status_t getDisplayViewport(const sp<IBinder>& display, Rect* outViewport);
++
+     // Get the index of the current active configuration (relative to the list
+     // returned by getDisplayInfo)
+     static int getActiveConfig(const sp<IBinder>& display);
+diff --git a/libs/gui/tests/Surface_test.cpp b/libs/gui/tests/Surface_test.cpp
+index 2c02ba657..6e196bfac 100644
+--- a/libs/gui/tests/Surface_test.cpp
++++ b/libs/gui/tests/Surface_test.cpp
+@@ -581,6 +581,9 @@ public:
+             Vector<DisplayInfo>* /*configs*/) override { return NO_ERROR; }
+     status_t getDisplayStats(const sp<IBinder>& /*display*/,
+             DisplayStatInfo* /*stats*/) override { return NO_ERROR; }
++    status_t getDisplayViewport(const sp<IBinder>& /*display*/, Rect* /*outViewport*/) override {
++        return NO_ERROR;
++    }
+     int getActiveConfig(const sp<IBinder>& /*display*/) override { return 0; }
+     status_t setActiveConfig(const sp<IBinder>& /*display*/, int /*id*/)
+             override {
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index f0c35d163..a403f0403 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -981,6 +981,21 @@ status_t SurfaceFlinger::getDisplayStats(const sp<IBinder>& /* display */,
+     return NO_ERROR;
+ }
+ 
++status_t SurfaceFlinger::getDisplayViewport(const sp<IBinder>& display, Rect* outViewport) {
++    if (outViewport == nullptr || display.get() == nullptr) {
++        return BAD_VALUE;
++    }
++
++    sp<const DisplayDevice> device(getDisplayDevice(display));
++    if (device == nullptr) {
++        return BAD_VALUE;
++    }
++
++    *outViewport = device->getViewport();
++
++    return NO_ERROR;
++}
++
+ int SurfaceFlinger::getActiveConfig(const sp<IBinder>& display) {
+     if (display == nullptr) {
+         ALOGE("%s : display is nullptr", __func__);
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index 8f724e98d..0148ab675 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -429,6 +429,7 @@ private:
+                                    const Rect& sourceCrop, float frameScale, bool childrenOnly);
+     virtual status_t getDisplayStats(const sp<IBinder>& display,
+             DisplayStatInfo* stats);
++    virtual status_t getDisplayViewport(const sp<IBinder>& display, Rect* outViewport);
+     virtual status_t getDisplayConfigs(const sp<IBinder>& display,
+             Vector<DisplayInfo>* configs);
+     virtual int getActiveConfig(const sp<IBinder>& display);
+-- 
+2.17.1
+

@@ -1,0 +1,482 @@
+From 820e22d3240b9d2c881a08ec78b9502e7a66ad00 Mon Sep 17 00:00:00 2001
+From: jackqdyulei <jackqdyulei@google.com>
+Date: Tue, 2 Oct 2018 14:19:27 -0700
+Subject: [PATCH 48/71] Add entitlement check for usb tethering
+
+Before this CL, usb tethering in detail page doesn't have entitlement
+check. This CL fix it by using the correct API
+
+Also polish it by updating the UI before entitlement check to align
+hotspot page. So in UI it will first check "usb tethering". If
+entitlement check fail, it will revoke and go back to previous selection.
+
+Bug: 115707279
+Test: RunSettingsRoboTests
+Merged-In: I3d2ebad2879479a870bcdfe596bb88b83c424389
+Change-Id: I3d2ebad2879479a870bcdfe596bb88b83c424389
+---
+ .../usb/UsbDefaultFragment.java               | 42 +++++++++-
+ .../usb/UsbDetailsFunctionsController.java    | 48 ++++++++++-
+ .../usb/UsbDefaultFragmentTest.java           | 55 +++++++++++--
+ .../UsbDetailsFunctionsControllerTest.java    | 81 +++++++++++++++----
+ 4 files changed, 201 insertions(+), 25 deletions(-)
+
+diff --git a/src/com/android/settings/connecteddevice/usb/UsbDefaultFragment.java b/src/com/android/settings/connecteddevice/usb/UsbDefaultFragment.java
+index e1b3d70049..6e7c6a7749 100644
+--- a/src/com/android/settings/connecteddevice/usb/UsbDefaultFragment.java
++++ b/src/com/android/settings/connecteddevice/usb/UsbDefaultFragment.java
+@@ -16,9 +16,14 @@
+ 
+ package com.android.settings.connecteddevice.usb;
+ 
++import static android.net.ConnectivityManager.TETHERING_USB;
++
+ import android.content.Context;
+ import android.graphics.drawable.Drawable;
++import android.hardware.usb.UsbManager;
++import android.net.ConnectivityManager;
+ import android.os.Bundle;
++import android.util.Log;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+ import com.android.internal.logging.nano.MetricsProto;
+@@ -39,11 +44,18 @@ import java.util.List;
+ public class UsbDefaultFragment extends RadioButtonPickerFragment {
+     @VisibleForTesting
+     UsbBackend mUsbBackend;
++    @VisibleForTesting
++    ConnectivityManager mConnectivityManager;
++    @VisibleForTesting
++    OnStartTetheringCallback mOnStartTetheringCallback = new OnStartTetheringCallback();
++    @VisibleForTesting
++    long mPreviousFunctions;
+ 
+     @Override
+     public void onAttach(Context context) {
+         super.onAttach(context);
+         mUsbBackend = new UsbBackend(context);
++        mConnectivityManager = context.getSystemService(ConnectivityManager.class);
+     }
+ 
+     @Override
+@@ -103,9 +115,37 @@ public class UsbDefaultFragment extends RadioButtonPickerFragment {
+     @Override
+     protected boolean setDefaultKey(String key) {
+         long functions = UsbBackend.usbFunctionsFromString(key);
++        mPreviousFunctions = mUsbBackend.getCurrentFunctions();
+         if (!Utils.isMonkeyRunning()) {
+-            mUsbBackend.setDefaultUsbFunctions(functions);
++            if (functions == UsbManager.FUNCTION_RNDIS) {
++                // We need to have entitlement check for usb tethering, so use API in
++                // ConnectivityManager.
++                mConnectivityManager.startTethering(TETHERING_USB, true /* showProvisioningUi */,
++                        mOnStartTetheringCallback);
++            } else {
++                mUsbBackend.setDefaultUsbFunctions(functions);
++            }
++
+         }
+         return true;
+     }
++
++    @VisibleForTesting
++    final class OnStartTetheringCallback extends
++            ConnectivityManager.OnStartTetheringCallback {
++
++        @Override
++        public void onTetheringStarted() {
++            super.onTetheringStarted();
++            // Set default usb functions again to make internal data persistent
++            mUsbBackend.setDefaultUsbFunctions(UsbManager.FUNCTION_RNDIS);
++        }
++
++        @Override
++        public void onTetheringFailed() {
++            super.onTetheringFailed();
++            mUsbBackend.setDefaultUsbFunctions(mPreviousFunctions);
++            updateCandidates();
++        }
++    }
+ }
+\ No newline at end of file
+diff --git a/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsController.java b/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsController.java
+index 47545ca17f..c5fec421af 100644
+--- a/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsController.java
++++ b/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsController.java
+@@ -16,11 +16,15 @@
+ 
+ package com.android.settings.connecteddevice.usb;
+ 
++import static android.net.ConnectivityManager.TETHERING_USB;
++
+ import android.content.Context;
+ import android.hardware.usb.UsbManager;
+ import android.hardware.usb.UsbPort;
++import android.support.annotation.VisibleForTesting;
+ import android.support.v7.preference.PreferenceCategory;
+ import android.support.v7.preference.PreferenceScreen;
++import android.net.ConnectivityManager;
+ 
+ import com.android.settings.R;
+ import com.android.settings.Utils;
+@@ -46,10 +50,18 @@ public class UsbDetailsFunctionsController extends UsbDetailsController
+     }
+ 
+     private PreferenceCategory mProfilesContainer;
++    private ConnectivityManager mConnectivityManager;
++    @VisibleForTesting
++    OnStartTetheringCallback mOnStartTetheringCallback;
++    @VisibleForTesting
++    long mPreviousFunction;
+ 
+     public UsbDetailsFunctionsController(Context context, UsbDetailsFragment fragment,
+             UsbBackend backend) {
+         super(context, fragment, backend);
++        mConnectivityManager = context.getSystemService(ConnectivityManager.class);
++        mOnStartTetheringCallback = new OnStartTetheringCallback();
++        mPreviousFunction = mUsbBackend.getCurrentFunctions();
+     }
+ 
+     @Override
+@@ -96,9 +108,28 @@ public class UsbDetailsFunctionsController extends UsbDetailsController
+ 
+     @Override
+     public void onRadioButtonClicked(RadioButtonPreference preference) {
+-        long function = UsbBackend.usbFunctionsFromString(preference.getKey());
+-        if (function != mUsbBackend.getCurrentFunctions() && !Utils.isMonkeyRunning()) {
+-            mUsbBackend.setCurrentFunctions(function);
++        final long function = UsbBackend.usbFunctionsFromString(preference.getKey());
++        final long previousFunction = mUsbBackend.getCurrentFunctions();
++        if (function != previousFunction && !Utils.isMonkeyRunning()) {
++            mPreviousFunction = previousFunction;
++
++            if (function == UsbManager.FUNCTION_RNDIS) {
++                //Update the UI in advance to make it looks smooth
++                final RadioButtonPreference prevPref =
++                        (RadioButtonPreference) mProfilesContainer.findPreference(
++                                UsbBackend.usbFunctionsToString(mPreviousFunction));
++                if (prevPref != null) {
++                    prevPref.setChecked(false);
++                    preference.setChecked(true);
++                }
++
++                // We need to have entitlement check for usb tethering, so use API in
++                // ConnectivityManager.
++                mConnectivityManager.startTethering(TETHERING_USB, true /* showProvisioningUi */,
++                        mOnStartTetheringCallback);
++            } else {
++                mUsbBackend.setCurrentFunctions(function);
++            }
+         }
+     }
+ 
+@@ -111,4 +142,15 @@ public class UsbDetailsFunctionsController extends UsbDetailsController
+     public String getPreferenceKey() {
+         return "usb_details_functions";
+     }
++
++    @VisibleForTesting
++    final class OnStartTetheringCallback extends
++            ConnectivityManager.OnStartTetheringCallback {
++
++        @Override
++        public void onTetheringFailed() {
++            super.onTetheringFailed();
++            mUsbBackend.setCurrentFunctions(mPreviousFunction);
++        }
++    }
+ }
+diff --git a/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDefaultFragmentTest.java b/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDefaultFragmentTest.java
+index dca10d7339..2c619dc405 100644
+--- a/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDefaultFragmentTest.java
++++ b/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDefaultFragmentTest.java
+@@ -16,12 +16,21 @@
+ 
+ package com.android.settings.connecteddevice.usb;
+ 
++import static android.net.ConnectivityManager.TETHERING_USB;
++
+ import static com.google.common.truth.Truth.assertThat;
++
++import static org.mockito.Matchers.anyLong;
++import static org.mockito.Mockito.doNothing;
++import static org.mockito.Mockito.doReturn;
++import static org.mockito.Mockito.never;
++import static org.mockito.Mockito.spy;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.verifyZeroInteractions;
+ import static org.mockito.Mockito.when;
+ 
+ import android.hardware.usb.UsbManager;
++import android.net.ConnectivityManager;
+ 
+ import com.android.settings.testutils.SettingsRobolectricTestRunner;
+ import com.android.settings.testutils.shadow.ShadowUtils;
+@@ -31,13 +40,17 @@ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.Mock;
+ import org.mockito.MockitoAnnotations;
++import org.robolectric.Robolectric;
+ import org.robolectric.annotation.Config;
++import org.robolectric.util.FragmentTestUtil;
+ 
+ @RunWith(SettingsRobolectricTestRunner.class)
+ public class UsbDefaultFragmentTest {
+ 
+     @Mock
+     private UsbBackend mUsbBackend;
++    @Mock
++    private ConnectivityManager mConnectivityManager;
+ 
+     private UsbDefaultFragment mFragment;
+ 
+@@ -46,6 +59,7 @@ public class UsbDefaultFragmentTest {
+         MockitoAnnotations.initMocks(this);
+         mFragment = new UsbDefaultFragment();
+         mFragment.mUsbBackend = mUsbBackend;
++        mFragment.mConnectivityManager = mConnectivityManager;
+     }
+ 
+     @Test
+@@ -101,12 +115,6 @@ public class UsbDefaultFragmentTest {
+         verify(mUsbBackend).setDefaultUsbFunctions(UsbManager.FUNCTION_PTP);
+     }
+ 
+-    @Test
+-    public void setDefaultKey_isRndis_shouldSetRndis() {
+-        mFragment.setDefaultKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_RNDIS));
+-        verify(mUsbBackend).setDefaultUsbFunctions(UsbManager.FUNCTION_RNDIS);
+-    }
+-
+     @Test
+     public void setDefaultKey_isMidi_shouldSetMidi() {
+         mFragment.setDefaultKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_MIDI));
+@@ -118,6 +126,39 @@ public class UsbDefaultFragmentTest {
+     public void setDefaultKey_isMonkey_shouldDoNothing() {
+         ShadowUtils.setIsUserAMonkey(true);
+         mFragment.setDefaultKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_MTP));
+-        verifyZeroInteractions(mUsbBackend);
++
++        verify(mUsbBackend, never()).setDefaultUsbFunctions(anyLong());
++    }
++
++    @Test
++    public void setDefaultKey_functionRndis_startTetheringInvoked() {
++        doReturn(UsbManager.FUNCTION_MTP).when(mUsbBackend).getCurrentFunctions();
++
++        mFragment.setDefaultKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_RNDIS));
++
++        verify(mConnectivityManager).startTethering(TETHERING_USB, true,
++                mFragment.mOnStartTetheringCallback);
++        assertThat(mFragment.mPreviousFunctions).isEqualTo(
++                UsbManager.FUNCTION_MTP);
++    }
++
++    @Test
++    public void setDefaultKey_functionOther_setCurrentFunctionInvoked() {
++        doReturn(UsbManager.FUNCTION_MTP).when(mUsbBackend).getCurrentFunctions();
++
++        mFragment.setDefaultKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_PTP));
++
++        verify(mUsbBackend).setDefaultUsbFunctions(UsbManager.FUNCTION_PTP);
++        assertThat(mFragment.mPreviousFunctions).isEqualTo(
++                UsbManager.FUNCTION_MTP);
++    }
++
++    @Test
++    public void onTetheringStarted_setDefaultUsbFunctions() {
++        mFragment.mPreviousFunctions = UsbManager.FUNCTION_PTP;
++
++        mFragment.mOnStartTetheringCallback.onTetheringStarted();
++
++        verify(mUsbBackend).setDefaultUsbFunctions(UsbManager.FUNCTION_RNDIS);
+     }
+ }
+diff --git a/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsControllerTest.java b/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsControllerTest.java
+index 713fd2471d..2da89447ef 100644
+--- a/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsControllerTest.java
++++ b/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsControllerTest.java
+@@ -16,9 +16,14 @@
+ 
+ package com.android.settings.connecteddevice.usb;
+ 
++import static android.net.ConnectivityManager.TETHERING_USB;
++
+ import static com.google.common.truth.Truth.assertThat;
+ 
+ import static org.mockito.ArgumentMatchers.anyLong;
++import static org.mockito.Mockito.doReturn;
++import static org.mockito.Mockito.never;
++import static org.mockito.Mockito.spy;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+ 
+@@ -26,6 +31,7 @@ import android.app.Activity;
+ import android.content.Context;
+ import android.hardware.usb.UsbManager;
+ import android.hardware.usb.UsbPort;
++import android.net.ConnectivityManager;
+ import android.support.v7.preference.PreferenceCategory;
+ import android.support.v7.preference.PreferenceManager;
+ import android.support.v7.preference.PreferenceScreen;
+@@ -53,9 +59,10 @@ public class UsbDetailsFunctionsControllerTest {
+     private UsbDetailsFunctionsController mDetailsFunctionsController;
+     private Context mContext;
+     private Lifecycle mLifecycle;
+-    private PreferenceCategory mPreference;
++    private PreferenceCategory mPreferenceCategory;
+     private PreferenceManager mPreferenceManager;
+     private PreferenceScreen mScreen;
++    private RadioButtonPreference mRadioButtonPreference;
+ 
+     @Mock
+     private UsbBackend mUsbBackend;
+@@ -63,12 +70,14 @@ public class UsbDetailsFunctionsControllerTest {
+     private UsbDetailsFragment mFragment;
+     @Mock
+     private Activity mActivity;
++    @Mock
++    private ConnectivityManager mConnectivityManager;
+ 
+     @Before
+     public void setUp() {
+         MockitoAnnotations.initMocks(this);
+ 
+-        mContext = RuntimeEnvironment.application;
++        mContext = spy(RuntimeEnvironment.application);
+         mLifecycle = new Lifecycle(() -> mLifecycle);
+         mPreferenceManager = new PreferenceManager(mContext);
+         mScreen = mPreferenceManager.createPreferenceScreen(mContext);
+@@ -78,12 +87,16 @@ public class UsbDetailsFunctionsControllerTest {
+         when(mFragment.getContext()).thenReturn(mContext);
+         when(mFragment.getPreferenceManager()).thenReturn(mPreferenceManager);
+         when(mFragment.getPreferenceScreen()).thenReturn(mScreen);
++        when(mContext.getSystemService(ConnectivityManager.class)).thenReturn(mConnectivityManager);
+ 
+         mDetailsFunctionsController = new UsbDetailsFunctionsController(mContext, mFragment,
+                 mUsbBackend);
+-        mPreference = new PreferenceCategory(mContext);
+-        mPreference.setKey(mDetailsFunctionsController.getPreferenceKey());
+-        mScreen.addPreference(mPreference);
++        mPreferenceCategory = new PreferenceCategory(mContext);
++        mPreferenceCategory.setKey(mDetailsFunctionsController.getPreferenceKey());
++        mScreen.addPreference(mPreferenceCategory);
++        mDetailsFunctionsController.displayPreference(mScreen);
++
++        mRadioButtonPreference = new RadioButtonPreference(mContext);
+     }
+ 
+     @Test
+@@ -105,10 +118,9 @@ public class UsbDetailsFunctionsControllerTest {
+     public void displayRefresh_disconnected_shouldDisable() {
+         when(mUsbBackend.areFunctionsSupported(anyLong())).thenReturn(true);
+ 
+-        mDetailsFunctionsController.displayPreference(mScreen);
+         mDetailsFunctionsController.refresh(false, UsbManager.FUNCTION_NONE,
+                 UsbPort.POWER_ROLE_SINK, UsbPort.DATA_ROLE_DEVICE);
+-        assertThat(mPreference.isEnabled()).isFalse();
++        assertThat(mPreferenceCategory.isEnabled()).isFalse();
+     }
+ 
+     @Test
+@@ -118,7 +130,6 @@ public class UsbDetailsFunctionsControllerTest {
+         when(mUsbBackend.areFunctionsSupported(UsbManager.FUNCTION_PTP)).thenReturn(false);
+         when(mUsbBackend.areFunctionsSupported(UsbManager.FUNCTION_RNDIS)).thenReturn(false);
+ 
+-        mDetailsFunctionsController.displayPreference(mScreen);
+         mDetailsFunctionsController.refresh(true, UsbManager.FUNCTION_NONE, UsbPort.POWER_ROLE_SINK,
+                 UsbPort.DATA_ROLE_DEVICE);
+         List<RadioButtonPreference> prefs = getRadioPreferences();
+@@ -131,7 +142,6 @@ public class UsbDetailsFunctionsControllerTest {
+     public void displayRefresh_mtpEnabled_shouldCheckSwitches() {
+         when(mUsbBackend.areFunctionsSupported(anyLong())).thenReturn(true);
+ 
+-        mDetailsFunctionsController.displayPreference(mScreen);
+         mDetailsFunctionsController.refresh(true, UsbManager.FUNCTION_MTP, UsbPort.POWER_ROLE_SINK,
+                 UsbPort.DATA_ROLE_DEVICE);
+         List<RadioButtonPreference> prefs = getRadioPreferences();
+@@ -145,7 +155,6 @@ public class UsbDetailsFunctionsControllerTest {
+     public void onClickMtp_noneEnabled_shouldEnableMtp() {
+         when(mUsbBackend.areFunctionsSupported(anyLong())).thenReturn(true);
+ 
+-        mDetailsFunctionsController.displayPreference(mScreen);
+         mDetailsFunctionsController.refresh(true, UsbManager.FUNCTION_NONE, UsbPort.POWER_ROLE_SINK,
+                 UsbPort.DATA_ROLE_DEVICE);
+         when(mUsbBackend.getCurrentFunctions()).thenReturn(UsbManager.FUNCTION_NONE);
+@@ -164,7 +173,6 @@ public class UsbDetailsFunctionsControllerTest {
+     public void onClickMtp_ptpEnabled_shouldEnableMtp() {
+         when(mUsbBackend.areFunctionsSupported(anyLong())).thenReturn(true);
+ 
+-        mDetailsFunctionsController.displayPreference(mScreen);
+         mDetailsFunctionsController.refresh(true, UsbManager.FUNCTION_PTP, UsbPort.POWER_ROLE_SINK,
+                 UsbPort.DATA_ROLE_DEVICE);
+         when(mUsbBackend.getCurrentFunctions()).thenReturn(UsbManager.FUNCTION_PTP);
+@@ -186,7 +194,6 @@ public class UsbDetailsFunctionsControllerTest {
+     public void onClickNone_mtpEnabled_shouldDisableMtp() {
+         when(mUsbBackend.areFunctionsSupported(anyLong())).thenReturn(true);
+ 
+-        mDetailsFunctionsController.displayPreference(mScreen);
+         mDetailsFunctionsController.refresh(true, UsbManager.FUNCTION_MTP, UsbPort.POWER_ROLE_SINK,
+                 UsbPort.DATA_ROLE_DEVICE);
+         when(mUsbBackend.getCurrentFunctions()).thenReturn(UsbManager.FUNCTION_MTP);
+@@ -210,9 +217,55 @@ public class UsbDetailsFunctionsControllerTest {
+ 
+     private List<RadioButtonPreference> getRadioPreferences() {
+         ArrayList<RadioButtonPreference> result = new ArrayList<>();
+-        for (int i = 0; i < mPreference.getPreferenceCount(); i++) {
+-            result.add((RadioButtonPreference) mPreference.getPreference(i));
++        for (int i = 0; i < mPreferenceCategory.getPreferenceCount(); i++) {
++            result.add((RadioButtonPreference) mPreferenceCategory.getPreference(i));
+         }
+         return result;
+     }
++
++    @Test
++    public void onRadioButtonClicked_functionRndis_startTetheringInvoked() {
++        mRadioButtonPreference.setKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_RNDIS));
++        doReturn(UsbManager.FUNCTION_MTP).when(mUsbBackend).getCurrentFunctions();
++
++        mDetailsFunctionsController.onRadioButtonClicked(mRadioButtonPreference);
++
++        verify(mConnectivityManager).startTethering(TETHERING_USB, true,
++                mDetailsFunctionsController.mOnStartTetheringCallback);
++        assertThat(mDetailsFunctionsController.mPreviousFunction).isEqualTo(
++                UsbManager.FUNCTION_MTP);
++    }
++
++    @Test
++    public void onRadioButtonClicked_functionOther_setCurrentFunctionInvoked() {
++        mRadioButtonPreference.setKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_PTP));
++        doReturn(UsbManager.FUNCTION_MTP).when(mUsbBackend).getCurrentFunctions();
++
++        mDetailsFunctionsController.onRadioButtonClicked(mRadioButtonPreference);
++
++        verify(mUsbBackend).setCurrentFunctions(UsbManager.FUNCTION_PTP);
++        assertThat(mDetailsFunctionsController.mPreviousFunction).isEqualTo(
++                UsbManager.FUNCTION_MTP);
++    }
++
++    @Test
++    public void onRadioButtonClicked_clickSameButton_doNothing() {
++        mRadioButtonPreference.setKey(UsbBackend.usbFunctionsToString(UsbManager.FUNCTION_PTP));
++        doReturn(UsbManager.FUNCTION_PTP).when(mUsbBackend).getCurrentFunctions();
++
++        mDetailsFunctionsController.onRadioButtonClicked(mRadioButtonPreference);
++
++        verify(mUsbBackend, never()).setCurrentFunctions(UsbManager.FUNCTION_PTP);
++        verify(mConnectivityManager, never()).startTethering(TETHERING_USB, true,
++                mDetailsFunctionsController.mOnStartTetheringCallback);
++    }
++
++    @Test
++    public void onTetheringFailed_resetPreviousFunctions() {
++        mDetailsFunctionsController.mPreviousFunction = UsbManager.FUNCTION_PTP;
++
++        mDetailsFunctionsController.mOnStartTetheringCallback.onTetheringFailed();
++
++        verify(mUsbBackend).setCurrentFunctions(UsbManager.FUNCTION_PTP);
++    }
+ }
+-- 
+2.17.1
+

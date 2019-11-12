@@ -1,0 +1,62 @@
+From a950098d66721ad689daef1c6ed2ee615a9d7feb Mon Sep 17 00:00:00 2001
+From: Jakub Pawlowski <jpawlowski@google.com>
+Date: Thu, 6 Jun 2019 13:54:55 +0200
+Subject: [PATCH 56/59] DO NOT MERGE Fix for Bluetooth connection being dropped
+ after HCI Read Encryption Key Size
+
+If remote device stop the encryption before we call "Read Encryption Key Size",
+we might receive Insufficient Security, which means that link is no longer
+encrypted.
+
+In such cases we should stay connected, rather than disconnecting the
+link.
+
+Test: Connect to device that stop encryption right after encryption is
+complete, i.e. to change roles.
+Bug: 124301137
+Bug: 132626699
+
+Change-Id: Iab0fd9f357d18a6b048b971d0393fbb47fd4d793
+Merged-In: Iab0fd9f357d18a6b048b971d0393fbb47fd4d793
+(cherry picked from commit c978f86b506f31567b5991c91cdbe4c142ca8edd)
+---
+ stack/btu/btu_hcif.cc | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/stack/btu/btu_hcif.cc b/stack/btu/btu_hcif.cc
+index fbd769510..b5243cdca 100644
+--- a/stack/btu/btu_hcif.cc
++++ b/stack/btu/btu_hcif.cc
+@@ -733,6 +733,14 @@ static void read_encryption_key_size_complete_after_encryption_change(
+                  << std::to_string(key_size);
+   }
+ 
++  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
++    /* If remote device stop the encryption before we call "Read Encryption Key
++     * Size", we might receive Insufficient Security, which means that link is
++     * no longer encrypted. */
++    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
++    return;
++  }
++
+   if (status != HCI_SUCCESS) {
+     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+@@ -1694,6 +1702,14 @@ static void read_encryption_key_size_complete_after_key_refresh(
+                  << std::to_string(key_size);
+   }
+ 
++  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
++    /* If remote device stop the encryption before we call "Read Encryption Key
++     * Size", we might receive Insufficient Security, which means that link is
++     * no longer encrypted. */
++    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
++    return;
++  }
++
+   if (status != HCI_SUCCESS) {
+     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+-- 
+2.17.1
+

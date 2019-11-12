@@ -1,0 +1,63 @@
+From ea8ebd5fcbfe399c7876909e2e680d59fba59cf0 Mon Sep 17 00:00:00 2001
+From: Eric Laurent <elaurent@google.com>
+Date: Mon, 23 Jul 2018 14:15:40 -0700
+Subject: [PATCH 23/80] audio policy: fix regression in Audio MMAP device
+ selection
+
+Commit f3a5a601 caused a regression for AAudio MMAP playback use case
+where disconnecting currently selected device does not generate a
+disconnect callback to client causing silent audio until the
+stream is closed and reopened.
+
+This CL fixes a logical flaw in method SessionRouteMap::getActiveDeviceForStream()
+introduced by commit f3a5a601 causing a stale forced device to be
+returned after this device was disconnected.
+
+Bug: 111711159
+Bug: 79878501
+Test: CTS tests for audi routing and AAudio. Audio smoke tests
+Merged-In: Ibb16e26bc59b9e3f99bc74eb944601c6be5026dd
+Change-Id: Ibb16e26bc59b9e3f99bc74eb944601c6be5026dd
+---
+ .../common/managerdefinitions/src/SessionRoute.cpp     | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/services/audiopolicy/common/managerdefinitions/src/SessionRoute.cpp b/services/audiopolicy/common/managerdefinitions/src/SessionRoute.cpp
+index d34214b72..22065262a 100644
+--- a/services/audiopolicy/common/managerdefinitions/src/SessionRoute.cpp
++++ b/services/audiopolicy/common/managerdefinitions/src/SessionRoute.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-#define LOG_TAG "APM::SessionRoute"
++#define LOG_TAG "APM_SessionRoute"
+ //#define LOG_NDEBUG 0
+ 
+ #include "SessionRoute.h"
+@@ -122,19 +122,17 @@ void SessionRouteMap::addRoute(audio_session_t session,
+ audio_devices_t SessionRouteMap::getActiveDeviceForStream(audio_stream_type_t streamType,
+                                                           const DeviceVector& availableDevices)
+ {
+-    audio_devices_t device = AUDIO_DEVICE_NONE;
+-
+     for (size_t index = 0; index < size(); index++) {
+         sp<SessionRoute> route = valueAt(index);
+         if (streamType == route->mStreamType && route->isActiveOrChanged()
+                 && route->mDeviceDescriptor != 0) {
+-            device = route->mDeviceDescriptor->type();
++            audio_devices_t device = route->mDeviceDescriptor->type();
+             if (!availableDevices.getDevicesFromType(device).isEmpty()) {
+-                break;
++                return device;
+             }
+         }
+     }
+-    return device;
++    return AUDIO_DEVICE_NONE;
+ }
+ 
+ } // namespace android
+-- 
+2.17.1
+

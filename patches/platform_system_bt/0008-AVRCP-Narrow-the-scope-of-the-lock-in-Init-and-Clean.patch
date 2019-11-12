@@ -1,0 +1,53 @@
+From 9945de2bfb919336d7271040ace1e75a70dac6da Mon Sep 17 00:00:00 2001
+From: Ajay Panicker <apanicke@google.com>
+Date: Thu, 24 May 2018 11:26:15 -0700
+Subject: [PATCH 08/59] AVRCP: Narrow the scope of the lock in Init and Cleanup
+
+Bug: 80227904
+Test: Disable Bluetooth while connected to a device
+Change-Id: I6c77e38ebaa84e4a075ef4636d6b519d4ccfb8c5
+(cherry picked from commit 4369f6f7607c17ef0ab77bb52d23f20dbc54e424)
+---
+ btif/avrcp/avrcp_service.cc | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/btif/avrcp/avrcp_service.cc b/btif/avrcp/avrcp_service.cc
+index 14f098f20..26b826cf9 100644
+--- a/btif/avrcp/avrcp_service.cc
++++ b/btif/avrcp/avrcp_service.cc
+@@ -282,12 +282,14 @@ class VolumeInterfaceWrapper : public VolumeInterface {
+ void AvrcpService::Init(MediaInterface* media_interface,
+                         VolumeInterface* volume_interface) {
+   LOG(INFO) << "AVRCP Target Service started";
+-  std::lock_guard<std::mutex> lock(jni_mutex_);
+   if (instance_ == nullptr) {
+     instance_ = new AvrcpService();
+   }
+ 
+-  jni_message_loop_ = get_jni_message_loop();
++  {
++    std::lock_guard<std::mutex> lock(jni_mutex_);
++    jni_message_loop_ = get_jni_message_loop();
++  }
+ 
+   // TODO (apanicke): Add a function that sets up the SDP records once we
+   // remove the AVRCP SDP setup in AVDTP (bta_av_main.cc)
+@@ -310,10 +312,11 @@ void AvrcpService::Init(MediaInterface* media_interface,
+ 
+ void AvrcpService::Cleanup() {
+   LOG(INFO) << "AVRCP Target Service stopped";
+-  std::lock_guard<std::mutex> lock(jni_mutex_);
+-
+-  task_tracker_.TryCancelAll();
+-  jni_message_loop_ = nullptr;
++  {
++    std::lock_guard<std::mutex> lock(jni_mutex_);
++    task_tracker_.TryCancelAll();
++    jni_message_loop_ = nullptr;
++  }
+ 
+   instance_->connection_handler_->CleanUp();
+   instance_->connection_handler_ = nullptr;
+-- 
+2.17.1
+

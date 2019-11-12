@@ -1,0 +1,86 @@
+From 87a5411e04929045b27e8e89fab5f394992a09cb Mon Sep 17 00:00:00 2001
+From: Sundeep Ghuman <sghuman@google.com>
+Date: Thu, 15 Feb 2018 14:49:15 -0800
+Subject: [PATCH 135/306] Safeguard against NPE race condition.
+
+It is possible for the main activity to be quit before the posted
+message is executed, safeguard against NPEs in this scenario.
+
+Bug: 73484470
+Test: runtest --path frameworks/base/packages/SettingsLib/tests/integ/src/com/android/settingslib/wifi/AccessPointTest.jav
+Change-Id: I34b40089ef2eae213c804e4e379d6ab7825bbceb
+(cherry picked from commit 5d14fd7b657c9cc2ece5507b96d47a2a0e5b3e25)
+---
+ .../android/settingslib/wifi/AccessPoint.java | 37 +++++++++++++------
+ 1 file changed, 26 insertions(+), 11 deletions(-)
+
+diff --git a/packages/SettingsLib/src/com/android/settingslib/wifi/AccessPoint.java b/packages/SettingsLib/src/com/android/settingslib/wifi/AccessPoint.java
+index b380ac53dda..c5c116982b4 100644
+--- a/packages/SettingsLib/src/com/android/settingslib/wifi/AccessPoint.java
++++ b/packages/SettingsLib/src/com/android/settingslib/wifi/AccessPoint.java
+@@ -1048,15 +1048,20 @@ public class AccessPoint implements Comparable<AccessPoint> {
+         if (newLevel > 0 && newLevel != oldLevel) {
+             // Only update labels on visible rssi changes
+             updateSpeed();
+-            if (mAccessPointListener != null) {
+-                ThreadUtils.postOnMainThread(() -> mAccessPointListener.onLevelChanged(this));
+-            }
+-        }
++            ThreadUtils.postOnMainThread(() -> {
++                if (mAccessPointListener != null) {
++                    mAccessPointListener.onLevelChanged(this);
++                }
++            });
+ 
+-        if (mAccessPointListener != null) {
+-            ThreadUtils.postOnMainThread(() -> mAccessPointListener.onAccessPointChanged(this));
+         }
+ 
++        ThreadUtils.postOnMainThread(() -> {
++            if (mAccessPointListener != null) {
++                mAccessPointListener.onAccessPointChanged(this);
++            }
++        });
++
+         if (!scanResults.isEmpty()) {
+             ScanResult result = scanResults.iterator().next();
+ 
+@@ -1102,10 +1107,18 @@ public class AccessPoint implements Comparable<AccessPoint> {
+             mNetworkInfo = null;
+         }
+         if (updated && mAccessPointListener != null) {
+-            ThreadUtils.postOnMainThread(() -> mAccessPointListener.onAccessPointChanged(this));
++            ThreadUtils.postOnMainThread(() -> {
++                if (mAccessPointListener != null) {
++                    mAccessPointListener.onAccessPointChanged(this);
++                }
++            });
+ 
+             if (oldLevel != getLevel() /* current level */) {
+-                ThreadUtils.postOnMainThread(() -> mAccessPointListener.onLevelChanged(this));
++                ThreadUtils.postOnMainThread(() -> {
++                    if (mAccessPointListener != null) {
++                        mAccessPointListener.onLevelChanged(this);
++                    }
++                });
+             }
+         }
+ 
+@@ -1115,9 +1128,11 @@ public class AccessPoint implements Comparable<AccessPoint> {
+     void update(@Nullable WifiConfiguration config) {
+         mConfig = config;
+         networkId = config != null ? config.networkId : WifiConfiguration.INVALID_NETWORK_ID;
+-        if (mAccessPointListener != null) {
+-            ThreadUtils.postOnMainThread(() -> mAccessPointListener.onAccessPointChanged(this));
+-        }
++        ThreadUtils.postOnMainThread(() -> {
++            if (mAccessPointListener != null) {
++                mAccessPointListener.onAccessPointChanged(this);
++            }
++        });
+     }
+ 
+     @VisibleForTesting
+-- 
+2.17.1
+

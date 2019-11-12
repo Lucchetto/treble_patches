@@ -1,0 +1,60 @@
+From 6b1f5732eb55160163cba89b36243465f02a3942 Mon Sep 17 00:00:00 2001
+From: chaviw <chaviw@google.com>
+Date: Thu, 2 Nov 2017 11:27:51 -0700
+Subject: [PATCH 019/306] Fix window cropping issue.
+
+Comparing mLayer to mSystemDecorLayer no longer makes sense since mLayer
+is always zero. The code was always falling into this check and causing
+the crop to be calculated incorrectly by ignoring system decor.
+
+Test: Apps in split screen now have the background when draging.
+Change-Id: I3e310390fcc840d9ae869ed58243a9f8ff5d1337
+(cherry picked from commit 0eac168982c393c71d1fef7711733f39c07b0290)
+---
+ services/core/java/com/android/server/wm/WindowState.java | 3 ---
+ .../src/com/android/server/wm/WindowFrameTests.java       | 8 +++-----
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/WindowState.java b/services/core/java/com/android/server/wm/WindowState.java
+index 502fc127e0c..a2323a46d23 100644
+--- a/services/core/java/com/android/server/wm/WindowState.java
++++ b/services/core/java/com/android/server/wm/WindowState.java
+@@ -4111,9 +4111,6 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+             policyCrop.intersect(-mCompatFrame.left, -mCompatFrame.top,
+                     displayInfo.logicalWidth - mCompatFrame.left,
+                     displayInfo.logicalHeight - mCompatFrame.top);
+-        } else if (mLayer >= mService.mSystemDecorLayer) {
+-            // Above the decor layer is easy, just use the entire window
+-            policyCrop.set(0, 0, mCompatFrame.width(), mCompatFrame.height());
+         } else if (mDecorFrame.isEmpty()) {
+             // Windows without policy decor aren't cropped.
+             policyCrop.set(0, 0, mCompatFrame.width(), mCompatFrame.height());
+diff --git a/services/tests/servicestests/src/com/android/server/wm/WindowFrameTests.java b/services/tests/servicestests/src/com/android/server/wm/WindowFrameTests.java
+index 503e1ac4563..fdcf57b1824 100644
+--- a/services/tests/servicestests/src/com/android/server/wm/WindowFrameTests.java
++++ b/services/tests/servicestests/src/com/android/server/wm/WindowFrameTests.java
+@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
+ import android.app.ActivityManager.TaskDescription;
+ import android.content.res.Configuration;
+ import android.graphics.Rect;
++import android.os.Debug;
+ import android.platform.test.annotations.Presubmit;
+ import android.support.test.InstrumentationRegistry;
+ import android.support.test.filters.SmallTest;
+@@ -339,11 +340,8 @@ public class WindowFrameTests extends WindowTestsBase {
+ 
+         w.computeFrameLw(pf, df, of, cf, vf, dcf, sf, null);
+         w.calculatePolicyCrop(policyCrop);
+-        // If we were above system decor we wouldnt' get any cropping though
+-        w.mLayer = sWm.mSystemDecorLayer + 1;
+-        w.calculatePolicyCrop(policyCrop);
+-        assertRect(policyCrop, 0, 0, logicalWidth, logicalHeight);
+-        w.mLayer = 1;
++        assertRect(policyCrop, 0, cf.top, logicalWidth, cf.bottom);
++
+         dcf.setEmpty();
+         // Likewise with no decor frame we would get no crop
+         w.computeFrameLw(pf, df, of, cf, vf, dcf, sf, null);
+-- 
+2.17.1
+

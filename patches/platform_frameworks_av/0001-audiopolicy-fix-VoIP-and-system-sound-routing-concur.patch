@@ -1,0 +1,85 @@
+From 484e927cf9e9bdd91f21796d52ea23c8fe49f670 Mon Sep 17 00:00:00 2001
+From: Eric Laurent <elaurent@google.com>
+Date: Thu, 7 Jun 2018 17:29:23 -0700
+Subject: [PATCH 01/80] audiopolicy: fix VoIP and system sound routing
+ concurrency
+
+On platforms with dedicated output profiles for VoIP, activity on
+all output streams should be considered when use case priority is
+evaluated while selecting current device on a given output stream.
+
+For now, implement a simple rule taking only into account output streams
+attached to the same audio HAL module and limited to voice call use
+case.
+This should be extended to all use cases with a refined rule
+considering mutually exclusive devices (using same backend) as opposed
+to all streams on the same audio HAL module.
+
+Bug: 109640706
+Test: repro steps in b/109640706
+Change-Id: I2cea35911a6121980f128a3a3d694699364854eb
+---
+ .../managerdefault/AudioPolicyManager.cpp     | 20 ++++++++++++++++++-
+ .../managerdefault/AudioPolicyManager.h       |  4 ++++
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/services/audiopolicy/managerdefault/AudioPolicyManager.cpp b/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+index 377555155..4b767b5ce 100644
+--- a/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
++++ b/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+@@ -4872,11 +4872,15 @@ audio_devices_t AudioPolicyManager::getNewOutputDevice(const sp<AudioOutputDescr
+     //      use device for strategy DTMF
+     // 9: the strategy for beacon, a.k.a. "transmitted through speaker" is active on the output:
+     //      use device for strategy t-t-s
++
++    // FIXME: extend use of isStrategyActiveOnSameModule() to all strategies
++    // with a refined rule considering mutually exclusive devices (using same backend)
++    // as opposed to all streams on the same audio HAL module.
+     if (isStrategyActive(outputDesc, STRATEGY_ENFORCED_AUDIBLE) &&
+         mEngine->getForceUse(AUDIO_POLICY_FORCE_FOR_SYSTEM) == AUDIO_POLICY_FORCE_SYSTEM_ENFORCED) {
+         device = getDeviceForStrategy(STRATEGY_ENFORCED_AUDIBLE, fromCache);
+     } else if (isInCall() ||
+-                    isStrategyActive(outputDesc, STRATEGY_PHONE)) {
++               isStrategyActiveOnSameModule(outputDesc, STRATEGY_PHONE)) {
+         device = getDeviceForStrategy(STRATEGY_PHONE, fromCache);
+     } else if (isStrategyActive(outputDesc, STRATEGY_SONIFICATION)) {
+         device = getDeviceForStrategy(STRATEGY_SONIFICATION, fromCache);
+@@ -5884,6 +5888,20 @@ bool AudioPolicyManager::isStrategyActive(const sp<AudioOutputDescriptor>& outpu
+     return false;
+ }
+ 
++bool AudioPolicyManager::isStrategyActiveOnSameModule(const sp<AudioOutputDescriptor>& outputDesc,
++                                          routing_strategy strategy, uint32_t inPastMs,
++                                          nsecs_t sysTime) const
++{
++    for (size_t i = 0; i < mOutputs.size(); i++) {
++        sp<SwAudioOutputDescriptor> desc = mOutputs.valueAt(i);
++        if (outputDesc->sharesHwModuleWith(desc)
++            && isStrategyActive(desc, strategy, inPastMs, sysTime)) {
++            return true;
++        }
++    }
++    return false;
++}
++
+ audio_policy_forced_cfg_t AudioPolicyManager::getForceUse(audio_policy_force_use_t usage)
+ {
+     return mEngine->getForceUse(usage);
+diff --git a/services/audiopolicy/managerdefault/AudioPolicyManager.h b/services/audiopolicy/managerdefault/AudioPolicyManager.h
+index b954714fa..48e0472b2 100644
+--- a/services/audiopolicy/managerdefault/AudioPolicyManager.h
++++ b/services/audiopolicy/managerdefault/AudioPolicyManager.h
+@@ -321,6 +321,10 @@ protected:
+         bool isStrategyActive(const sp<AudioOutputDescriptor>& outputDesc, routing_strategy strategy,
+                               uint32_t inPastMs = 0, nsecs_t sysTime = 0) const;
+ 
++        bool isStrategyActiveOnSameModule(const sp<AudioOutputDescriptor>& outputDesc,
++                                                  routing_strategy strategy, uint32_t inPastMs = 0,
++                                                  nsecs_t sysTime = 0) const;
++
+         // change the route of the specified output. Returns the number of ms we have slept to
+         // allow new routing to take effect in certain cases.
+         virtual uint32_t setOutputDevice(const sp<AudioOutputDescriptor>& outputDesc,
+-- 
+2.17.1
+

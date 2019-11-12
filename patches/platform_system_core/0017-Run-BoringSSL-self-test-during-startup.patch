@@ -1,0 +1,162 @@
+From 66d9e9231e3b76f89f9b440766e3e0fbf2c85609 Mon Sep 17 00:00:00 2001
+From: Branden Archer <brarcher@google.com>
+Date: Thu, 15 Nov 2018 08:43:48 -0800
+Subject: [PATCH 17/29] Run BoringSSL self test during startup
+
+NIAP certification requires that all cryptographic functions
+undergo a self-test during startup to demonstrate correct
+operation. This change adds such a check.
+
+If the check fails, it will prevent the device from booting
+by rebooting into the bootloader.
+
+Bug: 119826244
+Test: Built for walleye. After device booted examined dmesg and
+      observed logs from init showing that the new task did
+      start. Further, when BoringSSL is built to fail its self
+      check the device did stop during a normal boot and enter
+      the bootloader, and did so before the boot animation stopped.
+Change-Id: I4df375cfcdbadcae7f67b01441fef6e729312807
+Merged-In: I07a5dc73a314502c87de566bb26f4d73499d2675
+---
+ init/Android.bp              |  1 +
+ init/boringssl_self_test.cpp | 56 ++++++++++++++++++++++++++++++++++++
+ init/boringssl_self_test.h   | 28 ++++++++++++++++++
+ init/init.cpp                |  4 +++
+ 4 files changed, 89 insertions(+)
+ create mode 100644 init/boringssl_self_test.cpp
+ create mode 100644 init/boringssl_self_test.h
+
+diff --git a/init/Android.bp b/init/Android.bp
+index 70a4ac651..63c8382a4 100644
+--- a/init/Android.bp
++++ b/init/Android.bp
+@@ -95,6 +95,7 @@ cc_library_static {
+         "action.cpp",
+         "action_manager.cpp",
+         "action_parser.cpp",
++        "boringssl_self_test.cpp",
+         "bootchart.cpp",
+         "builtins.cpp",
+         "capabilities.cpp",
+diff --git a/init/boringssl_self_test.cpp b/init/boringssl_self_test.cpp
+new file mode 100644
+index 000000000..850f1aa73
+--- /dev/null
++++ b/init/boringssl_self_test.cpp
+@@ -0,0 +1,56 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "boringssl_self_test.h"
++
++#include <android-base/logging.h>
++#include <cutils/android_reboot.h>
++#include <openssl/crypto.h>
++#include <sys/types.h>
++#include <unistd.h>
++
++namespace android {
++namespace init {
++
++Result<Success> StartBoringSslSelfTest(const BuiltinArguments&) {
++    pid_t id = fork();
++
++    if (id == 0) {
++        if (BORINGSSL_self_test() != 1) {
++            LOG(INFO) << "BoringSSL crypto self tests failed";
++
++            // This check has failed, so the device should refuse
++            // to boot. Rebooting to bootloader to wait for
++            // further action from the user.
++
++            int result =
++                android_reboot(ANDROID_RB_RESTART2, 0, "bootloader,boringssl-self-check-failed");
++            if (result != 0) {
++                LOG(ERROR) << "Failed to reboot into bootloader";
++            }
++        }
++
++        _exit(0);
++    } else if (id == -1) {
++        // Failed to fork, so cannot run the test. Refuse to continue.
++        PLOG(FATAL) << "Failed to fork for BoringSSL self test";
++    }
++
++    return Success();
++}
++
++}  // namespace init
++}  // namespace android
+diff --git a/init/boringssl_self_test.h b/init/boringssl_self_test.h
+new file mode 100644
+index 000000000..b21fc7883
+--- /dev/null
++++ b/init/boringssl_self_test.h
+@@ -0,0 +1,28 @@
++/*
++ * Copyright (C) 2018 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#include "builtin_arguments.h"
++#include "result.h"
++
++namespace android {
++namespace init {
++
++Result<Success> StartBoringSslSelfTest(const BuiltinArguments&);
++
++}  // namespace init
++}  // namespace android
+diff --git a/init/init.cpp b/init/init.cpp
+index 4fe115e92..fc58eeabb 100644
+--- a/init/init.cpp
++++ b/init/init.cpp
+@@ -47,6 +47,7 @@
+ #include <optional>
+ 
+ #include "action_parser.h"
++#include "boringssl_self_test.h"
+ #include "import_parser.h"
+ #include "init_first_stage.h"
+ #include "keychords.h"
+@@ -731,6 +732,9 @@ int main(int argc, char** argv) {
+     // Trigger all the boot actions to get us started.
+     am.QueueEventTrigger("init");
+ 
++    // Starting the BoringSSL self test, for NIAP certification compliance.
++    am.QueueBuiltinAction(StartBoringSslSelfTest, "StartBoringSslSelfTest");
++
+     // Repeat mix_hwrng_into_linux_rng in case /dev/hw_random or /dev/random
+     // wasn't ready immediately after wait_for_coldboot_done
+     am.QueueBuiltinAction(MixHwrngIntoLinuxRngAction, "MixHwrngIntoLinuxRng");
+-- 
+2.17.1
+

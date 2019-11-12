@@ -1,0 +1,39 @@
+From d5523ea59a7c6e85b8ba28f6d92430a64a240e32 Mon Sep 17 00:00:00 2001
+From: Lajos Molnar <lajos@google.com>
+Date: Fri, 13 Jul 2018 14:10:21 -0700
+Subject: [PATCH 15/80] media sync: forcefully limit correction by
+ VideoFrameScheduler.
+
+Don't allow video frame scheduler to correct by more than twice the
+correction limit. If this happens, restart the scheduler.
+
+Bug: 79400257
+Change-Id: I9c30ee0acf3bbb8ef89ce31672fe5f8055c85e2e
+---
+ media/libstagefright/VideoFrameScheduler.cpp | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/media/libstagefright/VideoFrameScheduler.cpp b/media/libstagefright/VideoFrameScheduler.cpp
+index 6819bba40..9020fc1aa 100644
+--- a/media/libstagefright/VideoFrameScheduler.cpp
++++ b/media/libstagefright/VideoFrameScheduler.cpp
+@@ -475,7 +475,16 @@ nsecs_t VideoFrameScheduler::schedule(nsecs_t renderTime) {
+                 nextVsyncTime += mVsyncPeriod;
+                 if (vsyncsForLastFrame < ULONG_MAX)
+                     ++vsyncsForLastFrame;
++            } else if (mTimeCorrection < -correctionLimit * 2
++                    || mTimeCorrection > correctionLimit * 2) {
++                ALOGW("correction beyond limit: %lld vs %lld (vsyncs for last frame: %zu, min: %zu)"
++                        " restarting. render=%lld",
++                        (long long)mTimeCorrection, (long long)correctionLimit,
++                        vsyncsForLastFrame, minVsyncsPerFrame, (long long)origRenderTime);
++                restart();
++                return origRenderTime;
+             }
++
+             ATRACE_INT("FRAME_VSYNCS", vsyncsForLastFrame);
+         }
+         mLastVsyncTime = nextVsyncTime;
+-- 
+2.17.1
+

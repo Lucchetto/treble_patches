@@ -1,0 +1,126 @@
+From d7dd3e2d3d3d3828b53a688f8cc965df1ba1b60c Mon Sep 17 00:00:00 2001
+From: bohu <bohu@google.com>
+Date: Wed, 13 Jun 2018 09:04:30 -0700
+Subject: [PATCH 05/81] emualtor: cleanup media configuration
+
+The media configuration is handled by goldfish/vendor.mk
+already; clean them up from device.mk files.
+
+this cl does not impact arm devices;
+and it does the right thing for x86/64 devices
+because the media configuration should go to vendor
+instead of staying on system
+
+BUG: 110030159
+Change-Id: If492f1e01f600b1c969e9ef04598f7af6783970e
+---
+ target/board/generic/device.mk        | 11 -----------
+ target/board/generic_arm64/device.mk  | 10 ----------
+ target/board/generic_x86/device.mk    | 14 --------------
+ target/board/generic_x86_64/device.mk | 14 --------------
+ 4 files changed, 49 deletions(-)
+
+diff --git a/target/board/generic/device.mk b/target/board/generic/device.mk
+index 82c6657f5..273ac7145 100644
+--- a/target/board/generic/device.mk
++++ b/target/board/generic/device.mk
+@@ -14,17 +14,6 @@
+ # limitations under the License.
+ #
+ 
+-# This is a build configuration for the product aspects that
+-# are specific to the emulator.
+-
+-PRODUCT_COPY_FILES := \
+-    device/generic/goldfish/camera/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_audio.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_telephony.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video.xml \
+-    device/generic/goldfish/camera/media_codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml \
+-    hardware/libhardware_legacy/audio/audio_policy.conf:system/etc/audio_policy.conf
+-
+ # minimal configuration for audio policy.
+ PRODUCT_COPY_FILES += \
+     frameworks/av/services/audiopolicy/config/audio_policy_configuration_generic.xml:system/etc/audio_policy_configuration.xml \
+diff --git a/target/board/generic_arm64/device.mk b/target/board/generic_arm64/device.mk
+index c0fbdcda4..8e26700bc 100644
+--- a/target/board/generic_arm64/device.mk
++++ b/target/board/generic_arm64/device.mk
+@@ -14,16 +14,6 @@
+ # limitations under the License.
+ #
+ 
+-# This is a build configuration for the product aspects that
+-# are specific to the emulator.
+-
+-PRODUCT_COPY_FILES := \
+-    device/generic/goldfish/camera/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_audio.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_telephony.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video.xml \
+-    device/generic/goldfish/camera/media_codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml
+-
+ # minimal configuration for audio policy.
+ PRODUCT_COPY_FILES += \
+     frameworks/av/services/audiopolicy/config/audio_policy_configuration_generic.xml:system/etc/audio_policy_configuration.xml \
+diff --git a/target/board/generic_x86/device.mk b/target/board/generic_x86/device.mk
+index ecf869735..273ac7145 100644
+--- a/target/board/generic_x86/device.mk
++++ b/target/board/generic_x86/device.mk
+@@ -14,16 +14,6 @@
+ # limitations under the License.
+ #
+ 
+-# This is a build configuration for the product aspects that
+-# are specific to the emulator.
+-
+-PRODUCT_COPY_FILES := \
+-    device/generic/goldfish/camera/media_profiles.xml:system/etc/media_profiles.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
+-    device/generic/goldfish/camera/media_codecs.xml:system/etc/media_codecs.xml
+-
+ # minimal configuration for audio policy.
+ PRODUCT_COPY_FILES += \
+     frameworks/av/services/audiopolicy/config/audio_policy_configuration_generic.xml:system/etc/audio_policy_configuration.xml \
+@@ -40,7 +30,3 @@ PRODUCT_COPY_FILES += \
+ #   NFC configuration file should be in vendor/etc, instead of system/etc
+ PRODUCT_COPY_FILES += \
+     device/generic/common/nfc/libnfc-nci.conf:system/etc/libnfc-nci.conf
+-
+-PRODUCT_PACKAGES := \
+-    audio.primary.goldfish \
+-    vibrator.goldfish
+diff --git a/target/board/generic_x86_64/device.mk b/target/board/generic_x86_64/device.mk
+index ecf869735..273ac7145 100755
+--- a/target/board/generic_x86_64/device.mk
++++ b/target/board/generic_x86_64/device.mk
+@@ -14,16 +14,6 @@
+ # limitations under the License.
+ #
+ 
+-# This is a build configuration for the product aspects that
+-# are specific to the emulator.
+-
+-PRODUCT_COPY_FILES := \
+-    device/generic/goldfish/camera/media_profiles.xml:system/etc/media_profiles.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
+-    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
+-    device/generic/goldfish/camera/media_codecs.xml:system/etc/media_codecs.xml
+-
+ # minimal configuration for audio policy.
+ PRODUCT_COPY_FILES += \
+     frameworks/av/services/audiopolicy/config/audio_policy_configuration_generic.xml:system/etc/audio_policy_configuration.xml \
+@@ -40,7 +30,3 @@ PRODUCT_COPY_FILES += \
+ #   NFC configuration file should be in vendor/etc, instead of system/etc
+ PRODUCT_COPY_FILES += \
+     device/generic/common/nfc/libnfc-nci.conf:system/etc/libnfc-nci.conf
+-
+-PRODUCT_PACKAGES := \
+-    audio.primary.goldfish \
+-    vibrator.goldfish
+-- 
+2.17.1
+

@@ -1,0 +1,56 @@
+From 15cf65cd5f9e29c4e8cbd53309aabd85d8c45f6a Mon Sep 17 00:00:00 2001
+From: Suprabh Shukla <suprabh@google.com>
+Date: Mon, 12 Feb 2018 12:53:23 -0800
+Subject: [PATCH 125/306] Allow setting alarm to the same time as an earlier
+ one
+
+With alarm deferring, we may end up rescheduling an alarm to the exact
+time we set the previous kernel alarm to. Removing the optimization to
+prevent duplicate sets, as otherwise we may end up being in a bad state
+of no kernel alarm set. Also added the field maxWhenElapsed to the alarm
+dump for more details in the bugreports.
+
+Test: Builds. Boots. Existing tests pass:
+atest CtsAlarmManagerTestCases
+
+Bug: 73069486
+Change-Id: Iade4549b399def57902b644b1d50945722e60c28
+(cherry picked from commit 2fa9545e29ef6b6fc511c2136b5f91e5b7e29818)
+---
+ .../core/java/com/android/server/AlarmManagerService.java   | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/AlarmManagerService.java b/services/core/java/com/android/server/AlarmManagerService.java
+index 10fad6273ac..a422b7ccd27 100644
+--- a/services/core/java/com/android/server/AlarmManagerService.java
++++ b/services/core/java/com/android/server/AlarmManagerService.java
+@@ -2584,7 +2584,7 @@ class AlarmManagerService extends SystemService {
+         if (mAlarmBatches.size() > 0) {
+             final Batch firstWakeup = findFirstWakeupBatchLocked();
+             final Batch firstBatch = mAlarmBatches.get(0);
+-            if (firstWakeup != null && mNextWakeup != firstWakeup.start) {
++            if (firstWakeup != null) {
+                 mNextWakeup = firstWakeup.start;
+                 mLastWakeupSet = SystemClock.elapsedRealtime();
+                 setLocked(ELAPSED_REALTIME_WAKEUP, firstWakeup.start);
+@@ -2598,7 +2598,7 @@ class AlarmManagerService extends SystemService {
+                 nextNonWakeup = mNextNonWakeupDeliveryTime;
+             }
+         }
+-        if (nextNonWakeup != 0 && mNextNonWakeup != nextNonWakeup) {
++        if (nextNonWakeup != 0) {
+             mNextNonWakeup = nextNonWakeup;
+             setLocked(ELAPSED_REALTIME, nextNonWakeup);
+         }
+@@ -3229,6 +3229,8 @@ class AlarmManagerService extends SystemService {
+                     expectedMaxWhenElapsed, nowELAPSED, pw);
+                     pw.print(" whenElapsed="); TimeUtils.formatDuration(whenElapsed,
+                             nowELAPSED, pw);
++                    pw.print(" maxWhenElapsed="); TimeUtils.formatDuration(maxWhenElapsed,
++                            nowELAPSED, pw);
+                     pw.print(" when=");
+                     if (isRtc) {
+                         pw.print(sdf.format(new Date(when)));
+-- 
+2.17.1
+

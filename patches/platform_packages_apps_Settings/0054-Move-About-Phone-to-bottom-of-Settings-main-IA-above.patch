@@ -1,0 +1,290 @@
+From bea5b289ffeb59271ce80155683e093114b0cfa8 Mon Sep 17 00:00:00 2001
+From: Edgar Wang <edgarwang@google.com>
+Date: Mon, 29 Oct 2018 20:22:11 +0800
+Subject: [PATCH 54/71] Move "About Phone" to bottom of Settings main IA, above
+ "Tips & Support"
+
+Merged-In: I0a0f03bdb27d9eea48eb758496eefeebcbc57b6c
+Change-Id: If839a7199992104cc0abac9327844145d148cd68
+Fixes: 118168552
+Test: robotests
+---
+ AndroidManifest.xml                |  8 ++---
+ color-check-baseline.xml           | 54 ++++++++++++++++++++++++------
+ res/drawable/ic_homepage_about.xml | 36 ++++++++++++++++++++
+ res/drawable/ic_phone_info.xml     |  9 +++++
+ res/values/colors.xml              |  7 ++--
+ 5 files changed, 96 insertions(+), 18 deletions(-)
+ create mode 100644 res/drawable/ic_homepage_about.xml
+ create mode 100644 res/drawable/ic_phone_info.xml
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 39e049c400..dbccf6cbe6 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -999,7 +999,7 @@
+ 
+         <activity android:name=".Settings$MyDeviceInfoActivity"
+                   android:label="@string/about_settings"
+-                  android:icon="@drawable/ic_settings_about"
++                  android:icon="@drawable/ic_homepage_about"
+                   android:taskAffinity="com.android.settings"
+                   android:parentActivityName="Settings">
+             <intent-filter android:priority="1">
+@@ -1012,11 +1012,11 @@
+                 <category android:name="android.intent.category.DEFAULT" />
+                 <category android:name="android.intent.category.VOICE_LAUNCH" />
+             </intent-filter>
+-            <intent-filter android:priority="270">
++            <intent-filter android:priority="-2">
+                 <action android:name="com.android.settings.action.SETTINGS" />
+             </intent-filter>
+             <meta-data android:name="com.android.settings.category"
+-                       android:value="com.android.settings.category.ia.system" />
++                       android:value="com.android.settings.category.ia.homepage" />
+             <meta-data android:name="com.android.settings.title"
+                        android:resource="@string/about_settings" />
+             <meta-data android:name="com.android.settings.FRAGMENT_CLASS"
+@@ -3174,7 +3174,7 @@
+                   android:icon="@drawable/ic_homepage_support"
+                   android:theme="@android:style/Theme.DeviceDefault.Light.Panel"
+                   android:enabled="@bool/config_support_enabled">
+-            <intent-filter android:priority="-2">
++            <intent-filter android:priority="-3">
+                 <action android:name="com.android.settings.action.SETTINGS"/>
+             </intent-filter>
+             <intent-filter>
+diff --git a/color-check-baseline.xml b/color-check-baseline.xml
+index 7ce4da7f9d..de68065765 100644
+--- a/color-check-baseline.xml
++++ b/color-check-baseline.xml
+@@ -1033,7 +1033,7 @@
+         priority="4"
+         summary="Using hardcoded color"
+         explanation="Hardcoded color values are bad because theme changes cannot be uniformly applied.Instead use the theme specific colors such as `?android:attr/textColorPrimary` in attributes.&#xA;This ensures that a theme change from a light to a dark theme can be uniformlyapplied across the app."
+-        errorLine1="    &lt;color name=&quot;homepage_connected_device_background&quot;>#71A234&lt;/color>"
++        errorLine1="    &lt;color name=&quot;homepage_connected_device_background&quot;>#72B70F&lt;/color>"
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+@@ -1081,7 +1081,7 @@
+         priority="4"
+         summary="Using hardcoded color"
+         explanation="Hardcoded color values are bad because theme changes cannot be uniformly applied.Instead use the theme specific colors such as `?android:attr/textColorPrimary` in attributes.&#xA;This ensures that a theme change from a light to a dark theme can be uniformlyapplied across the app."
+-        errorLine1="    &lt;color name=&quot;homepage_display_background&quot;>#FFB600&lt;/color>"
++        errorLine1="    &lt;color name=&quot;homepage_display_background&quot;>#FFA727&lt;/color>"
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+@@ -1177,7 +1177,7 @@
+         priority="4"
+         summary="Using hardcoded color"
+         explanation="Hardcoded color values are bad because theme changes cannot be uniformly applied.Instead use the theme specific colors such as `?android:attr/textColorPrimary` in attributes.&#xA;This ensures that a theme change from a light to a dark theme can be uniformlyapplied across the app."
+-        errorLine1="    &lt;color name=&quot;homepage_system_background&quot;>#757575&lt;/color>"
++        errorLine1="    &lt;color name=&quot;homepage_system_background&quot;>#9E9E9E&lt;/color>"
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+@@ -1185,6 +1185,22 @@
+             column="5"/>
+     </issue>
+ 
++    <issue
++        id="HardCodedColor"
++        severity="Error"
++        message="Avoid using hardcoded color"
++        category="Correctness"
++        priority="4"
++        summary="Using hardcoded color"
++        explanation="Hardcoded color values are bad because theme changes cannot be uniformly applied.Instead use the theme specific colors such as `?android:attr/textColorPrimary` in attributes.&#xA;This ensures that a theme change from a light to a dark theme can be uniformlyapplied across the app."
++        errorLine1="    &lt;color name=&quot;homepage_about_background&quot;>#9FA8DA&lt;/color>"
++        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
++        <location
++            file="res/values/colors.xml"
++            line="126"
++            column="5"/>
++    </issue>
++
+     <issue
+         id="HardCodedColor"
+         severity="Error"
+@@ -1197,7 +1213,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="126"
++            line="127"
+             column="5"/>
+     </issue>
+ 
+@@ -1213,7 +1229,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="127"
++            line="128"
+             column="5"/>
+     </issue>
+ 
+@@ -1229,7 +1245,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="132"
++            line="133"
+             column="5"/>
+     </issue>
+ 
+@@ -1245,7 +1261,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="133"
++            line="134"
+             column="5"/>
+     </issue>
+ 
+@@ -1261,7 +1277,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="134"
++            line="135"
+             column="5"/>
+     </issue>
+ 
+@@ -1277,7 +1293,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="135"
++            line="136"
+             column="5"/>
+     </issue>
+ 
+@@ -1293,7 +1309,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="136"
++            line="137"
+             column="5"/>
+     </issue>
+ 
+@@ -1309,7 +1325,7 @@
+         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+         <location
+             file="res/values/colors.xml"
+-            line="137"
++            line="138"
+             column="5"/>
+     </issue>
+ 
+@@ -1633,6 +1649,22 @@
+             column="9"/>
+     </issue>
+ 
++    <issue
++        id="HardCodedColor"
++        severity="Error"
++        message="Avoid using hardcoded color"
++        category="Correctness"
++        priority="4"
++        summary="Using hardcoded color"
++        explanation="Hardcoded color values are bad because theme changes cannot be uniformly applied.Instead use the theme specific colors such as `?android:attr/textColorPrimary` in attributes.&#xA;This ensures that a theme change from a light to a dark theme can be uniformlyapplied across the app."
++        errorLine1="                android:color=&quot;@color/homepage_about_background&quot; />"
++        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
++        <location
++            file="res/drawable/ic_homepage_about.xml"
++            line="23"
++            column="17"/>
++    </issue>
++
+     <issue
+         id="HardCodedColor"
+         severity="Error"
+diff --git a/res/drawable/ic_homepage_about.xml b/res/drawable/ic_homepage_about.xml
+new file mode 100644
+index 0000000000..d47a740b57
+--- /dev/null
++++ b/res/drawable/ic_homepage_about.xml
+@@ -0,0 +1,36 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++  Copyright (C) 2018 The Android Open Source Project
++
++  Licensed under the Apache License, Version 2.0 (the "License");
++  you may not use this file except in compliance with the License.
++  You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++  Unless required by applicable law or agreed to in writing, software
++  distributed under the License is distributed on an "AS IS" BASIS,
++  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++  See the License for the specific language governing permissions and
++  limitations under the License.
++  -->
++
++<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
++
++    <item>
++        <shape android:shape="oval">
++            <solid
++                android:color="@color/homepage_about_background" />
++            <size
++                android:width="@dimen/dashboard_tile_image_size"
++                android:height="@dimen/dashboard_tile_image_size" />
++        </shape>
++    </item>
++
++    <item
++        android:width="@dimen/dashboard_tile_foreground_image_size"
++        android:height="@dimen/dashboard_tile_foreground_image_size"
++        android:start="@dimen/dashboard_tile_foreground_image_inset"
++        android:top="@dimen/dashboard_tile_foreground_image_inset"
++        android:drawable="@drawable/ic_phone_info" />
++</layer-list>
+diff --git a/res/drawable/ic_phone_info.xml b/res/drawable/ic_phone_info.xml
+new file mode 100644
+index 0000000000..7aee3e86eb
+--- /dev/null
++++ b/res/drawable/ic_phone_info.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++        android:width="24dp"
++        android:height="24dp"
++        android:viewportWidth="24.0"
++        android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FFFFFFFF"
++        android:pathData="M17,1.01L7,1C5.9,1 5,1.9 5,3v18c0,1.1 0.9,2 2,2h10c1.1,0 2,-0.9 2,-2V3C19,1.9 18.1,1.01 17,1.01zM17,21H7v-1h10V21zM17,18H7V6h10V18zM7,4V3h10v1H7zM11,7h2v2h-2V7zM11,11h2v6h-2V11z"/>
++</vector>
+diff --git a/res/values/colors.xml b/res/values/colors.xml
+index e5f7c276ae..be6cb62edd 100644
+--- a/res/values/colors.xml
++++ b/res/values/colors.xml
+@@ -113,16 +113,17 @@
+ 
+     <!-- Dashboard/homepage icon background colors -->
+     <color name="homepage_network_background">#2196F3</color>
+-    <color name="homepage_connected_device_background">#71A234</color>
++    <color name="homepage_connected_device_background">#72B70F</color>
+     <color name="homepage_app_and_notification_background">#FF7E0F</color>
+     <color name="homepage_battery_background">#258982</color>
+-    <color name="homepage_display_background">#FFB600</color>
++    <color name="homepage_display_background">#FFA727</color>
+     <color name="homepage_sound_background">#01B1AF</color>
+     <color name="homepage_storage_background">#C14CE6</color>
+     <color name="homepage_security_background">#0F9D58</color>
+     <color name="homepage_accounts_background">#F15B8D</color>
+     <color name="homepage_accessibility_background">#5011C1</color>
+-    <color name="homepage_system_background">#757575</color>
++    <color name="homepage_system_background">#9E9E9E</color>
++    <color name="homepage_about_background">#9FA8DA</color>
+     <color name="homepage_support_background">#26459C</color>
+     <color name="homepage_generic_icon_background">#1A73E8</color>
+     <!-- End of dashboard/homepage icon background colors -->
+-- 
+2.17.1
+
