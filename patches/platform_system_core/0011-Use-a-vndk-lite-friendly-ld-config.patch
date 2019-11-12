@@ -1,7 +1,7 @@
 From 5fecdf356ad59848746a8f567b7d404d87fdd500 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 14 Sep 2019 22:49:31 +0200
-Subject: [PATCH 11/14] Use a vndk-lite friendly ld config
+Subject: [PATCH 11/15] Use a vndk-lite friendly ld config
 
 Change-Id: I5b1e49fc534e6625ebdb6e183466e73b5c49e175
 ---
