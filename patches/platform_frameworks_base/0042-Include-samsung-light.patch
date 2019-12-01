@@ -1,0 +1,24 @@
+From a09f7e4428f0ba3823901cf7fb2ccaf6569a20d7 Mon Sep 17 00:00:00 2001
+From: Luke Williams <expressluke@turbox.uk>
+Date: Sun, 1 Dec 2019 11:43:22 +0000
+Subject: [PATCH] Include samsung light
+
+---
+ services/core/jni/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/services/core/jni/Android.bp b/services/core/jni/Android.bp
+index fdcefd42316..d8645012e24 100644
+--- a/services/core/jni/Android.bp
++++ b/services/core/jni/Android.bp
+@@ -135,6 +135,7 @@ cc_defaults {
+         "android.system.suspend@1.0",
+         "suspend_control_aidl_interface-cpp",
+         "vendor.lineage.power@1.0",
++        "vendor.samsung.hardware.light@2.0",
+     ],
+ 
+     static_libs: [
+-- 
+2.17.1
+
