@@ -1,4 +1,4 @@
-From 850885c7e148867e700b0aa44b275994725e0b84 Mon Sep 17 00:00:00 2001
+From 1e0ec89fe86a516902f3bf2fb3aa3e94411fa39f Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 10 Dec 2017 00:26:21 +0100
 Subject: [PATCH 01/15] Revert "logd: add "+passcred" for logdw socket"

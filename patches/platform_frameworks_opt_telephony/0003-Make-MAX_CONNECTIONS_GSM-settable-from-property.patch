@@ -1,4 +1,4 @@
-From 6fccbbce6f3271be29f562760e2a326c089e55e8 Mon Sep 17 00:00:00 2001
+From 74ec1d893c8423723335d75cef7c400f0dfdb425 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Fri, 28 Dec 2018 13:06:32 +0100
 Subject: [PATCH 3/7] Make MAX_CONNECTIONS_GSM settable from property

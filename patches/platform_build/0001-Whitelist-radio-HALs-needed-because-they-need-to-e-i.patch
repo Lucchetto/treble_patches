@@ -1,4 +1,4 @@
-From 881c4463ed74a8f7c313a5f1398a48a85239437c Mon Sep 17 00:00:00 2001
+From a51f3065a74e19615194de86f44bb8463281c635 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Fri, 6 Sep 2019 15:10:28 +0200
 Subject: [PATCH 1/2] Whitelist radio HALs (needed because they need to e in

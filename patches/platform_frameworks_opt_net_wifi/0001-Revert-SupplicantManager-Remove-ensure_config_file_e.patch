@@ -1,4 +1,4 @@
-From ca72c96e07867bdb6091ee0a54742f240f84f75e Mon Sep 17 00:00:00 2001
+From 617786a10e42185eaafe8ab2a66e86bb41fe4b2f Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 14 Aug 2018 16:59:12 +0200
 Subject: [PATCH 1/4] Revert "SupplicantManager: Remove

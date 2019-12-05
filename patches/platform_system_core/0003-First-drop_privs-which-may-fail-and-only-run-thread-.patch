@@ -1,4 +1,4 @@
-From 35c0e42158cb54ff11c516138e53c771846e71a8 Mon Sep 17 00:00:00 2001
+From e0b79b1ba016681761880d73af1acc510d2e973a Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 14 Aug 2018 19:33:23 +0200
 Subject: [PATCH 03/15] First drop_privs (which may fail) and only run thread

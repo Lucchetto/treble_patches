@@ -1,4 +1,4 @@
-From fc360ebb632c8dbb3115b9c20c266461967a3520 Mon Sep 17 00:00:00 2001
+From 660d0a537964f8bd08799425a131d80a92ee260e Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 14 Aug 2018 20:53:12 +0200
 Subject: [PATCH 2/6] Don't set reserved_disk group, it panics old inits

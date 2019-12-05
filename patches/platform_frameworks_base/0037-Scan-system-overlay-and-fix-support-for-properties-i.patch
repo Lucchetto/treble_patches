@@ -1,4 +1,4 @@
-From c1ada1eef863883253f22955e4c72ceafbae6ba5 Mon Sep 17 00:00:00 2001
+From 5fdeb9a4a8755ba00f80edc45b68dfbf450c32aa Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 14 Oct 2019 23:50:46 +0200
 Subject: [PATCH 37/40] Scan /system/overlay and fix support for properties in
@@ -97,10 +97,10 @@ index 71ba3f0f1ac..7fda402b80f 100644
    if (iter != tag->end()) {
      info.is_static = std::stoul(iter->second) != 0U;
 diff --git a/core/java/android/content/pm/PackageParser.java b/core/java/android/content/pm/PackageParser.java
-index b3776787cc2..2147cc61728 100644
+index 535a8bc9db7..a164cb186a9 100644
 --- a/core/java/android/content/pm/PackageParser.java
 +++ b/core/java/android/content/pm/PackageParser.java
-@@ -1353,6 +1353,7 @@ public class PackageParser {
+@@ -1355,6 +1355,7 @@ public class PackageParser {
          } catch (PackageParserException e) {
              throw e;
          } catch (Exception e) {
@@ -108,7 +108,7 @@ index b3776787cc2..2147cc61728 100644
              throw new PackageParserException(INSTALL_PARSE_FAILED_UNEXPECTED_EXCEPTION,
                      "Failed to read manifest from " + apkPath, e);
          } finally {
-@@ -1392,6 +1393,7 @@ public class PackageParser {
+@@ -1394,6 +1395,7 @@ public class PackageParser {
          } catch (PackageParserException e) {
              throw e;
          } catch (Exception e) {
@@ -116,7 +116,7 @@ index b3776787cc2..2147cc61728 100644
              throw new PackageParserException(INSTALL_PARSE_FAILED_UNEXPECTED_EXCEPTION,
                      "Failed to read manifest from " + apkPath, e);
          } finally {
-@@ -2556,7 +2558,12 @@ public class PackageParser {
+@@ -2574,7 +2576,12 @@ public class PackageParser {
  
          // check property value - make sure it is both set and equal to expected value
          final String currValue = SystemProperties.get(propName);
@@ -145,10 +145,10 @@ index 4518c7e66a5..9e1b6db9ad9 100644
      input_dirs.push_back(AssetManager::VENDOR_OVERLAY_DIR);
    }
 diff --git a/services/core/java/com/android/server/pm/PackageManagerService.java b/services/core/java/com/android/server/pm/PackageManagerService.java
-index a7d436ab87b..bd6230e9fef 100644
+index aae48239a0c..67d57538477 100644
 --- a/services/core/java/com/android/server/pm/PackageManagerService.java
 +++ b/services/core/java/com/android/server/pm/PackageManagerService.java
-@@ -2608,6 +2608,12 @@ public class PackageManagerService extends IPackageManager.Stub
+@@ -2624,6 +2624,12 @@ public class PackageManagerService extends IPackageManager.Stub
              // any apps.)
              // For security and version matching reason, only consider overlay packages if they
              // reside in the right directory.

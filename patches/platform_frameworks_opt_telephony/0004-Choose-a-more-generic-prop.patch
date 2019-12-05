@@ -1,4 +1,4 @@
-From 51b02c7be8a0d720ed924df4507899697a96b1a3 Mon Sep 17 00:00:00 2001
+From 7ca906dc7eed7506b194fa3c170d26feb5b383ce Mon Sep 17 00:00:00 2001
 From: Dil3mm4 <dil3mm4.dev@gmail.com>
 Date: Sat, 17 Nov 2018 18:18:42 +0000
 Subject: [PATCH 4/7] Choose a more generic prop.
@@ -11,10 +11,10 @@ Change-Id: Icf1700f55be40915f9c64059019287f300d81405
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/java/com/android/internal/telephony/GsmCdmaPhone.java b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
-index 14a322747..8359a3858 100644
+index 6a6ba7471..0c2cb9881 100644
 --- a/src/java/com/android/internal/telephony/GsmCdmaPhone.java
 +++ b/src/java/com/android/internal/telephony/GsmCdmaPhone.java
-@@ -2313,7 +2313,7 @@ public class GsmCdmaPhone extends Phone {
+@@ -2321,7 +2321,7 @@ public class GsmCdmaPhone extends Phone {
              // Complete pending USSD
  
              if (isUssdRelease) {

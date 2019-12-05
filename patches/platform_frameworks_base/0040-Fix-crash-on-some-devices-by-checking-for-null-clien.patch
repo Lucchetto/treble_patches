@@ -1,4 +1,4 @@
-From b19f456207eb65020f66a53a98d854a7f09d4db4 Mon Sep 17 00:00:00 2001
+From 159a6e756230789dd2ec624adc1dc1417a80a6b7 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 27 Oct 2019 16:27:55 +0100
 Subject: [PATCH 40/40] Fix crash on some devices by checking for null client

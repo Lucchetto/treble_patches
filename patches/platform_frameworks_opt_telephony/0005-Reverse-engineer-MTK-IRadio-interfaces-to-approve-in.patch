@@ -1,4 +1,4 @@
-From 6f8691bfa27414580ebd6c6b18f02beff644a672 Mon Sep 17 00:00:00 2001
+From d1e9d98f0eaffe144db26147e98bee7c14c482a4 Mon Sep 17 00:00:00 2001
 From: Bevis Tseng <bevis@cloudmosa.com>
 Date: Thu, 18 Apr 2019 16:30:45 +0800
 Subject: [PATCH 5/7] Reverse-engineer MTK IRadio interfaces to approve

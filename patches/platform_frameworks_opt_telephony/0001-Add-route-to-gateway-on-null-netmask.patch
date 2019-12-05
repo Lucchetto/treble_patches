@@ -1,4 +1,4 @@
-From 64a59fbee87527b847ef89a45a22bad5ed51f3dd Mon Sep 17 00:00:00 2001
+From 623e6041d449cde93de691f3f3a579309e7ab9e1 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 16 Aug 2018 22:12:46 +0200
 Subject: [PATCH 1/7] Add route to gateway on null netmask

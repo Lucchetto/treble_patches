@@ -1,4 +1,4 @@
-From 2401689f91d246427b053be8730233c61d2245ee Mon Sep 17 00:00:00 2001
+From dd132e9aec63cdea25293f8fcd5df1875c603e99 Mon Sep 17 00:00:00 2001
 From: Steve Kondik <steve@cyngn.com>
 Date: Sat, 3 Jan 2015 05:13:26 -0800
 Subject: [PATCH 16/40] power: Disable keyboard/button lights while
@@ -14,10 +14,10 @@ Change-Id: I7f1fc35a1573717d1ea101a07c4171d6f66d1553
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/services/core/java/com/android/server/power/PowerManagerService.java b/services/core/java/com/android/server/power/PowerManagerService.java
-index 73ca3a8df5a..b7b634b7d6e 100644
+index 24cc9981892..dc72c2fce32 100644
 --- a/services/core/java/com/android/server/power/PowerManagerService.java
 +++ b/services/core/java/com/android/server/power/PowerManagerService.java
-@@ -2040,7 +2040,7 @@ public final class PowerManagerService extends SystemService
+@@ -2052,7 +2052,7 @@ public final class PowerManagerService extends SystemService
                  final long nextProfileTimeout = getNextProfileTimeoutLocked(now);
  
                  mUserActivitySummary = 0;

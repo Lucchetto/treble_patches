@@ -1,4 +1,4 @@
-From 5fc0c38e67d55bf4b5b681efee0096679cf5d621 Mon Sep 17 00:00:00 2001
+From ae044ed725439246c6f84c6ac34439665ba03cd6 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 12 Sep 2019 12:54:23 +0200
 Subject: [PATCH 5/6] Use vndk_lite ld.config only on same-version vendor

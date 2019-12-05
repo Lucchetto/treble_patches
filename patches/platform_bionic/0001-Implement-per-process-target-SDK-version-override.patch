@@ -1,4 +1,4 @@
-From 7b90ce96711702aedf9c59a1e94d288136240b69 Mon Sep 17 00:00:00 2001
+From b0e8154953efd6c9a6f6081ee9810f432b45016e Mon Sep 17 00:00:00 2001
 From: Danny Baumann <dannybaumann@web.de>
 Date: Wed, 29 Aug 2018 11:21:52 +0200
 Subject: [PATCH 1/6] Implement per-process target SDK version override.

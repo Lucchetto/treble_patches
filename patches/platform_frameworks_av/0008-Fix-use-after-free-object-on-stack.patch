@@ -1,7 +1,7 @@
-From 86a44bc471f30038bed48be440b0e95e06d12c2d Mon Sep 17 00:00:00 2001
+From d4beaa183f38c0086a30e17529339a18eb72e57b Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 5 Aug 2019 17:27:47 +0200
-Subject: [PATCH 08/11] Fix use-after-free (object on stack)
+Subject: [PATCH 08/12] Fix use-after-free (object on stack)
 
 Change-Id: I9ae666b10873eac4e7a55032071e7b15b0de058a
 ---

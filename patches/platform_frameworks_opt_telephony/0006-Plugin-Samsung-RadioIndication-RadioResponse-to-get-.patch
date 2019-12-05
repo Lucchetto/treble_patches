@@ -1,4 +1,4 @@
-From da6b6abe7c92aa3a62cfa7c17651f23f04d9a9ee Mon Sep 17 00:00:00 2001
+From 6d97d17705f4fb0e18a9557ce526eb17f3212f32 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 12 Aug 2019 23:49:56 +0200
 Subject: [PATCH 6/7] Plugin Samsung RadioIndication/RadioResponse to get

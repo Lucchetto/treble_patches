@@ -1,4 +1,4 @@
-From 2039fb5f1d00975fcd5e0f8545da71a3ca95d701 Mon Sep 17 00:00:00 2001
+From 6bb1bf0e6330735f93a2bc84560932460c8887e3 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 14 Aug 2018 20:54:08 +0200
 Subject: [PATCH 3/6] Create vendor_de. This is done by /init.rc on
@@ -9,10 +9,10 @@ Subject: [PATCH 3/6] Create vendor_de. This is done by /init.rc on
  1 file changed, 2 insertions(+)
 
 diff --git a/FsCrypt.cpp b/FsCrypt.cpp
-index 8b061cb..bb90ee0 100644
+index 7f2b5e4..924af98 100644
 --- a/FsCrypt.cpp
 +++ b/FsCrypt.cpp
-@@ -669,6 +669,8 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
+@@ -676,6 +676,8 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
          auto vendor_de_path = android::vold::BuildDataVendorDePath(user_id);
          auto user_de_path = android::vold::BuildDataUserDePath(volume_uuid, user_id);
  

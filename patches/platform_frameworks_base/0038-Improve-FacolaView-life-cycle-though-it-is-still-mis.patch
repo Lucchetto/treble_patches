@@ -1,4 +1,4 @@
-From 9a7d72ca8bae584205aec38d6aebeb477b9e415f Mon Sep 17 00:00:00 2001
+From 165fb79692ae485d383458c173b0fd180b51a868 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 22 Oct 2019 00:33:23 +0200
 Subject: [PATCH 38/40] Improve FacolaView life cycle, though it is still

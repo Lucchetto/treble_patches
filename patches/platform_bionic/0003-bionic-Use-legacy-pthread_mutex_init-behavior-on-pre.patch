@@ -1,4 +1,4 @@
-From 638c28e5dc84c7a4985f056bfcfe7178fabc6450 Mon Sep 17 00:00:00 2001
+From 3ce0069b363f1e86cedf0cfab9d329a9d14ed32c Mon Sep 17 00:00:00 2001
 From: nx111 <gd.zhangdz@gmail.com>
 Date: Wed, 3 Oct 2018 16:58:19 +0800
 Subject: [PATCH 3/6] bionic: Use legacy pthread_mutex_init() behavior on pre-P

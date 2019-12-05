@@ -1,4 +1,4 @@
-From 26394310ed71e4ca656194e66741a12b9bfe53de Mon Sep 17 00:00:00 2001
+From 8e66037d15fc52d2f6d0df90c6c7715b523705db Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 3 Dec 2018 20:54:54 +0100
 Subject: [PATCH 3/7] ::Kirin:: Workaround some conflicting Kirin tether

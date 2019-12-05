@@ -1,4 +1,4 @@
-From f59953143ca4a486936b163dcedb25df0abefccb Mon Sep 17 00:00:00 2001
+From 14a8b2b3fcd5b10588db2d75d50c9065e2db16bd Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 2 Jul 2019 21:15:07 +0200
 Subject: [PATCH 26/40] Make samsung light HAL more overridable

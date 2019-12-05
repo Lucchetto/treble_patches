@@ -1,4 +1,4 @@
-From bdacc397cbd7a2d8dd3f068d4931e4c8f2fbbd39 Mon Sep 17 00:00:00 2001
+From 9c2dfe9ea64d9ef210ee708ee3424beeb2d54d7c Mon Sep 17 00:00:00 2001
 From: penn5 <penn5@users.noreply.github.com>
 Date: Mon, 4 Mar 2019 22:21:07 +0000
 Subject: [PATCH 2/2] Add props to control supported features and states (#1)

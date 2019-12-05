@@ -1,4 +1,4 @@
-From e45ddacfd775473a5c32ab437deb39cfd46ac4f4 Mon Sep 17 00:00:00 2001
+From af9a097779cadf3d2c6597baeda562108099e994 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 6 May 2019 20:25:34 +0200
 Subject: [PATCH 2/3] Fixes crash when selecting network

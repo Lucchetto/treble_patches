@@ -1,4 +1,4 @@
-From a0082d4ca1cb6c96245b7d34b84b07c205021911 Mon Sep 17 00:00:00 2001
+From 3b7b0c81e98b02d2df4dd4c62345a4f34478f028 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 14 Sep 2019 21:53:35 +0200
 Subject: [PATCH 10/15] Take ro.vndk.version into account to know what to test

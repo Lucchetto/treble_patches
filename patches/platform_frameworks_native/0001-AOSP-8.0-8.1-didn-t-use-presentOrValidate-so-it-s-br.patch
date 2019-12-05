@@ -1,4 +1,4 @@
-From d69973262e722557b6ad0c4788fa9f4e1c4ae9f3 Mon Sep 17 00:00:00 2001
+From 62922cab437bddbf4af5db3e30fb539c7645905e Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Tue, 14 Aug 2018 21:01:35 +0200
 Subject: [PATCH 1/5] AOSP 8.0/8.1 didn't use presentOrValidate, so it's

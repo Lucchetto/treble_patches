@@ -1,4 +1,4 @@
-From c4ee3b96aa5487b9783aebb0e3376dffe08780df Mon Sep 17 00:00:00 2001
+From c4d432cd5609a0560ed1e210b2d535ac422e1ac3 Mon Sep 17 00:00:00 2001
 From: Ricardo Cerqueira <cyanogenmod@cerqueira.org>
 Date: Fri, 23 Nov 2012 14:23:16 +0000
 Subject: [PATCH 15/40] Reintroduce button-backlight (and respective inactivity
@@ -68,7 +68,7 @@ index 5804fc8ba72..427ab483324 100644
  
          // Always use the VR brightness when in the VR state.
 diff --git a/services/core/java/com/android/server/power/PowerManagerService.java b/services/core/java/com/android/server/power/PowerManagerService.java
-index aa49ba62f48..73ca3a8df5a 100644
+index e1b3e4d6fbc..24cc9981892 100644
 --- a/services/core/java/com/android/server/power/PowerManagerService.java
 +++ b/services/core/java/com/android/server/power/PowerManagerService.java
 @@ -223,6 +223,12 @@ public final class PowerManagerService extends SystemService
@@ -92,7 +92,7 @@ index aa49ba62f48..73ca3a8df5a 100644
  
      private final Object mLock = LockGuard.installNewLock(LockGuard.INDEX_POWER);
  
-@@ -851,6 +858,7 @@ public final class PowerManagerService extends SystemService
+@@ -855,6 +862,7 @@ public final class PowerManagerService extends SystemService
  
              mLightsManager = getLocalService(LightsManager.class);
              mAttentionLight = mLightsManager.getLight(LightsManager.LIGHT_ID_ATTENTION);
@@ -100,7 +100,7 @@ index aa49ba62f48..73ca3a8df5a 100644
  
              // Initialize display power management.
              mDisplayManagerInternal.initPowerManagement(
-@@ -2028,6 +2036,7 @@ public final class PowerManagerService extends SystemService
+@@ -2040,6 +2048,7 @@ public final class PowerManagerService extends SystemService
                  final long screenOffTimeout = getScreenOffTimeoutLocked(sleepTimeout);
                  final long screenDimDuration = getScreenDimDurationLocked(screenOffTimeout);
                  final boolean userInactiveOverride = mUserInactiveOverrideFromWindowManager;
@@ -108,7 +108,7 @@ index aa49ba62f48..73ca3a8df5a 100644
                  final long nextProfileTimeout = getNextProfileTimeoutLocked(now);
  
                  mUserActivitySummary = 0;
-@@ -2035,6 +2044,12 @@ public final class PowerManagerService extends SystemService
+@@ -2047,6 +2056,12 @@ public final class PowerManagerService extends SystemService
                      nextTimeout = mLastUserActivityTime
                              + screenOffTimeout - screenDimDuration;
                      if (now < nextTimeout) {

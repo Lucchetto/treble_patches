@@ -1,4 +1,4 @@
-From 316437719a351f953aa7e415bd773e33d3c61fb4 Mon Sep 17 00:00:00 2001
+From 9dd05b07beeed46b8f20c2e9e25d0dfcfb381684 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 14 Sep 2019 21:25:07 +0200
 Subject: [PATCH 2/2] Add BOARD_SYSTEMIMAGE_AS_SYSTEM parameter to build SaS

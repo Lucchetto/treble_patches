@@ -1,4 +1,4 @@
-From d3931970f9df73a07d9669117b4c3130ea6931bd Mon Sep 17 00:00:00 2001
+From 250b604dd5155ec4ae7f02c7a8d7683832dd8238 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Wed, 14 Aug 2019 08:50:47 +0200
 Subject: [PATCH 31/40] Use Samsung power HAL

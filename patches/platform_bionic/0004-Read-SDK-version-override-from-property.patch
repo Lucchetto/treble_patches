@@ -1,4 +1,4 @@
-From c1fcfbda36f7888f1f0d4ce897d7da114fa604c5 Mon Sep 17 00:00:00 2001
+From 0419e1c04e71ff631316afd435ef2b41852a28f6 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 3 Jan 2019 17:50:03 +0100
 Subject: [PATCH 4/6] Read SDK version override from property

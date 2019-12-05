@@ -1,4 +1,4 @@
-From ce93727c6e24f528cc2b89d207ee1f921d0874ce Mon Sep 17 00:00:00 2001
+From db1c5b7bc13d4988d459026176dc7607a2542bb2 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 20 May 2019 23:45:56 +0200
 Subject: [PATCH 3/3] Fail gracefully in mobile settings

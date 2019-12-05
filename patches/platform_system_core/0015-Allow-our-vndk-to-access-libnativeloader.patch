@@ -1,4 +1,4 @@
-From ad188b926bd2a5f1989ef9c615f111e548c0e88d Mon Sep 17 00:00:00 2001
+From 2f556132ce533719576348932dbabc20d377c194 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 11 Nov 2019 00:21:36 +0100
 Subject: [PATCH 15/15] Allow our vndk to access libnativeloader

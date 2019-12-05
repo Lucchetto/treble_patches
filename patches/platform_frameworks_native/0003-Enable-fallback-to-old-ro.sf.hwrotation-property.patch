@@ -1,4 +1,4 @@
-From 905b3e7663a92f63818c804d22836a5d1ff2ec0f Mon Sep 17 00:00:00 2001
+From 9b6749ecaedf5d10c94cb2753bf742153a1abf2c Mon Sep 17 00:00:00 2001
 From: phh <phh@phh.me>
 Date: Wed, 22 Aug 2018 08:57:52 +0000
 Subject: [PATCH 3/5] Enable fallback to old ro.sf.hwrotation property
@@ -9,7 +9,7 @@ Change-Id: I46b75a15b85fc5bda31357a4beeb7dab77bd6fe1
  1 file changed, 18 insertions(+)
 
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
-index ffb7012bb..481fe0a02 100644
+index 23b399f83..301f7fa32 100644
 --- a/services/surfaceflinger/SurfaceFlinger.cpp
 +++ b/services/surfaceflinger/SurfaceFlinger.cpp
 @@ -334,7 +334,25 @@ SurfaceFlinger::SurfaceFlinger(Factory& factory) : SurfaceFlinger(factory, SkipI

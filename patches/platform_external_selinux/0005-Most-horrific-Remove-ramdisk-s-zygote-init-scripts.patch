@@ -1,4 +1,4 @@
-From 098fd53e0e09a8663d061342abd29b31e8d127e9 Mon Sep 17 00:00:00 2001
+From 177784a81d555abc7556e44be344b55fde8018ab Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Thu, 12 Sep 2019 20:34:28 +0200
 Subject: [PATCH 5/7] Most horrific: Remove ramdisk's zygote init scripts
