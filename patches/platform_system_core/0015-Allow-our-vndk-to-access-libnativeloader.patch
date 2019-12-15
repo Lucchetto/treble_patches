@@ -1,7 +1,7 @@
 From 2f556132ce533719576348932dbabc20d377c194 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 11 Nov 2019 00:21:36 +0100
-Subject: [PATCH 15/15] Allow our vndk to access libnativeloader
+Subject: [PATCH 15/16] Allow our vndk to access libnativeloader
 
 ---
  rootdir/etc/ld.config.txt | 1 +
