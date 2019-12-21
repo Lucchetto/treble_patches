@@ -1,7 +1,7 @@
 From 5fdeb9a4a8755ba00f80edc45b68dfbf450c32aa Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 14 Oct 2019 23:50:46 +0200
-Subject: [PATCH 37/40] Scan /system/overlay and fix support for properties in
+Subject: [PATCH 37/45] Scan /system/overlay and fix support for properties in
  idmap2
 
 Change-Id: Ic04b5b1cc7b5d8cee67b1e2fdaa8aa793546b6d6

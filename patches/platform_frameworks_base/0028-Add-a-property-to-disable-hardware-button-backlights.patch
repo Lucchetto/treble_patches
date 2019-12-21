@@ -1,7 +1,7 @@
 From ddb5de0412059d713960e6be7640e42b715abbe9 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sat, 10 Aug 2019 20:40:24 +0200
-Subject: [PATCH 28/40] Add a property to disable hardware button backlights
+Subject: [PATCH 28/45] Add a property to disable hardware button backlights
 
 Change-Id: I59c4003cc79f668eb0d56f99ca27f185bf7bc52f
 ---

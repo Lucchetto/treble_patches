@@ -1,7 +1,7 @@
 From fd6982a47f8a437c832b40b4375194b51053ab90 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Wed, 14 Aug 2019 23:36:45 +0200
-Subject: [PATCH 32/40] Also add com.samsung.sensor.physical_proximity (if
+Subject: [PATCH 32/45] Also add com.samsung.sensor.physical_proximity (if
  available, it is more a true proximity sensor than touch proximity sensor)
 
 ---

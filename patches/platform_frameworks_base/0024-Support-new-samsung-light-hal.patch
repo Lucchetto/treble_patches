@@ -1,7 +1,7 @@
 From 93db4dfcb7fbe1a56ae158483a2bcc00adad667b Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Sun, 24 Mar 2019 23:05:14 +0100
-Subject: [PATCH 24/40] Support new samsung light hal
+Subject: [PATCH 24/45] Support new samsung light hal
 
 Change-Id: I88ca834894320129737b4e31fa8f7e5ee918889a
 ---

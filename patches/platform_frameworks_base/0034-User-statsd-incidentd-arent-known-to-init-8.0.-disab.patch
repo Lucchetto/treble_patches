@@ -1,7 +1,7 @@
 From 74d26dfadff9cbb1f1cf228454664ef3bf0dc9d9 Mon Sep 17 00:00:00 2001
 From: Pierre-Hugues Husson <phh@phh.me>
 Date: Mon, 12 Aug 2019 23:10:21 +0200
-Subject: [PATCH 34/40] User statsd/incidentd arent known to init 8.0. disable
+Subject: [PATCH 34/45] User statsd/incidentd arent known to init 8.0. disable
  those services
 
 Change-Id: I074654e194f764ffbc6961ff0ae304e36a9b5d1e
